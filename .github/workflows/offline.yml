@@ -44,7 +44,7 @@ jobs:
           OPENAI_API_KEY: ""
           ANTHROPIC_API_KEY: ""
         run: |
-          sudo -E unshare --net -- bash -euo pipefail -c '
+          sudo -E env "PATH=$PATH" unshare --net -- bash -euo pipefail -c '
             ip link set lo up
 
             # If this ever succeeds the workflow is proving nothing, so fail
@@ -61,7 +61,7 @@ jobs:
 
       - name: a full ingest, inside a network namespace
         run: |
-          sudo -E unshare --net -- bash -euo pipefail -c '
+          sudo -E env "PATH=$PATH" unshare --net -- bash -euo pipefail -c '
             ip link set lo up
             uv run --no-sync python tests/fixtures/build_corpus.py /tmp/offline-check
             cd /tmp/offline-check
