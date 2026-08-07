@@ -89,6 +89,8 @@ source = ["src/ledgerkb"]
 # --- import-linter: core/ stays pure -----------------------------------------
 [tool.importlinter]
 root_packages = ["ledgerkb"]
+# Required for the contract below that forbids third-party imports in core/.
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "core imports nothing from the rest of ledgerkb"

@@ -169,18 +169,26 @@ class TestBitemporal:
         store.add_chunks([c])
         ev = [Evidence(chunk_id=c.id, quote="Owner: Jane Smith")]
 
-        before = utcnow() - timedelta(days=1)
+        # An explicit asserted_at in the past, rather than "now plus a
+        # microsecond". Windows' clock granularity is ~15ms, so a test that
+        # relies on two wall-clock reads differing is a coin flip there.
+        asserted = utcnow() - timedelta(hours=1)
+        before = asserted - timedelta(days=1)
+
         a = Assertion(workspace_id=workspace.id, predicate="owns",
-                      claim_text="Jane Smith owns the action.", modality="explicit", evidence=ev)
+                      claim_text="Jane Smith owns the action.", modality="explicit",
+                      evidence=ev, asserted_at=asserted)
         store.add_assertion(a)
         store.invalidate(a.id, by="agent/test", reason="superseded")
 
         assert store.active_assertions(workspace.id) == []
-        assert store.assertions_as_of(workspace.id, before) == []
+        assert store.assertions_as_of(workspace.id, before) == [], "not yet asserted"
 
-        mid = a.asserted_at + timedelta(microseconds=1)
+        mid = asserted + timedelta(minutes=1)
         as_of = store.assertions_as_of(workspace.id, mid)
         assert [x.id for x in as_of] == [a.id], "we believed it at that instant"
+
+        assert store.assertions_as_of(workspace.id, utcnow()) == [], "no longer believed"
 
 
 class TestEntityResolution:
