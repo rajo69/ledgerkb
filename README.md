@@ -31,7 +31,7 @@ lkb ingest ./documents     # PDF, DOCX, XLSX, PPTX, HTML, EML, CSV, JSON, MD, TX
 lkb docs                   # what was ingested, with its metadata
 lkb chunks <id> --verify   # re-slice every chunk from the stored text
 
-pytest                     # 189 tests, no network, no credentials
+pytest                     # full suite, no network, no credentials
 ```
 
 Nothing in the test suite touches a provider, and no stage up to here needs an

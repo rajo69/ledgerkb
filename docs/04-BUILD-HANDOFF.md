@@ -1,7 +1,59 @@
 # Build Handoff — Start Here
 
-**Version:** 1.0 · **Date:** 2026-08-07
-**Purpose:** Everything a fresh session needs to begin development without re-deriving prior decisions.
+**Version:** 1.2 · **Date:** 2026-08-07
+**Purpose:** Everything a fresh session needs to continue development without re-deriving prior decisions.
+
+---
+
+## 0. Where the build actually is
+
+**L0 and L1 are complete and their gates are green. L2 is next.**
+
+Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0, `main` protected by CI).
+
+| Stage | State |
+|---|---|
+| **L0** — skeleton and contracts | ✅ done |
+| **L1** — ingest, parse, chunk | ✅ done |
+| **L2** — index and retrieve | ⬅️ **next** |
+| L3–L8, P1–P6 | not started |
+
+```bash
+uv venv && uv pip install -e ".[local]" --group dev
+pytest                                    # full suite, no network, no credentials
+ruff check . && mypy && lint-imports      # what CI runs
+```
+
+**What exists and works today:**
+
+- `core/` — models, ports, config with the four tunability tiers, error taxonomy. Pure: stdlib + pydantic, CI-enforced.
+- `storage/sqlite/` — migrations 001 and 002, FTS5 for BM25, float32 vector columns, database triggers refusing any delete on the ledger. `search_dense` is an exact scan; `search_sparse` works today.
+- `ingest/` — filesystem and ZIP readers, tier-0 parsers for ten formats, the sanitiser, the structure-first chunker, deterministic metadata extraction, and the pipeline that wires them with content-hash dedupe and per-document failure isolation.
+- `providers/fake.py` — deterministic chat, embedder and reranker. Every test uses these.
+- `cli/` — `init`, `version`, `doctor`, `doctor --tiers`, `ingest`, `docs`, `chunks --verify`.
+- `tests/fixtures/build_corpus.py` — generates 20 mixed-format documents, 10 injection fixtures and 5 malicious archives. Nothing is committed as a binary.
+- CI: `ci.yml` (ruff, mypy strict on `core`, import contracts, 3 OS × 3 Python, coverage floor) and `offline.yml` (the whole suite **plus a full ingest** inside a network namespace).
+
+**Still empty:** `index/`, `extract/`, `ledger/`, `project/`, `evals/`, `obs/`, `storage/postgres/`, `apps/`.
+
+### 0.1 The invariant that constrains everything downstream
+
+For every chunk, `version.text[chunk.char_start:chunk.char_end] == chunk.text`, exactly.
+
+Chunk text is **sliced, never constructed** — there is no code path that builds a chunk by joining or stripping. Whitespace trimming moves the boundaries; overlap extends spans backwards into the source rather than copying a prefix. Sanitisation runs once, before any offset is taken, and remaps heading and page offsets so there is exactly one coordinate system.
+
+This is what makes a citation a precise span, and it is what deterministic quote verification (L3, Arch §6.4) will check against. Anything at L2+ that rewrites chunk text breaks the citation guarantee.
+
+### 0.2 Deviations from this document, and why
+
+Four things differ from what is written below. All four are deliberate.
+
+| Deviation | Reason |
+|---|---|
+| `ports.py` uses `TypeVar`, not PEP 695 `def structured[T: BaseModel]` | PEP 695 is 3.12+; `requires-python` and the CI matrix both include 3.11 |
+| `ParsedDocument.headings` is `list[Heading]`, not `list[tuple[int, str]]` | A `heading_path` needs heading *levels*; a tuple of (offset, text) cannot express nesting |
+| Migration `002_version_text` adds `text`, `parse_warnings`, `metadata_misses` to `document_version` | Storing canonical text makes the offset invariant checkable against the store, and lets re-chunking happen without re-parsing |
+| `python-pptx` added to the `local` extra | PPTX is in L1's required format list but was missing from §5. MIT licensed |
 
 ---
 
@@ -15,13 +67,13 @@
 
 | Doc | Read when |
 |---|---|
-| **`04-BUILD-HANDOFF.md`** (this) | First. Orientation + concrete L0/L1 scaffolding |
+| **`04-BUILD-HANDOFF.md`** (this) | First. Current state (§0), locked decisions, open questions, and the next stage's starting point (§10) |
 | [`03-IMPLEMENTATION-PLAN.md`](./03-IMPLEMENTATION-PLAN.md) | Before starting any stage — has the exit gates |
 | [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md) | Designing a component — data model, pipeline, retrieval |
 | [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) | Building UI or deciding behaviour |
 | [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) | Tempted to change a dependency — the evidence is here |
 
-**Order of work:** L0 → L1 → … → L8 (library, v1.0.0 on PyPI) → P1 → P6 (product). No stage starts until the previous gate is green.
+**Order of work:** L0 → L1 → … → L8 (library, v1.0.0 on PyPI) → P1 → P6 (product). No stage starts until the previous gate is green. **L0 and L1 are done; L2 is next — see §0 and §10.**
 
 ---
 
@@ -50,17 +102,32 @@ Each was researched. If you want to change one, read the cited section first.
 
 ---
 
-## 3. Open questions — answer at L0
+## 3. Open questions
 
-Blocking. Do not start L1 with these unresolved.
-
-| # | Question | Default if no answer |
+| # | Question | State |
 |---|---|---|
-| Q1 | **PyPI name.** Is `ledgerkb` available? | Fall back to `okfkit`, then `attestkb` |
-| Q2 | **Embedding model + dimension.** *Locked at first index build — changing forces full re-index* | `BAAI/bge-m3`, 1024 dims |
-| Q3 | **PDF parser default.** `pymupdf4llm` is AGPL-3.0 | **`pypdfium2` (Apache/BSD)**; PyMuPDF as opt-in extra |
-| Q4 | **Is there a real corpus?** No Sheffield documents exist in this repo | Build a 20-doc synthetic fixture corpus at L1 |
-| Q5 | **Second corpus for the agnosticism gate** (v1.0 needs two unrelated corpora) | Pick any public document set unlike council minutes |
+| Q1 | **PyPI name.** Is `ledgerkb` available? | ✅ **Resolved.** Available (so are `okfkit` and `attestkb`). Availability is not reservation — the name is only claimed on first publish at L8 |
+| Q2 | **Embedding model + dimension** | 🔴 **Open, and blocking L2** — see below |
+| Q3 | **PDF parser default.** `pymupdf4llm` is AGPL-3.0 | ✅ **Resolved.** `pypdfium2` (BSD-3/Apache-2.0) is the default and is implemented. Every parser dependency was licence-checked: all permissive, no AGPL anywhere |
+| Q4 | **Is there a real corpus?** | ✅ **Resolved by its documented default.** None exists. `tests/fixtures/build_corpus.py` generates 20 council-shaped documents across ten formats. See the caveat below |
+| Q5 | **Second corpus for the agnosticism gate** | ⬜ Open, not needed until v1.0. Pick any public document set unlike council minutes |
+
+### Q2 — decide this before writing any L2 code
+
+**The two design documents disagree**, and the field is tier-3 locked (changing it after the first index build invalidates every stored vector and requires `lkb reindex --confirm`):
+
+| Source | Model | Dimensions |
+|---|---|---|
+| §3 of this document, as originally written | `BAAI/bge-m3` | 1024 |
+| The `ledgerkb.toml` in §8, and what `lkb init` currently writes | `qwen/qwen3-embedding-8b` | 1024 |
+
+Dimensions agree at 1024, so the locked *dimension* is safe either way. The **model name** is the open decision, and it is also a hosting decision: `bge-m3` runs locally through `fastembed` (already in the `local` extra, no API key, keeps the offline guarantee intact for L2); `qwen3-embedding-8b` runs through OpenRouter and needs a key.
+
+Recommendation: **`BAAI/bge-m3` via `fastembed`**, because it keeps `offline.yml` meaningful through L2 and makes the eval loop free. If you take that, change the `[embeddings]` block in `DEFAULT_CONFIG` in `src/ledgerkb/cli/main.py` and in `ledgerkb.toml` at the same time.
+
+### Q4 — the caveat worth knowing
+
+The fixture corpus is synthetic and was written by the same process that wrote the extractors. When metadata coverage came in below the 90% gate, **both** the extractor and the fixtures were changed: a format-based `doc_type` fallback was added (a real gap), *and* three fixtures gained approval dates while four gained programme references (making the corpus more like real council papers, but also adjusting the thing being measured). Real documents will behave differently. Treat the current coverage figures as a floor on a friendly corpus, not as a measured property of the extractor.
 
 ---
 
@@ -415,23 +482,46 @@ Also enforced: Conventional Commits, DCO sign-off, protected `main`, PR review r
 
 ---
 
-## 10. First session — do this in order
+## 10. Next session — L2, index and retrieve
 
-**L0 (~half a day)**
+**Goal:** hybrid retrieval that beats either half alone. The exit gate is in [`03-IMPLEMENTATION-PLAN.md §L2`](./03-IMPLEMENTATION-PLAN.md); read it before starting.
 
-1. Resolve Q1–Q3 in §3. Reserve the PyPI name.
-2. `uv init`, create the §4 tree, drop in the §5 `pyproject.toml`.
-3. Write `core/models.py` and `core/ports.py` (§6). Encode the two invariants as validators.
-4. Write `core/config.py` — load/validate `ledgerkb.toml` + profile merge (§8).
-5. Write `storage/sqlite/` — migrations `001_init.sql` from §7, plus the `Store` implementation.
-6. Write `providers/fake.py` — deterministic stub chat + embedder.
-7. Write `cli/main.py` — `init`, `version`, `doctor`.
-8. Wire `ci.yml` and `offline.yml`. Add the import-linter rule that `core` imports nothing outside stdlib + pydantic.
-9. Repo furniture: LICENSE (Apache-2.0), README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue templates.
+**Answer Q2 first (§3).** It is tier-3 locked at the first index build, so getting it wrong costs a full re-index.
 
-**L0 gate:** clean install < 60s and < 120MB on all three OSes · `mypy --strict` green · `lkb init && lkb doctor` works with **zero API keys** · every core model round-trips through SQLite unchanged.
+### Do this in order
 
-**L1 (~1 day)** — readers, tier-0 parsers, sanitiser, structure-first chunker, metadata extraction, the 20-doc fixture corpus. Gate is in [`03-IMPLEMENTATION-PLAN.md §L1`](./03-IMPLEMENTATION-PLAN.md) — the load-bearing one is **every chunk's `char_start:char_end` slices back byte-identical from its source document**, as a Hypothesis property test.
+1. **`providers/openai_compat.py`** — the base adapter, covering ~95% of providers (Plan §6). Behind the `ChatModel` / `Embedder` Protocols that already exist in `core/ports.py`. Nothing else may import a provider SDK directly.
+2. **`providers/local.py`** — `fastembed` embedder, so L2 keeps working with zero API keys and `offline.yml` stays meaningful.
+3. **`index/embed.py`** — batch embedding with the budget guard honoured. The store already has `set_embeddings(pairs)`; `chunk.embedding` is a float32 blob and `chunk.embed_text` is the single string both indexes derive from.
+4. **`index/contextualise.py`** — the 50–100 token header per chunk (Arch §4.3), written to `chunk.context_header`. This is the highest-volume LLM call in the system and the only one worth optimising hard: batch per document, cache the document prefix, use `[chat.cheap]`. **`contextual_headers` is a tier-2 gated setting** — turning it on or off forces a full re-index, and `check_transition` already enforces that.
+5. **`index/rrf.py`** — reciprocal rank fusion over the two hit lists. Pure function, no I/O, fully unit-testable. `retrieval.rrf_k` is free-tier.
+6. **`index/hybrid.py`** — dense + sparse + RRF. Both halves already work in `SqliteStore`.
+7. **`index/rerank.py`** — behind the `Reranker` port; `FakeReranker` exists for tests.
+8. **`lkb ask` / `lkb search`** — retrieval only at L2. Grounded answering with quote verification is L3.
+
+### What is already in place for you
+
+| Need | Where |
+|---|---|
+| `Embedder`, `Reranker`, `ChatModel` Protocols | `core/ports.py` |
+| Deterministic fakes for all three | `providers/fake.py` — hash-derived, unit-length, stable across processes |
+| `search_dense` (exact cosine scan) and `search_sparse` (FTS5 BM25) | `storage/sqlite/store.py` |
+| `Hit` model with `method` discriminator | `core/models.py` |
+| Tier enforcement for gated/locked config changes | `core/config.py:check_transition` |
+| A corpus that already chunks cleanly | `tests/fixtures/build_corpus.py` |
+
+### Watch out for
+
+- **Never write to `chunk.text`.** Contextual headers go in `context_header`; `embed_text` composes them. Rewriting `text` breaks §0.1 and every citation with it.
+- **`sqlite-vec` is an optional accelerator and still alpha** (`vec` extra). The exact scan is correct and fast enough for the fixture corpus. Do not make it a hard dependency.
+- **The budget guard aborts.** `max_cost_usd_per_run` has no override, by design. Embedding a large corpus must respect it and say so.
+- **Keep `offline.yml` green.** If L2 cannot run without an API key, the offline job stops proving anything — which is why step 2 comes before step 4.
+
+### Earlier gates, for reference
+
+**L0 gate** ✅ — clean install on all three OSes · `mypy --strict` green · `lkb init && lkb doctor` with zero API keys · every core model round-trips through SQLite unchanged.
+
+**L1 gate** ✅ — 20/20 fixtures ingest with zero unhandled exceptions · 55/55 chunks slice back byte-identical (plus a Hypothesis property over arbitrary input) · all five metadata fields ≥ 95% · 10/10 injection fixtures caught with the benign decoy untouched · 5/5 malicious archives refused · the whole path runs with no network and no API key.
 
 ---
 

@@ -1,14 +1,16 @@
 # Contributing
 
-Thanks for looking. The project is early — L0 of the plan in
-[`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md).
+Thanks for looking. The project is early — L1 of the plan in
+[`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md). Current
+state, and where the next stage starts, are in
+[`docs/04-BUILD-HANDOFF.md`](docs/04-BUILD-HANDOFF.md).
 
 ## Getting set up
 
 ```bash
 uv venv
-uv pip install -e . --group dev
-pytest                     # 80 tests, no network, no API key
+uv pip install -e ".[local]" --group dev   # [local] brings the tier-0 parsers
+pytest                                     # the full suite: no network, no API key
 ```
 
 Nothing in the test suite calls a real provider. Tests that need credentials are
