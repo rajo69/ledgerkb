@@ -195,6 +195,36 @@ class TestFailuresAreIsolated:
         assert "legacy Word" in (report.failed[0].error or "")
 
 
+class TestRelativePaths:
+    """`lkb ingest ./corpus` is the ordinary invocation, so it must work."""
+
+    def test_a_relative_target_ingests(
+        self, pipeline: IngestPipeline, store: SqliteStore,
+        workspace: Workspace, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        d = tmp_path / "papers"
+        d.mkdir()
+        (d / "minutes.md").write_text("# Minutes\n\nItem 1 agreed.\n", encoding="utf-8")
+
+        monkeypatch.chdir(tmp_path)
+        source = Source(workspace_id=workspace.id, kind="upload", label="relative")
+        store.add_source(source)
+        report = pipeline.ingest_path("./papers", workspace.id, source)
+
+        assert len(report.ingested) == 1
+        doc = store.get_document(report.ingested[0].document_id)
+        assert doc is not None
+        assert doc.uri is not None and doc.uri.startswith("file://")
+
+    def test_a_missing_target_names_what_was_asked_for(
+        self, pipeline: IngestPipeline, store: SqliteStore, workspace: Workspace
+    ) -> None:
+        source = Source(workspace_id=workspace.id, kind="upload", label="missing")
+        store.add_source(source)
+        with pytest.raises(FileNotFoundError, match="no-such-directory"):
+            pipeline.ingest_path("./no-such-directory", workspace.id, source)
+
+
 class TestZipIngest:
     def test_a_zip_expands_into_its_members(
         self, pipeline: IngestPipeline, store: SqliteStore,

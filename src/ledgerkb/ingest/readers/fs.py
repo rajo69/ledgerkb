@@ -49,10 +49,14 @@ class FilesystemReader:
         A directory is walked in sorted order so two runs over the same tree
         produce the same sequence — which is what makes an ingest run
         reproducible and a change report meaningful.
+
+        The target is resolved to an absolute path first: ``external_id`` stays
+        relative to it, but ``uri`` is a ``file://`` URI, and a relative path
+        has no URI form.
         """
-        path = Path(target)
+        path = Path(target).resolve()
         if not path.exists():
-            raise FileNotFoundError(f"No such path: {path}")
+            raise FileNotFoundError(f"No such path: {target}")
 
         if path.is_file():
             yield from self._read_file(path, external_id=path.name)
