@@ -1,0 +1,16 @@
+# The default profile ships generic.
+#
+# Profiles carry domain knowledge so the code stays corpus-agnostic. A corpus is
+# never accommodated by a code branch — it gets a profile.
+
+entity_types = ["Person","Organisation","Project","Meeting","Decision",
+                "Action","Risk","Document","Location","Policy"]
+predicates   = ["attended","owns","was_made_at","is_assigned_to","relates_to",
+                "threatens","mentions","supersedes","depends_on","supports"]
+doc_types    = ["minutes","report","register","policy","email","note"]
+
+[staleness]
+default_days = 180
+
+[extraction]
+hints = ""

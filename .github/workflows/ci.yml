@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_VERSION: "0.11.5"
+
+jobs:
+  static:
+    name: lint, types, import contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv python install 3.13
+      - run: uv sync --group dev
+
+      - name: ruff
+        run: uv run ruff check --output-format=github .
+
+      - name: mypy --strict (core)
+        run: uv run mypy
+
+      - name: import contracts
+        # core/ imports nothing but the stdlib and pydantic. This is what makes
+        # everything testable without a network.
+        run: uv run lint-imports
+
+  test:
+    name: py${{ matrix.python }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv python install ${{ matrix.python }}
+
+      - name: install and time it
+        # L0 gate: a clean install lands in under 60s on all three OSes.
+        shell: bash
+        run: |
+          start=$(date +%s)
+          uv sync --group dev --python ${{ matrix.python }}
+          echo "install took $(( $(date +%s) - start ))s"
+
+      - name: pytest
+        run: uv run pytest
+
+      - name: coverage floor
+        # A ratchet, not a target. Raise it as coverage grows; never lower it.
+        run: uv run coverage report --fail-under=80
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv python install 3.13
+      - run: uv sync --group dev
+      - name: pip-audit
+        # Reports, but does not block an unrelated PR on an advisory published
+        # that morning. Renovate raises the fix as its own PR.
+        continue-on-error: true
+        run: uvx pip-audit --strict

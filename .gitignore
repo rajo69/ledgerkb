@@ -1,0 +1,40 @@
+# Source material — third-party PDFs, kept local. Everything derived from them
+# lives in docs/, so a fresh session loses nothing.
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# ledgerkb working state
+.lkb/
+*.db
+*.db-wal
+*.db-shm
+exports/
+
+# Secrets — never committed. Configuration references an env var name, never a key.
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

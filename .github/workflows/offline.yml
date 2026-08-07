@@ -1,0 +1,64 @@
+name: offline
+
+# Proves there is no accidental network dependency. Every test defaults to the
+# fake providers, so the whole suite must pass with egress blocked. If this
+# workflow fails and ci.yml passes, something started reaching for the network.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: offline-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  no-egress:
+    name: full suite, egress blocked
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.11.5"
+          enable-cache: true
+      - run: uv python install 3.13
+
+      - name: install (network still allowed)
+        run: uv sync --group dev
+
+      - name: block egress
+        # Loopback stays up so the test runner works; everything else is dropped.
+        # DROP rather than REJECT, so a stray call hangs and times out visibly
+        # instead of failing fast in a way a broad `except` might swallow.
+        run: |
+          sudo iptables -P OUTPUT DROP
+          sudo iptables -A OUTPUT -o lo -j ACCEPT
+          sudo iptables -A OUTPUT -d 127.0.0.0/8 -j ACCEPT
+
+      - name: verify egress really is blocked
+        run: |
+          if timeout 8 curl -sS https://pypi.org > /dev/null 2>&1; then
+            echo "::error::egress is not blocked - this workflow would prove nothing"
+            exit 1
+          fi
+          echo "egress confirmed blocked"
+
+      - name: pytest
+        env:
+          # Deliberately empty. Nothing in the default path may need them.
+          OPENROUTER_API_KEY: ""
+          OPENAI_API_KEY: ""
+          ANTHROPIC_API_KEY: ""
+        run: uv run pytest -m "not live"
+
+      - name: lkb works with zero API keys
+        run: |
+          mkdir -p /tmp/offline-check
+          cd /tmp/offline-check
+          uv run --project "$GITHUB_WORKSPACE" lkb init .
+          uv run --project "$GITHUB_WORKSPACE" lkb doctor

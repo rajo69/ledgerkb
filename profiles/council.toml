@@ -1,0 +1,14 @@
+# Council minutes and committee papers.
+#
+# Overrides `default.toml`. Everything not restated here is inherited.
+
+doc_types = ["minutes","report","register","policy","email","note",
+             "agenda","decision_notice","committee_paper"]
+
+[staleness]
+default_days = 180
+minutes      = 90
+register     = 120
+
+[extraction]
+hints = "Documents are formal meeting records with numbered agenda items."
