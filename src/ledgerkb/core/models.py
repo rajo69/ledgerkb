@@ -113,6 +113,13 @@ class DocumentVersion(Base):
     ingested_at: datetime = Field(default_factory=utcnow)
     superseded_by: Id | None = None
 
+    text: str | None = None
+    """The canonical sanitised text. Every chunk offset indexes into this."""
+    parse_warnings: list[str] = Field(default_factory=list)
+    """Named degradations — an unreadable page, a low density probe. Never silent."""
+    metadata_misses: list[str] = Field(default_factory=list)
+    """Required fields that could not be found. Reported, never silently null."""
+
 
 # --- chunks ------------------------------------------------------------------
 

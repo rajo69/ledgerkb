@@ -22,8 +22,11 @@ from ledgerkb.storage.sqlite.store import SqliteStore
 
 class TestMigrations:
     def test_migrate_is_idempotent(self, store: SqliteStore) -> None:
-        assert store.schema_version() == 1
-        assert store.migrate() == 1
+        from ledgerkb.storage.base import discover_migrations
+
+        latest = discover_migrations()[-1].version
+        assert store.schema_version() == latest
+        assert store.migrate() == latest, "re-running must be a no-op"
 
     def test_fresh_store_reports_version_zero(self, tmp_path) -> None:
         s = SqliteStore(tmp_path / "fresh.db")

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from ledgerkb.core.config import Config
 from ledgerkb.core.models import (
     Chunk,
     Document,
@@ -83,6 +84,42 @@ def chunk_factory(workspace: Workspace, version: DocumentVersion):
         )
 
     return make
+
+
+@pytest.fixture(scope="session")
+def corpus_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """The 20-document fixture corpus, plus injection and archive fixtures.
+
+    Built once per session rather than committed, so the content stays
+    reviewable source instead of an opaque binary nobody diffs.
+    """
+    from tests.fixtures.build_corpus import build, build_injections, build_malicious_archives
+
+    root = tmp_path_factory.mktemp("corpus")
+    build(root / "corpus")
+    build_injections(root / "injections")
+    build_malicious_archives(root / "archives")
+    return root
+
+
+@pytest.fixture(scope="session")
+def corpus(corpus_root: Path) -> Path:
+    return corpus_root / "corpus"
+
+
+@pytest.fixture(scope="session")
+def injections(corpus_root: Path) -> Path:
+    return corpus_root / "injections"
+
+
+@pytest.fixture(scope="session")
+def archives(corpus_root: Path) -> Path:
+    return corpus_root / "archives"
+
+
+@pytest.fixture
+def config() -> Config:
+    return Config()
 
 
 @pytest.fixture

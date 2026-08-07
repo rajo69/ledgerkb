@@ -34,7 +34,8 @@ Source = "https://github.com/rajo69/ledgerkb"
 
 [project.optional-dependencies]
 local    = ["fastembed>=0.4", "chonkie>=0.4", "trafilatura>=1.12",
-            "pypdfium2>=4", "python-docx>=1.1", "openpyxl>=3.1", "selectolax>=0.3"]
+            "pypdfium2>=4", "python-docx>=1.1", "openpyxl>=3.1", "selectolax>=0.3",
+            "python-pptx>=1.0"]   # MIT; PPTX is in L1's required format list
 postgres = ["psycopg[binary]>=3.2", "pgvector>=0.3"]
 docling  = ["docling>=2"]
 crawl    = ["crawl4ai>=0.4"]

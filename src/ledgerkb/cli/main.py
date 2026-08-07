@@ -25,6 +25,9 @@ from ledgerkb.core.config import (
     tier_table,
 )
 from ledgerkb.core.errors import ConfigError, LedgerKBError
+from ledgerkb.core.models import Source, Workspace
+from ledgerkb.ingest.metadata import coverage_report
+from ledgerkb.ingest.pipeline import IngestPipeline
 from ledgerkb.storage.sqlite.store import SqliteStore
 
 app = typer.Typer(
@@ -254,6 +257,183 @@ def _print_tiers() -> None:
         "predicate schema, path-traversal guards, budget aborts have no key at any "
         "level, by design.[/]"
     )
+
+
+# --- L1 commands -------------------------------------------------------------
+
+
+def _open() -> tuple[Config, SqliteStore]:
+    cfg_path = find_config()
+    if cfg_path is None:
+        err.print(f"[yellow]no {CONFIG_FILENAME} found.[/] Run [bold]lkb init[/] first.")
+        raise typer.Exit(code=1)
+    try:
+        cfg = load_config(cfg_path)
+    except ConfigError as exc:
+        _fail(exc)
+    store = SqliteStore(cfg_path.parent / cfg.store.path)
+    store.migrate()
+    return cfg, store
+
+
+def _default_workspace(store: SqliteStore, cfg: Config) -> Workspace:
+    row = store.db.execute("SELECT id FROM workspace ORDER BY created_at LIMIT 1").fetchone()
+    if row:
+        ws = store.get_workspace(row["id"])
+        if ws is not None:
+            return ws
+    ws = Workspace(name="default", profile=cfg.profile)
+    store.add_workspace(ws)
+    return ws
+
+
+@app.command()
+def ingest(
+    path: Annotated[Path, typer.Argument(help="File, directory or .zip to ingest.")],
+    source_label: Annotated[
+        str, typer.Option("--source", help="Name for this source.")
+    ] = "local",
+) -> None:
+    """Read, parse, sanitise and chunk documents. No network, no API key."""
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+
+        row = store.db.execute(
+            "SELECT id FROM source WHERE workspace_id = ? AND label = ?", (ws.id, source_label)
+        ).fetchone()
+        if row:
+            source = Source(id=row["id"], workspace_id=ws.id, kind="upload", label=source_label)
+        else:
+            source = Source(workspace_id=ws.id, kind="upload", label=source_label)
+            store.add_source(source)
+
+        try:
+            report = IngestPipeline(store, cfg).ingest_path(path, ws.id, source)
+        except LedgerKBError as exc:
+            _fail(exc)
+
+        table = Table(box=None, pad_edge=False)
+        table.add_column("document")
+        table.add_column("status")
+        table.add_column("chunks", justify="right")
+        table.add_column("parser")
+        for o in report.outcomes:
+            colour = {"ingested": "green", "unchanged": "dim", "failed": "red"}[o.status]
+            table.add_row(
+                o.external_id[:60],
+                f"[{colour}]{o.status}[/]",
+                str(o.chunks) if o.chunks else "",
+                o.parser or "",
+            )
+        console.print(table)
+
+        console.print(
+            f"\n[bold]{len(report.ingested)} ingested[/], {len(report.unchanged)} unchanged, "
+            f"{len(report.failed)} failed - {report.total_chunks} chunks"
+        )
+
+        if report.total_quarantined:
+            console.print(
+                f"[yellow]{report.total_quarantined} quarantined span(s)[/] "
+                "- stored and excluded from prompts, not deleted"
+            )
+
+        # Failures are named. Never a silent count.
+        for o in report.failed:
+            err.print(f"  [red]failed[/] {o.external_id}: {o.error}")
+
+        metas = [o.metadata for o in report.ingested if o.metadata]
+        if metas:
+            console.print("\n[bold]metadata coverage[/]")
+            for name, pct in coverage_report(metas).items():
+                colour = "green" if pct >= 0.9 else "yellow"
+                console.print(f"  {name:20} [{colour}]{pct:.0%}[/]")
+    finally:
+        store.close()
+
+
+@app.command()
+def docs() -> None:
+    """List ingested documents."""
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+        documents = store.list_documents(ws.id)
+        if not documents:
+            console.print("[dim]no documents yet - run [bold]lkb ingest <path>[/][/]")
+            return
+
+        table = Table(box=None, pad_edge=False)
+        for col in ("id", "title", "type", "date", "meeting/project", "chunks"):
+            table.add_column(col)
+        for d in documents:
+            version = store.latest_version_for(d.id)
+            n = len(store.chunks_for_version(version.id)) if version else 0
+            table.add_row(
+                d.id[:8],
+                (d.title or "")[:40],
+                d.doc_type or "[dim]-[/]",
+                str(d.published_at) if d.published_at else "[dim]-[/]",
+                (d.meeting_or_project or "[dim]-[/]")[:30],
+                str(n),
+            )
+        console.print(table)
+    finally:
+        store.close()
+
+
+@app.command()
+def chunks(
+    doc_id: Annotated[str, typer.Argument(help="Document id, or a unique prefix.")],
+    verify: Annotated[
+        bool, typer.Option("--verify", help="Re-slice every chunk from the stored text.")
+    ] = False,
+) -> None:
+    """Show a document's chunks, optionally re-checking every offset."""
+    _, store = _open()
+    try:
+        row = store.db.execute(
+            "SELECT id FROM document WHERE id LIKE ?", (f"{doc_id}%",)
+        ).fetchone()
+        if not row:
+            err.print(f"[yellow]no document matching {doc_id!r}[/]")
+            raise typer.Exit(code=1)
+
+        version = store.latest_version_for(row["id"])
+        if version is None:
+            err.print("[yellow]document has no version[/]")
+            raise typer.Exit(code=1)
+
+        rows = store.chunks_for_version(version.id)
+        console.print(f"[bold]{len(rows)} chunks[/] from version {version.id[:8]} "
+                      f"[dim]({version.parser}, quality {version.parse_quality:.2f})[/]")
+
+        if verify:
+            text = version.text or ""
+            bad = [c for c in rows if text[c.char_start : c.char_end] != c.text]
+            if bad:
+                err.print(f"[bold red]{len(bad)} chunk(s) do not slice back[/]")
+                for c in bad[:5]:
+                    err.print(f"  ordinal {c.ordinal} at {c.char_start}:{c.char_end}")
+                raise typer.Exit(code=1)
+            console.print("[green]all chunks slice back byte-identical[/]")
+
+        for c in rows[:40]:
+            path = " > ".join(c.heading_path) if c.heading_path else "[dim]no heading[/]"
+            page = f" p.{c.page_from}" if c.page_from else ""
+            console.print(f"\n[bold]{c.ordinal}[/] {path}{page} "
+                          f"[dim]{c.char_start}:{c.char_end} ~{c.token_count} tokens[/]")
+            preview = c.text[:200].replace("\n", " ")
+            console.print(f"  {preview}{'...' if len(c.text) > 200 else ''}")
+
+        quarantined = store.quarantine_for_version(version.id)
+        if quarantined:
+            console.print(f"\n[yellow]{len(quarantined)} quarantined span(s)[/]")
+            for q in quarantined[:10]:
+                console.print(f"  [dim]{q['reason']}[/] {q['text'][:80]!r}")
+    finally:
+        store.close()
 
 
 if __name__ == "__main__":  # pragma: no cover

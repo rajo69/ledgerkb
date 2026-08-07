@@ -26,7 +26,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - run: uv python install 3.13
-      - run: uv sync --group dev
+      - run: uv sync --group dev --extra local
 
       - name: ruff
         run: uv run ruff check --output-format=github .
@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           start=$(date +%s)
-          uv sync --group dev --python ${{ matrix.python }}
+          uv sync --group dev --extra local --python ${{ matrix.python }}
           echo "install took $(( $(date +%s) - start ))s"
 
       - name: pytest
@@ -79,7 +79,7 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
       - run: uv python install 3.13
-      - run: uv sync --group dev
+      - run: uv sync --group dev --extra local
       - name: pip-audit
         # Reports, but does not block an unrelated PR on an advisory published
         # that morning. Renovate raises the fix as its own PR.

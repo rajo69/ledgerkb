@@ -13,22 +13,36 @@ graph, OKF wiki, briefing PDF and change report are all *projections* of that on
 
 ## Status
 
-**L0 complete — the skeleton stands.** Core models, ports, config, the SQLite
-store, deterministic fake providers and the CLI are in. Next is L1: readers,
-tier-0 parsers, the sanitiser, the structure-first chunker and a 20-document
-fixture corpus. Stage gates are in [`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md).
+**L1 complete — documents go in, chunks come out.** Core models, ports, config,
+the SQLite store, tier-0 parsers for ten formats, the sanitiser, the
+structure-first chunker and the CLI are in. Next is L2: embeddings, hybrid
+retrieval, RRF and rerank. Stage gates are in
+[`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md).
 
 ```bash
 uv venv
-uv pip install -e . --group dev
-lkb init .          # config, profile, migrated store
-lkb doctor          # works with zero API keys
-lkb doctor --tiers  # every knob that exists, and what changing it costs
-pytest              # 80 tests, no network, no credentials
+uv pip install -e ".[local]" --group dev
+
+lkb init .                 # config, profile, migrated store
+lkb doctor                 # works with zero API keys
+lkb doctor --tiers         # every knob that exists, and what changing it costs
+
+lkb ingest ./documents     # PDF, DOCX, XLSX, PPTX, HTML, EML, CSV, JSON, MD, TXT, ZIP
+lkb docs                   # what was ingested, with its metadata
+lkb chunks <id> --verify   # re-slice every chunk from the stored text
+
+pytest                     # 189 tests, no network, no credentials
 ```
 
-Nothing in the test suite touches a provider. That is enforced, not hoped for:
-a separate CI workflow runs the whole suite with egress blocked.
+Nothing in the test suite touches a provider, and no stage up to here needs an
+API key. That is enforced, not hoped for: a separate CI workflow runs the whole
+suite, and a full ingest, with egress blocked.
+
+**The invariant everything rests on:** for every chunk,
+`document_text[chunk.char_start:chunk.char_end] == chunk.text`, exactly. Chunk
+text is sliced, never constructed. That is what makes a citation a precise span
+rather than a gesture at a page, and what lets quote verification be mechanical
+instead of another model's opinion.
 
 ## Documents
 

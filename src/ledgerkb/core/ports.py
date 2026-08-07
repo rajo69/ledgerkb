@@ -69,6 +69,19 @@ class ParseHint(Base):
     """Text-density heuristic, 0..1. Drives the tiered parser cascade."""
 
 
+class Heading(Base):
+    """A heading and where it starts.
+
+    ``level`` is what lets the chunker build a ``heading_path``, so a citation
+    can read "Planning Committee Minutes > Item 4 > Decision" rather than
+    naming a page number and leaving the reader to hunt.
+    """
+
+    char_start: int = Field(ge=0)
+    level: int = Field(ge=1, le=6)
+    text: str
+
+
 class ParsedDocument(Base):
     """Parser output. ``text`` is the single source of truth for every offset."""
 
@@ -79,8 +92,8 @@ class ParsedDocument(Base):
     page_count: int | None = None
     page_offsets: list[int] = Field(default_factory=list)
     """char offset at which each page starts — makes page citation exact."""
-    headings: list[tuple[int, str]] = Field(default_factory=list)
-    """(char_offset, heading_text), in document order."""
+    headings: list[Heading] = Field(default_factory=list)
+    """In document order."""
     title: str | None = None
     authors: list[str] = Field(default_factory=list)
     published_at: date | None = None
@@ -214,6 +227,7 @@ __all__ = [
     "ChatModel",
     "Chunker",
     "Embedder",
+    "Heading",
     "Id",
     "ParseHint",
     "ParsedDocument",

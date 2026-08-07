@@ -212,12 +212,13 @@ class SqliteStore:
     def add_version(self, v: DocumentVersion) -> str:
         self.db.execute(
             "INSERT INTO document_version (id,document_id,version_no,content_hash,text_hash,"
-            "blob_uri,mime,bytes,page_count,parser,parse_quality,ingested_at,superseded_by) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "blob_uri,mime,bytes,page_count,parser,parse_quality,ingested_at,superseded_by,"
+            "text,parse_warnings,metadata_misses) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 v.id, v.document_id, v.version_no, v.content_hash, v.text_hash, v.blob_uri,
                 v.mime, v.bytes, v.page_count, v.parser, v.parse_quality,
                 v.ingested_at.isoformat(), v.superseded_by,
+                v.text, dumps(v.parse_warnings), dumps(v.metadata_misses),
             ),
         )
         self.db.execute(
@@ -241,6 +242,9 @@ class SqliteStore:
             parse_quality=row["parse_quality"],
             ingested_at=datetime.fromisoformat(row["ingested_at"]),
             superseded_by=row["superseded_by"],
+            text=row["text"],
+            parse_warnings=loads(row["parse_warnings"], []),
+            metadata_misses=loads(row["metadata_misses"], []),
         )
 
     def get_version(self, id: str) -> DocumentVersion | None:
@@ -592,6 +596,63 @@ class SqliteStore:
             params.append(predicate)
         sql += " ORDER BY asserted_at"
         return [self._assertion(r) for r in self.db.execute(sql, params).fetchall()]
+
+    # --- quarantine ----------------------------------------------------------
+
+    def add_quarantine(self, version_id: str, spans: Iterable[Any]) -> None:
+        """Record what the sanitiser found. Stored, not deleted - the operator
+        gets to see what was in the file."""
+        rows = list(spans)
+        if not rows:
+            return
+        self.db.executemany(
+            "INSERT INTO quarantine (id,version_id,char_start,char_end,text,reason,"
+            "detected_at) VALUES (?,?,?,?,?,?,?)",
+            [
+                (new_id(), version_id, s.char_start, s.char_end, s.text, s.reason,
+                 utcnow().isoformat())
+                for s in rows
+            ],
+        )
+        self.db.commit()
+
+    def quarantine_for_version(self, version_id: str) -> list[dict[str, Any]]:
+        rows = self.db.execute(
+            "SELECT char_start, char_end, text, reason FROM quarantine "
+            "WHERE version_id = ? ORDER BY char_start",
+            (version_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    # --- listing -------------------------------------------------------------
+
+    def list_documents(self, workspace_id: str, limit: int = 200) -> list[Document]:
+        rows = self.db.execute(
+            "SELECT id FROM document WHERE workspace_id = ? ORDER BY external_id LIMIT ?",
+            (workspace_id, limit),
+        ).fetchall()
+        return [d for d in (self.get_document(r["id"]) for r in rows) if d is not None]
+
+    def chunks_for_version(self, version_id: str) -> list[Chunk]:
+        rows = self.db.execute(
+            "SELECT * FROM chunk WHERE version_id = ? ORDER BY ordinal", (version_id,)
+        ).fetchall()
+        return [self._chunk(r) for r in rows]
+
+    def latest_version_for(self, document_id: str) -> DocumentVersion | None:
+        row = self.db.execute(
+            "SELECT * FROM document_version WHERE document_id = ? "
+            "ORDER BY version_no DESC LIMIT 1",
+            (document_id,),
+        ).fetchone()
+        return self._version(row) if row else None
+
+    def next_version_no(self, document_id: str) -> int:
+        row = self.db.execute(
+            "SELECT COALESCE(MAX(version_no), 0) AS n FROM document_version WHERE document_id = ?",
+            (document_id,),
+        ).fetchone()
+        return int(row["n"]) + 1
 
     # --- runs and change events ---------------------------------------------
 

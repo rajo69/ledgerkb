@@ -29,7 +29,7 @@ jobs:
       - run: uv python install 3.13
 
       - name: install (network still allowed)
-        run: uv sync --group dev
+        run: uv sync --group dev --extra local
 
       - name: block egress
         # Loopback stays up so the test runner works; everything else is dropped.
@@ -56,9 +56,12 @@ jobs:
           ANTHROPIC_API_KEY: ""
         run: uv run pytest -m "not live"
 
-      - name: lkb works with zero API keys
+      - name: the whole ingest path works with zero API keys
         run: |
           mkdir -p /tmp/offline-check
+          uv run python tests/fixtures/build_corpus.py /tmp/offline-check
           cd /tmp/offline-check
           uv run --project "$GITHUB_WORKSPACE" lkb init .
           uv run --project "$GITHUB_WORKSPACE" lkb doctor
+          uv run --project "$GITHUB_WORKSPACE" lkb ingest ./corpus
+          uv run --project "$GITHUB_WORKSPACE" lkb docs
