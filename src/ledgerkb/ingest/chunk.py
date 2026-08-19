@@ -56,18 +56,23 @@ class Section:
     page_to: int | None = None
 
 
-def build_sections(doc: ParsedDocument) -> list[Section]:
+def build_sections(doc: ParsedDocument, structure_first: bool = True) -> list[Section]:
     """Turn the heading list into non-overlapping spans covering the document.
 
     A heading owns everything from its own start until the next heading at the
     same level or shallower. Text before the first heading is its own section
     rather than being discarded — front matter is often where the date lives.
+
+    With ``structure_first`` off the heading tree is ignored and the document is
+    one section, so splitting falls through to paragraphs and sentences. That is
+    the knob's whole meaning; it is gated because turning it off moves every
+    boundary.
     """
     text = doc.text
     if not text:
         return []
 
-    headings = sorted(doc.headings, key=lambda h: h.char_start)
+    headings = sorted(doc.headings, key=lambda h: h.char_start) if structure_first else []
     if not headings:
         return [Section(0, len(text), ())]
 
@@ -107,7 +112,7 @@ def chunk_document(
     chunks: list[Chunk] = []
     ordinal = 0
 
-    for section in build_sections(doc):
+    for section in build_sections(doc, cfg.structure_first):
         for start, end in _split(text, section, cfg):
             start, end = _trim(text, start, end)
             if start >= end:

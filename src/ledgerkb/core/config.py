@@ -93,11 +93,12 @@ class ChatConfig(Section):
 
 
 class EmbeddingsConfig(Section):
-    provider: Annotated[str, FREE] = "openai_compatible"
+    provider: Annotated[str, FREE] = "local"
+    """``local`` runs fastembed in-process; ``openai_compatible`` calls an endpoint."""
     model: Annotated[
         str,
         Tiered(Tier.LOCKED, "every stored vector becomes meaningless"),
-    ] = "qwen/qwen3-embedding-8b"
+    ] = "mixedbread-ai/mxbai-embed-large-v1"
     dimensions: Annotated[
         int,
         Tiered(Tier.LOCKED, "every stored vector becomes meaningless"),
@@ -105,11 +106,28 @@ class EmbeddingsConfig(Section):
     batch_size: Annotated[int, FREE] = Field(default=64, ge=1)
 
 
+RECHUNK = Tiered(Tier.GATED, "a full re-chunk and re-index")
+"""Anything that moves a chunk boundary.
+
+Boundaries are not a quality/cost tradeoff. Chunk ids change when they move,
+and ``assertion_evidence.chunk_id`` is a foreign key — so a boundary change
+leaves stored evidence pointing at a chunk generation that retrieval no longer
+returns. That is a correctness invariant, which by the rule at the top of this
+module means it cannot be free.
+"""
+
+
 class ChunkingConfig(Section):
-    max_tokens: Annotated[int, FREE] = Field(default=512, ge=64, le=8192)
-    overlap: Annotated[int, FREE] = Field(default=64, ge=0)
-    structure_first: Annotated[bool, FREE] = True
-    contextual_headers: Annotated[bool, Tiered(Tier.GATED, "a full re-index")] = True
+    max_tokens: Annotated[int, RECHUNK] = Field(default=512, ge=64, le=8192)
+    overlap: Annotated[int, RECHUNK] = Field(default=64, ge=0)
+    structure_first: Annotated[bool, RECHUNK] = True
+    contextual_headers: Annotated[bool, Tiered(Tier.GATED, "a full re-index")] = False
+    """Off until the A/B earns it.
+
+    The plan gates contextual headers on a >= 5 point recall improvement. A knob
+    that is on before the measurement makes the gate decorative, and this is the
+    highest-volume LLM call in the system.
+    """
     tokenizer: Annotated[
         str,
         Tiered(Tier.LOCKED, "chunk boundaries shift, breaking every existing offset"),

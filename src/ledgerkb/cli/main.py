@@ -57,14 +57,15 @@ api_key_env = "OPENROUTER_API_KEY"
 model = "deepseek/deepseek-v3.2"
 
 [embeddings]
-provider = "openai_compatible"
-model = "qwen/qwen3-embedding-8b"
+provider = "local"                              # fastembed, in-process, no API key
+model = "mixedbread-ai/mxbai-embed-large-v1"    # Apache-2.0
 dimensions = 1024          # LOCKED after the first index build
 
 [chunking]
-max_tokens = 512
-overlap = 64
-structure_first = true
+max_tokens = 512           # GATED: changing it forces a full re-chunk and re-index
+overlap = 64               # GATED
+structure_first = true     # GATED
+contextual_headers = false # off until the A/B earns the cost
 
 [retrieval]
 dense_k = 50
