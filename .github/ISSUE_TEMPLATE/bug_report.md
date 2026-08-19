@@ -16,7 +16,7 @@ lkb ...
 
 **Environment**
 
-Output of `lkb doctor` (it contains no secrets — configuration references an env
+Output of `lkb doctor` (it contains no secrets: configuration references an env
 var name, never a key):
 
 ```

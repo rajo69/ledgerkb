@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for looking. The project is early — L1 of the plan in
+Thanks for looking. The project is early. L1 of the plan in
 [`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md). Current
 state, and where the next stage starts, are in
 [`docs/04-BUILD-HANDOFF.md`](docs/04-BUILD-HANDOFF.md).
@@ -59,7 +59,7 @@ These are not style preferences. They are the reason the system's claims hold.
 ## Extending it
 
 The extension point is the Protocol ports in
-[`src/ledgerkb/core/ports.py`](src/ledgerkb/core/ports.py) — supply your own
+[`src/ledgerkb/core/ports.py`](src/ledgerkb/core/ports.py): supply your own
 `Store`, `Chunker`, `Reranker`, `ChatModel` or `Parser` and you get full power
 through code you own. A new capability starts as a Protocol, before any
 implementation exists.
@@ -69,5 +69,5 @@ implementation exists.
 Every dependency needs a licence check before it lands; the reasoning behind the
 current set is recorded in [`docs/00-RESEARCH-LOG.md`](docs/00-RESEARCH-LOG.md).
 Copyleft licences are not automatically out, but they must be an opt-in extra
-rather than a default — which is why `pypdfium2` (Apache/BSD) is the default PDF
+rather than a default, which is why `pypdfium2` (Apache/BSD) is the default PDF
 parser and AGPL-licensed PyMuPDF is an extra.

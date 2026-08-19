@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
-authors = [{ name = "Steel City AI" }]
+authors = [{ name = "Rajarshi Nandi" }]
 keywords = ["knowledge-base", "rag", "knowledge-graph", "okf", "provenance"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",

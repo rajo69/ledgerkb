@@ -1,4 +1,4 @@
-# Implementation Plan — Library First, Product Second
+# Implementation Plan: Library First, Product Second
 
 **Version:** 1.0 · **Date:** 2026-08-07
 **Companion docs:** [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) · [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) · [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md)
@@ -15,7 +15,7 @@
 | 🟡 **AMBER** | Criteria met but with a known defect logged | Proceed **only** if the defect is written into the risk register with an owner |
 | 🔴 **RED** | Any criterion unmet | Stop. Fix or explicitly descope in writing. Never carry forward silently |
 
-Stages are numbered `L*` (library) and `P*` (product). **No `P` stage begins before `L8` is green** — with one deliberate exception noted in §9 for the hackathon fast path.
+Stages are numbered `L*` (library) and `P*` (product). **No `P` stage begins before `L8` is green**, with one deliberate exception noted in §9 for the fast path.
 
 ---
 
@@ -67,11 +67,11 @@ pdf      = ["typst>=0.11"]
 vec      = ["sqlite-vec>=0.1.7"]
 all      = ["ledgerkb[local,extract,postgres,docling,obs,pdf,vec]"]
 
-[dependency-groups]                      # PEP 735 — dev only, never shipped via PyPI
+[dependency-groups]                      # PEP 735, dev only, never shipped via PyPI
 dev = ["pytest", "pytest-asyncio", "ruff", "mypy", "hypothesis", "respx"]
 ```
 
-Build backend **hatchling ≥1.26**, managed with **uv**. Note the distinction: `[project.optional-dependencies]` are installable from PyPI; `[dependency-groups]` are not — dev tooling belongs in the latter.
+Build backend **hatchling ≥1.26**, managed with **uv**. Note the distinction: `[project.optional-dependencies]` are installable from PyPI; `[dependency-groups]` are not: dev tooling belongs in the latter.
 
 ### 1.2 Storage: SQLite by default
 
@@ -80,29 +80,29 @@ The single most important decision for a library. `pip install ledgerkb && lkb i
 | | SQLite (default) | Postgres (scale) |
 |---|---|---|
 | Vector search | float32 BLOB + **numpy brute force**; optional `sqlite-vec` | `pgvector` HNSW + iterative scan |
-| Keyword search | **FTS5 `bm25()` — true BM25** | `tsvector` + `ts_rank_cd` |
+| Keyword search | **FTS5 `bm25()`, true BM25** | `tsvector` + `ts_rank_cd` |
 | Queue | in-process | `pgmq` |
 | Schedule | none | `pg_cron` |
 | Ceiling | ~100k chunks | millions |
 
 Two things worth stating plainly:
 
-1. **Brute-force KNN is the right call at this scale.** 50k chunks × 1024 dims float32 = ~200MB, cosine over the whole matrix in single-digit milliseconds. `sqlite-vec` is still at `0.1.7.alpha` as of Feb 2026 — fine as an *optional* accelerator, wrong as a hard dependency for a library that must install cleanly everywhere.
-2. **A known asymmetry:** SQLite gets *real* BM25 via FTS5; Postgres gets `ts_rank`, which is not BM25 (no length normalisation, no saturating term frequency). Local dev therefore has better lexical ranking than production until `pg_search` is added. Documented, not hidden — see risk R4.
+1. **Brute-force KNN is the right call at this scale.** 50k chunks × 1024 dims float32 = ~200MB, cosine over the whole matrix in single-digit milliseconds. `sqlite-vec` is still at `0.1.7.alpha` as of Feb 2026, fine as an *optional* accelerator, wrong as a hard dependency for a library that must install cleanly everywhere.
+2. **A known asymmetry:** SQLite gets *real* BM25 via FTS5; Postgres gets `ts_rank`, which is not BM25 (no length normalisation, no saturating term frequency). Local dev therefore has better lexical ranking than production until `pg_search` is added. Documented, not hidden. See risk R4.
 
 ---
 
 ## 2. Library stages
 
-### L0 — Skeleton and contracts
+### L0. Skeleton and contracts
 **Goal:** the shape everything else fills in.
 
 **Build**
 - Repo, `pyproject.toml`, uv lockfile, ruff + mypy strict on `core/`, pytest, GitHub Actions matrix (3.11/3.12/3.13 × linux/macos/windows).
-- `core/models.py` — `Document`, `DocumentVersion`, `Chunk`, `Entity`, `Assertion`, `Evidence`, `ChangeEvent` as Pydantic models.
-- `core/ports.py` — `Store`, `ChatModel`, `Embedder`, `Reranker`, `Parser`, `Chunker`, `BlobStore` Protocols.
-- `storage/sqlite.py` — schema + migrations (a plain numbered-SQL migrator; no Alembic).
-- `providers/fake.py` — deterministic fake chat/embedder for tests.
+- `core/models.py`: `Document`, `DocumentVersion`, `Chunk`, `Entity`, `Assertion`, `Evidence`, `ChangeEvent` as Pydantic models.
+- `core/ports.py`: `Store`, `ChatModel`, `Embedder`, `Reranker`, `Parser`, `Chunker`, `BlobStore` Protocols.
+- `storage/sqlite.py`: schema + migrations (a plain numbered-SQL migrator; no Alembic).
+- `providers/fake.py`: deterministic fake chat/embedder for tests.
 - `lkb init`, `lkb version`, `lkb doctor` (environment diagnostics).
 
 **Exit gate 🟢**
@@ -116,7 +116,7 @@ Two things worth stating plainly:
 
 ---
 
-### L1 — Ingest, parse, chunk *(no LLM, no network)*
+### L1. Ingest, parse, chunk *(no LLM, no network)*
 **Goal:** documents → chunks with correct metadata and offsets. Entirely offline.
 
 **Build**
@@ -124,27 +124,27 @@ Two things worth stating plainly:
 - Tier-0 parsers: `pypdfium2` (born-digital PDF), `trafilatura` (HTML), native readers. Tier-1 `docling` behind the `[docling]` extra and a text-density probe.
 - Sanitiser: zero-width and bidi-control stripping, hidden-text removal (colour==background, `display:none`, HTML comments), Unicode NFKC, **instruction-shape quarantine** (stored, not deleted).
 - Structure-first chunker: heading tree → sections; Chonkie `SemanticChunker` only for oversized sections.
-- Metadata extraction: title, date, `doc_type`, `meeting_or_project`, source URL, page/section — **the exact five the brief names**.
+- Metadata extraction: title, date, `doc_type`, `meeting_or_project`, source URL, page/section, **the exact five the brief names**.
 - `lkb ingest <path|url> [--source NAME]`, `lkb docs`, `lkb chunks <doc_id>`.
 
 **Exit gate 🟢**
 - [ ] 20-document fixture corpus (mixed formats) ingests with **zero unhandled exceptions**
-- [ ] **Every chunk's `char_start:char_end` slices back to byte-identical text in its source document** — property test over the full corpus
+- [ ] **Every chunk's `char_start:char_end` slices back to byte-identical text in its source document**, property test over the full corpus
 - [ ] All five required metadata fields populated on ≥ 90% of fixtures; misses reported, never silently null
 - [ ] Sanitiser catches all 10 hand-built injection fixtures (zero-width, white-on-white, comment-embedded, …)
 - [ ] ZIP guards reject all 5 malicious archive fixtures
-- [ ] **Runs with no network and no API key** — enforced by a CI job with egress blocked
+- [ ] **Runs with no network and no API key**, enforced by a CI job with egress blocked
 
 **Effort:** ~1 day · **Risk:** medium (parser edge cases)
 
 ---
 
-### L2 — Index and retrieve
+### L2. Index and retrieve
 **Goal:** hybrid retrieval that beats either half alone.
 
 **Build**
 - `Embedder` adapters: OpenAI-compatible HTTP; `fastembed` local (ONNX, no torch).
-- Contextual headers (Anthropic Contextual Retrieval) — batched, parent-document prompt caching, applied to **both** indexes.
+- Contextual headers (Anthropic Contextual Retrieval): batched, parent-document prompt caching, applied to **both** indexes.
 - Hybrid: dense KNN + FTS5 BM25 → **RRF (k=60)** → optional cross-encoder rerank.
 - Retrieval config object, persisted per workspace so results are reproducible.
 - `lkb index`, `lkb search "<q>" [--k N] [--explain]`.
@@ -152,7 +152,7 @@ Two things worth stating plainly:
 **Exit gate 🟢**
 - [ ] Golden set (**written in this stage, not later**): 40 questions, ≥ 7 unanswerable
 - [ ] **recall@20 ≥ 0.90** on answerable questions
-- [ ] Hybrid beats dense-only *and* BM25-only on the same set — measured, printed, committed
+- [ ] Hybrid beats dense-only *and* BM25-only on the same set, measured, printed, committed
 - [ ] Contextual headers improve recall@20 by ≥ 5 points (the A/B is the justification for the cost)
 - [ ] Embedding model + dimension recorded in the store; **re-index required and detected on change**
 - [ ] `--explain` prints per-candidate dense rank, BM25 rank, fused score
@@ -161,18 +161,18 @@ Two things worth stating plainly:
 
 ---
 
-### L3 — Grounded answering → 📦 **v0.1.0 on PyPI**
+### L3. Grounded answering → 📦 **v0.1.0 on PyPI**
 **Goal:** cited answers, honest abstention. **This alone satisfies Challenge 1 of the brief.**
 
 **Build**
 - Structured `Answer` model: `claims[]` each with `chunk_id`, verbatim `quote`, `modality` (`fact`|`inference`), `confidence`.
-- **Deterministic quote verification** — normalised exact match, then fuzzy ≥ 0.95. Unverified claims demoted or dropped. *Runs before the answer is returned, every time.*
+- **Deterministic quote verification**: normalised exact match, then fuzzy ≥ 0.95. Unverified claims demoted or dropped. *Runs before the answer is returned, every time.*
 - CRAG routing: `correct` → generate · `ambiguous` → expand + retry once · `incorrect` → rewrite, retry once, then **abstain with named coverage gaps**. No default web search.
 - `lkb ask "<q>" [--json] [--cite]`, `lkb serve --repl`.
 - **README** covering the five things the brief requires: retrieval approach, chunking strategy, why this search method, limitations, how to add documents.
 
 **Exit gate 🟢**
-- [ ] **Citation validity = 1.00.** Not a target — a hard assertion. Any claim whose quote is absent from its cited chunk cannot reach the caller.
+- [ ] **Citation validity = 1.00.** Not a target: a hard assertion. Any claim whose quote is absent from its cited chunk cannot reach the caller.
 - [ ] **Correct-abstention ≥ 0.90** on the unanswerable subset
 - [ ] Zero hallucinated `chunk_id`s across the full golden set
 - [ ] `facts` and `inference` never conflated in output
@@ -183,7 +183,7 @@ Two things worth stating plainly:
 
 ---
 
-### L4 — Assertion ledger and extraction
+### L4. Assertion ledger and extraction
 **Goal:** documents become claims with evidence.
 
 **Build**
@@ -192,11 +192,11 @@ Two things worth stating plainly:
 - Post-conditions in code: quote must exist in chunk; `inferred` ⇒ `confidence < 1.0`; unknown predicate ⇒ reject.
 - **Extraction calls carry zero tools.** Enforced by a test that asserts the outgoing request body has no `tools` key.
 - `stale_after` computation: explicit review dates, deadlines, conditional language, source cadence.
-- Decision status: `proposed` | `confirmed` — the brief distinguishes these and nothing else in the model does.
+- Decision status: `proposed` | `confirmed`, the brief distinguishes these and nothing else in the model does.
 - `lkb compile`, `lkb assertions [--entity X]`.
 
 **Exit gate 🟢**
-- [ ] **100% of assertions have ≥ 1 evidence row** — DB constraint, not convention
+- [ ] **100% of assertions have ≥ 1 evidence row**, DB constraint, not convention
 - [ ] 100% of evidence quotes verify against their chunk
 - [ ] Extraction precision ≥ 0.85 on a 100-assertion hand-labelled sample
 - [ ] Zero out-of-schema predicates across the whole corpus
@@ -207,7 +207,7 @@ Two things worth stating plainly:
 
 ---
 
-### L5 — Entity resolution and graph → 📦 **v0.3.0**
+### L5. Entity resolution and graph → 📦 **v0.3.0**
 **Goal:** the network, without wrong merges.
 
 **Build**
@@ -220,17 +220,17 @@ Two things worth stating plainly:
 - `lkb graph export --format json|graphml|mermaid|cypher`, `lkb entities --duplicates`.
 
 **Exit gate 🟢**
-- [ ] **Over-merge rate ≤ 0.02** on a labelled pair set — *over-merging is the failure that matters; under-merging is visible and fixable*
+- [ ] **Over-merge rate ≤ 0.02** on a labelled pair set, *over-merging is the failure that matters; under-merging is visible and fixable*
 - [ ] Every merge reversible; reversal test passes
 - [ ] All 5 example queries execute and return sensible results on the fixture corpus
 - [ ] Graph exports validate (GraphML against XSD, Mermaid renders, Cypher parses)
-- [ ] **Zero edges without a source document reference** — the brief's "do not generate relationships that cannot be supported"
+- [ ] **Zero edges without a source document reference**, the brief's "do not generate relationships that cannot be supported"
 
 **Effort:** ~1.5 days · **Risk:** high
 
 ---
 
-### L6 — Refresh and change report → 📦 **v0.4.0**
+### L6. Refresh and change report → 📦 **v0.4.0**
 **Goal:** the differentiator. Belief revision with preserved history.
 
 **Build**
@@ -242,7 +242,7 @@ Two things worth stating plainly:
 - `lkb refresh [--source X]`, `lkb changes [--run ID]`, `lkb history <assertion_id>`.
 
 **Exit gate 🟢**
-- [ ] Unchanged documents cost **zero LLM calls** — asserted by a call-counting test
+- [ ] Unchanged documents cost **zero LLM calls**, asserted by a call-counting test
 - [ ] "What did we believe on date D?" returns correct historical state
 - [ ] All 7 brief update-categories produced on a scripted new document containing each
 - [ ] Contradictions surface as two assertions; **a blended single answer is a test failure**
@@ -253,12 +253,12 @@ Two things worth stating plainly:
 
 ---
 
-### L7 — Projections and exports → 📦 **v0.5.0**
+### L7. Projections and exports → 📦 **v0.5.0**
 **Goal:** the four deliverables.
 
 **Build**
 - **OKF v0.2 serialiser** in one version-stamped module → `index.md`, `log.md`, concept files with `sources`, `generated`, `verified`, `status`, `stale_after`.
-- OKF conformance checker (~100 lines — the spec is small and worth owning).
+- OKF conformance checker (~100 lines, the spec is small and worth owning).
 - `Briefing.pdf` via Typst; all 10 Challenge-4 sections including proposed-vs-confirmed decisions and preserved disagreements.
 - `Governance_Guide.md` generated from live state.
 - `Entities_Relationships.json` + **a flat CSV knowledge-items table** (the brief asks for a DB-importable table).
@@ -270,7 +270,7 @@ Two things worth stating plainly:
 - [ ] OKF bundle passes the conformance checker; **opens correctly in Obsidian**
 - [ ] Every briefing statement carries a source and date; inferences visually marked
 - [ ] Disagreements appear in output as disagreements
-- [ ] Governance guide items all trace to real ledger rows — **no generic filler text**
+- [ ] Governance guide items all trace to real ledger rows, **no generic filler text**
 - [ ] `--all` produces one ZIP with `MANIFEST.md` + build receipt
 - [ ] Exports reproducible: same store state → byte-identical output (timestamps excluded)
 
@@ -278,7 +278,7 @@ Two things worth stating plainly:
 
 ---
 
-### L8 — Evals, guardrails, observability → 📦 **v1.0.0**
+### L8. Evals, guardrails, observability → 📦 **v1.0.0**
 **Goal:** production posture. Detail in §3–§5.
 
 **Exit gate 🟢**
@@ -299,7 +299,7 @@ Two things worth stating plainly:
 
 **Principle: the headline metrics require no LLM judge and no API key.** Evals that cost money get skipped, and skipped evals stop being true.
 
-### Built in — deterministic, zero dependencies
+### Built in: deterministic, zero dependencies
 
 | Metric | How | Gate |
 |---|---|---|
@@ -315,16 +315,16 @@ Two things worth stating plainly:
 
 Golden sets are YAML in-repo; `lkb eval run --set golden/sheffield.yaml`. A starter set ships with the package.
 
-### Optional — `pip install ledgerkb[eval]`
-- **Ragas** — faithfulness, answer relevancy, context precision/recall, noise sensitivity (LLM-judge; dashboards for chunking/embedding experiments).
-- **DeepEval** — pytest-native metric gates for CI.
-- **promptfoo** — npm, so it ships as a `promptfoo.yaml` config in the repo rather than a Python dependency. Red-team, 50+ vulnerability classes.
+### Optional (`pip install ledgerkb[eval]`)
+- **Ragas**, faithfulness, answer relevancy, context precision/recall, noise sensitivity (LLM-judge; dashboards for chunking/embedding experiments).
+- **DeepEval**, pytest-native metric gates for CI.
+- **promptfoo**, npm, so it ships as a `promptfoo.yaml` config in the repo rather than a Python dependency. Red-team, 50+ vulnerability classes.
 
 ---
 
 ## 4. Guardrails *(what the library ships)*
 
-### Tier 1 — always on, deterministic, no dependencies
+### Tier 1: always on, deterministic, no dependencies
 
 | Control | Stage | Purpose |
 |---|---|---|
@@ -339,12 +339,12 @@ Golden sets are YAML in-repo; `lkb eval run --set golden/sheffield.yaml`. A star
 | Budget guards | all | Max tokens / cost / docs per run → abort, never runaway |
 | PII redaction hook | ingest | Opt-in callback; no default classifier |
 
-### Tier 2 — a `guard` extra, if it is ever built
+### Tier 2: a `guard` extra, if it is ever built
 **Not shipped.** No `guard` extra exists; this section describes adapters we have
-not written. If it lands, the candidates are: **Prompt Guard 2** (injection classifier), **Llama Guard 4** (content classification — note it is *itself* susceptible to injection, so Prompt Guard layers in front), **LLM-Guard**, **NeMo Guardrails** (Colang orchestration).
+not written. If it lands, the candidates are: **Prompt Guard 2** (injection classifier), **Llama Guard 4** (content classification, note it is *itself* susceptible to injection, so Prompt Guard layers in front), **LLM-Guard**, **NeMo Guardrails** (Colang orchestration).
 
 ### Explicitly rejected
-**Keyword blocklists.** Standard guardrails drop to ~60% accuracy on benign data because trigger words appear innocently — and council minutes routinely contain *"the committee resolved to ignore the previous recommendation."* On this corpus a blunt filter causes more damage than the attack it prevents.
+**Keyword blocklists.** Standard guardrails drop to ~60% accuracy on benign data because trigger words appear innocently, and council minutes routinely contain *"the committee resolved to ignore the previous recommendation."* On this corpus a blunt filter causes more damage than the attack it prevents.
 
 ---
 
@@ -354,10 +354,10 @@ not written. If it lands, the candidates are: **Prompt Guard 2** (injection clas
 
 ### Two layers
 
-**1. Run records — always on, zero config, no collector.**
+**1. Run records, always on, zero config, no collector.**
 A `run_record` table in the store logs every stage: inputs, counts, tokens, cost, duration, errors, model+version. `lkb runs`, `lkb trace <run_id>`. Works offline, works in CI, works when nobody has set up a backend.
 
-**2. OTel spans — `pip install ledgerkb[obs]`.**
+**2. OTel spans, `pip install ledgerkb[obs]`.**
 Emits **GenAI semantic conventions**: spans `chat`, `embeddings`, `execute_tool`; attributes `gen_ai.request.model`, `gen_ai.usage.input_tokens`/`output_tokens`, `gen_ai.provider.name`. Plus our own `lkb.ingest`, `lkb.chunk`, `lkb.extract`, `lkb.reconcile`, `lkb.export`.
 
 Ship via OTLP to **anything**: Langfuse (native OTLP backend at `/api/public/otel`, HTTP JSON + protobuf), Arize Phoenix, Comet Opik, OpenObserve, Grafana, Datadog. One instrumentation, every backend, no lock-in.
@@ -367,7 +367,7 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="https://cloud.langfuse.com/api/public/otel"
 export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <base64 pk:sk>"
 ```
 
-**Pin the semconv version.** GenAI conventions are still `Development` — none are Stable, and all `gen_ai.*` attributes moved to a separate repo in June 2026. Treat as a moving target: `LKB_SEMCONV_VERSION` is explicit and upgraded deliberately.
+**Pin the semconv version.** GenAI conventions are still `Development`. None are Stable, and all `gen_ai.*` attributes moved to a separate repo in June 2026. Treat as a moving target: `LKB_SEMCONV_VERSION` is explicit and upgraded deliberately.
 
 ### Cost accounting
 Token counts × a configurable price table, per stage and per run. `lkb cost --run <id>` and `lkb cost --workspace`. Provider-reported usage is reconciled against local counts when available.
@@ -377,9 +377,9 @@ Token counts × a configurable price table, per stage and per run. `lkb cost --r
 ## 6. Provider support
 
 ### The architecture
-Three Protocols in `core/ports.py` — `ChatModel`, `Embedder`, `Reranker`. `core/` never imports a provider SDK.
+Three Protocols in `core/ports.py`: `ChatModel`, `Embedder`, `Reranker`. `core/` never imports a provider SDK.
 
-### Adapter 1 — OpenAI-compatible *(base install, covers ~95%)*
+### Adapter 1: OpenAI-compatible *(base install, covers ~95%)*
 One adapter speaking `/chat/completions` and `/embeddings`. Configure `base_url` + `api_key` + `model`.
 
 | Category | Works today |
@@ -390,10 +390,10 @@ One adapter speaking `/chat/completions` and `/embeddings`. Configure `base_url`
 | **Local / self-hosted** | **Ollama**, vLLM, llama.cpp, LM Studio, SGLang, TGI |
 | Embeddings servers | HF **TEI**, **Infinity**, Ollama, fastembed (in-process) |
 
-### Adapter 2 — native extras
+### Adapter 2: native extras
 `[anthropic]` (Messages API + prompt caching), `[bedrock]`, `[vertex]`.
 
-### Adapter 3 — `[litellm]`
+### Adapter 3 (`[litellm]`)
 Unlocks 100+ providers including non-OpenAI-compatible ones, plus routing, fallbacks and load balancing. One extra, one config line.
 
 ### Capability probing
@@ -434,25 +434,25 @@ dimensions = 1024
 
 ---
 
-## 7. OpenRouter — yes, first class
+## 7. OpenRouter, yes, first class
 
-Supported with **zero extra code** — it is OpenAI-compatible, so it uses the base adapter.
+Supported with **zero extra code**: it is OpenAI-compatible, so it uses the base adapter.
 
-**It can be your only provider.** OpenRouter added an embeddings endpoint (`POST /api/v1/embeddings`, OpenAI format) serving Qwen3-Embedding-8B, Cohere Embed v1 0.6B and text-embedding-3-small. So chat *and* embeddings come from one key — which is not true of every aggregator.
+**It can be your only provider.** OpenRouter added an embeddings endpoint (`POST /api/v1/embeddings`, OpenAI format) serving Qwen3-Embedding-8B, Cohere Embed v1 0.6B and text-embedding-3-small. So chat *and* embeddings come from one key, which is not true of every aggregator.
 
 | | |
 |---|---|
 | Coverage | **400+ models, 70+ providers** |
-| Chat | `/api/v1/chat/completions` — OpenAI format |
-| Embeddings | `/api/v1/embeddings` — OpenAI format |
+| Chat | `/api/v1/chat/completions`, OpenAI format |
+| Embeddings | `/api/v1/embeddings`, OpenAI format |
 | Fees | No inference markup; **5.5% on credit purchase** (5% crypto, $0.80 min per transaction) |
 | BYOK | First **1M requests/month free**, then 5% of equivalent platform cost |
 | Free tier | 25+ free models at 50 requests/day |
-| Bonus | Provider routing and automatic fallbacks — pairs well with our retry logic |
+| Bonus | Provider routing and automatic fallbacks, pairs well with our retry logic |
 
 Implementation notes: send optional `HTTP-Referer` and `X-Title` headers for attribution; some routed models lack strict `json_schema`, so the capability probe (§6) matters more here than with a single-vendor endpoint.
 
-**Caveat to log:** OpenRouter's free tier at 50 requests/day is nowhere near enough for an ingest run — a 100-document corpus makes thousands of calls. Free tier is for trying `lkb ask`, not for compiling a workspace.
+**Caveat to log:** OpenRouter's free tier at 50 requests/day is nowhere near enough for an ingest run: a 100-document corpus makes thousands of calls. Free tier is for trying `lkb ask`, not for compiling a workspace.
 
 ---
 
@@ -460,22 +460,22 @@ Implementation notes: send optional `HTTP-Referer` and `X-Title` headers for att
 
 The product is a **thin shell over the library**. If a `P` stage needs new domain logic, that is a signal the logic belongs in the library instead.
 
-### P1 — Service layer *(~1 day)*
-FastAPI wrapping `ledgerkb`. Endpoints for sources, ingest, ask, entities, changes, export. Job queue via `pgmq`. SSE for token streaming. **Gate:** every endpoint is a thin call into the library — zero domain logic in the API layer, verified by review.
+### P1. Service layer *(~1 day)*
+FastAPI wrapping `ledgerkb`. Endpoints for sources, ingest, ask, entities, changes, export. Job queue via `pgmq`. SSE for token streaming. **Gate:** every endpoint is a thin call into the library, zero domain logic in the API layer, verified by review.
 
-### P2 — Web UI core *(~2 days)*
-Next.js 16, AI SDK v6. Ask view with the three-zone answer contract (facts / interpretation / gaps). Documents list. Explore graph view. **Gate:** answer rendering is faithful to the library's `Answer` model — facts and inference visually distinct, gaps always shown.
+### P2. Web UI core *(~2 days)*
+Next.js 16, AI SDK v6. Ask view with the three-zone answer contract (facts / interpretation / gaps). Documents list. Explore graph view. **Gate:** answer rendering is faithful to the library's `Answer` model: facts and inference visually distinct, gaps always shown.
 
-### P3 — Connectors *(~2 days)*
-Upload (Blob client upload, multi-file + ZIP), links (URL / list / sitemap / bounded crawl with preview), Google Drive (**`drive.file` + Picker only**). **Gate:** Drive connector never requests a restricted scope — asserted in test.
+### P3. Connectors *(~2 days)*
+Upload (Blob client upload, multi-file + ZIP), links (URL / list / sitemap / bounded crawl with preview), Google Drive (**`drive.file` + Picker only**). **Gate:** Drive connector never requests a restricted scope, asserted in test.
 
-### P4 — Change report + export picker *(~1.5 days)*
+### P4. Change report + export picker *(~1.5 days)*
 Refresh UI, change report view, multi-select export picker, download history. **Gate:** the 5-minute demo script in the product spec runs end to end without intervention.
 
-### P5 — Deploy artifacts *(~1 day)*
-`docker-compose.yml` (Postgres + api + worker + Ollama), `railway.json`, `vercel.json`, `.env.example`, deploy docs. **Gate:** a stranger following the README deploys successfully in **under 15 minutes** — tested on someone who has not seen the repo.
+### P5. Deploy artifacts *(~1 day)*
+`docker-compose.yml` (Postgres + api + worker + Ollama), `railway.json`, `vercel.json`, `.env.example`, deploy docs. **Gate:** a stranger following the README deploys successfully in **under 15 minutes**, tested on someone who has not seen the repo.
 
-### P6 — Hardening *(~1.5 days)*
+### P6. Hardening *(~1.5 days)*
 Rerank, Docling tier-1, Langfuse wiring, promptfoo in CI, error states, empty states, accessibility pass. **Gate:** all product-spec states implemented; Lighthouse ≥ 90.
 
 ---
@@ -488,7 +488,7 @@ Rerank, Docling tier-1, Langfuse wiring, promptfoo in CI, error states, empty st
 | Product | P1–P6 | **~9 days** |
 | **Total** | | **~20 working days** |
 
-### Hackathon fast path — 2 days
+### The fast path, 2 days
 
 The **only** sanctioned exception to the gating rule. Ship `L0 → L1 → L2 → L3` (a complete, honest Challenge-1 system with real citations and real abstention), then **jump to L6** using a simplified ledger, because the change report is what wins. Skip L4's full extraction, L5's resolution cascade, L7's OKF bundle.
 

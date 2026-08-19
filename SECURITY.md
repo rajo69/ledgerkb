@@ -44,5 +44,5 @@ injection, credential leakage into logs, exports or traces, and dependency
 vulnerabilities.
 
 Out of scope: a model producing a low-quality answer that is nonetheless
-correctly cited and grounded. That is an evaluation issue — please open a normal
+correctly cited and grounded. That is an evaluation issue. Please open a normal
 issue with the golden-set case.

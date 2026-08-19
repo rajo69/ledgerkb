@@ -1,4 +1,4 @@
-# Build Handoff — Start Here
+# Build Handoff: Start Here
 
 **Version:** 1.2 · **Date:** 2026-08-07
 **Purpose:** Everything a fresh session needs to continue development without re-deriving prior decisions.
@@ -13,9 +13,9 @@ Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0, `main` pro
 
 | Stage | State |
 |---|---|
-| **L0** — skeleton and contracts | ✅ done |
-| **L1** — ingest, parse, chunk | ✅ done |
-| **L2** — index and retrieve | 🟡 **half done** — machinery in, measurement outstanding |
+| **L0**, skeleton and contracts | ✅ done |
+| **L1**, ingest, parse, chunk | ✅ done |
+| **L2**, index and retrieve | 🟡 **half done**, machinery in, measurement outstanding |
 | L3–L8, P1–P6 | not started |
 
 ```bash
@@ -26,12 +26,12 @@ ruff check . && mypy && lint-imports      # what CI runs
 
 **What exists and works today:**
 
-- `core/` — models, ports, config with the four tunability tiers, error taxonomy. Pure: stdlib + pydantic, CI-enforced.
-- `storage/sqlite/` — migrations 001 and 002, FTS5 for BM25, float32 vector columns, database triggers refusing any delete on the ledger. `search_dense` is an exact scan; `search_sparse` works today.
-- `ingest/` — filesystem and ZIP readers, tier-0 parsers for ten formats, the sanitiser, the structure-first chunker, deterministic metadata extraction, and the pipeline that wires them with content-hash dedupe and per-document failure isolation.
-- `providers/fake.py` — deterministic chat, embedder and reranker. Every test uses these.
-- `cli/` — `init`, `version`, `doctor`, `doctor --tiers`, `ingest`, `docs`, `chunks --verify`.
-- `tests/fixtures/build_corpus.py` — generates 20 mixed-format documents, 10 injection fixtures and 5 malicious archives. Nothing is committed as a binary.
+- `core/`: models, ports, config with the four tunability tiers, error taxonomy. Pure: stdlib + pydantic, CI-enforced.
+- `storage/sqlite/`: migrations 001 and 002, FTS5 for BM25, float32 vector columns, database triggers refusing any delete on the ledger. `search_dense` is an exact scan; `search_sparse` works today.
+- `ingest/`: filesystem and ZIP readers, tier-0 parsers for ten formats, the sanitiser, the structure-first chunker, deterministic metadata extraction, and the pipeline that wires them with content-hash dedupe and per-document failure isolation.
+- `providers/fake.py`: deterministic chat, embedder and reranker. Every test uses these.
+- `cli/`: `init`, `version`, `doctor`, `doctor --tiers`, `ingest`, `docs`, `chunks --verify`.
+- `tests/fixtures/build_corpus.py`: generates 20 mixed-format documents, 10 injection fixtures and 5 malicious archives. Nothing is committed as a binary.
 - CI: `ci.yml` (ruff, mypy strict on `core`, import contracts, 3 OS × 3 Python, coverage floor) and `offline.yml` (the whole suite **plus a full ingest** inside a network namespace).
 
 **Still empty:** `index/`, `extract/`, `ledger/`, `project/`, `evals/`, `obs/`, `storage/postgres/`, `apps/`.
@@ -40,7 +40,7 @@ ruff check . && mypy && lint-imports      # what CI runs
 
 For every chunk, `version.text[chunk.char_start:chunk.char_end] == chunk.text`, exactly.
 
-Chunk text is **sliced, never constructed** — there is no code path that builds a chunk by joining or stripping. Whitespace trimming moves the boundaries; overlap extends spans backwards into the source rather than copying a prefix. Sanitisation runs once, before any offset is taken, and remaps heading and page offsets so there is exactly one coordinate system.
+Chunk text is **sliced, never constructed**. There is no code path that builds a chunk by joining or stripping. Whitespace trimming moves the boundaries; overlap extends spans backwards into the source rather than copying a prefix. Sanitisation runs once, before any offset is taken, and remaps heading and page offsets so there is exactly one coordinate system.
 
 This is what makes a citation a precise span, and it is what deterministic quote verification (L3, Arch §6.4) will check against. Anything at L2+ that rewrites chunk text breaks the citation guarantee.
 
@@ -59,25 +59,25 @@ Four things differ from what is written below. All four are deliberate.
 
 ## 1. Read this first
 
-**What we're building:** `ledgerkb` — an open-source Python library that turns scattered documents into a queryable, exportable knowledge base that **maintains a position over time**. A web product is built on top of it later.
+**What we're building:** `ledgerkb`, an open-source Python library that turns scattered documents into a queryable, exportable knowledge base that **maintains a position over time**. A web product is built on top of it later.
 
-**The organising idea:** one append-only ledger of evidence-bearing assertions. The RAG index, knowledge graph, OKF wiki, briefing PDF and change report are all **projections** of that one ledger — not separate subsystems.
+**The organising idea:** one append-only ledger of evidence-bearing assertions. The RAG index, knowledge graph, OKF wiki, briefing PDF and change report are all **projections** of that one ledger, not separate subsystems.
 
 **Document map:**
 
 | Doc | Read when |
 |---|---|
 | **`04-BUILD-HANDOFF.md`** (this) | First. Current state (§0), locked decisions, open questions, and the next stage's starting point (§10) |
-| [`03-IMPLEMENTATION-PLAN.md`](./03-IMPLEMENTATION-PLAN.md) | Before starting any stage — has the exit gates |
-| [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md) | Designing a component — data model, pipeline, retrieval |
+| [`03-IMPLEMENTATION-PLAN.md`](./03-IMPLEMENTATION-PLAN.md) | Before starting any stage: it has the exit gates |
+| [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md) | Designing a component: data model, pipeline, retrieval |
 | [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) | Building UI or deciding behaviour |
-| [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) | Tempted to change a dependency — the evidence is here |
+| [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) | Tempted to change a dependency: the evidence is here |
 
-**Order of work:** L0 → L1 → … → L8 (library, v1.0.0 on PyPI) → P1 → P6 (product). No stage starts until the previous gate is green. **L0 and L1 are done; L2 is next — see §0 and §10.**
+**Order of work:** L0 → L1 → … → L8 (library, v1.0.0 on PyPI) → P1 → P6 (product). No stage starts until the previous gate is green. **L0 and L1 are done; L2 is next, see §0 and §10.**
 
 ---
 
-## 2. Locked decisions — do not re-litigate
+## 2. Locked decisions. Do not re-litigate
 
 Each was researched. If you want to change one, read the cited section first.
 
@@ -87,7 +87,7 @@ Each was researched. If you want to change one, read the cited section first.
 | 2 | **No Kafka, Flink, CDC, or live ingest.** Manual refresh + content hashing only | Arch §5 |
 | 3 | **No graph database.** Relational `entity`/`assertion` tables + recursive CTEs. Kùzu is archived; Apache AGE isn't in Railway's image | Research §3.1–3.2 |
 | 4 | **No GraphRAG framework.** Own extraction. MS GraphRAG ~100× cost; LightRAG locks storage + had auth CVEs | Research §3.3 |
-| 5 | **Bitemporal invalidation** — set `invalid_at`, never delete | Arch §3.3 |
+| 5 | **Bitemporal invalidation**, set `invalid_at`, never delete | Arch §3.3 |
 | 6 | **Quote verification is deterministic**, not an LLM judge | Arch §6.4 |
 | 7 | **CRAG without a default web-search branch.** `incorrect` → abstain with named gaps | Arch §6.5 |
 | 8 | **Extraction calls carry zero tools.** The architectural anti-injection control | Arch §8 |
@@ -95,10 +95,10 @@ Each was researched. If you want to change one, read the cited section first.
 | 10 | **Conservative entity resolution.** Over-merging is the failure that matters | Research §3.4 |
 | 11 | **Providers behind Protocols.** OpenAI-compatible is the base adapter | Plan §6 |
 | 12 | **Observability is OTel over OTLP.** No vendor SDK as a hard dependency | Plan §5 |
-| 13 | **Headline evals are deterministic** — no API key required | Plan §3 |
-| 14 | **Licence: Apache-2.0.** DCO sign-off, not a CLA | — |
+| 13 | **Headline evals are deterministic**, no API key required | Plan §3 |
+| 14 | **Licence: Apache-2.0.** DCO sign-off, not a CLA | - |
 | 15 | **Corpus-agnostic via profiles**, never via code branches | §8 below |
-| 16 | **npm package is a typed API client**, not a port of the engine | — |
+| 16 | **npm package is a typed API client**, not a port of the engine | - |
 
 ---
 
@@ -106,16 +106,16 @@ Each was researched. If you want to change one, read the cited section first.
 
 | # | Question | State |
 |---|---|---|
-| Q1 | **PyPI name.** Is `ledgerkb` available? | ✅ **Resolved.** Available (so are `okfkit` and `attestkb`). Availability is not reservation — the name is only claimed on first publish at L8 |
-| Q2 | **Embedding model + dimension** | 🔴 **Open, and blocking L2** — see below |
+| Q1 | **PyPI name.** Is `ledgerkb` available? | ✅ **Resolved.** Available (so are `okfkit` and `attestkb`). Availability is not reservation, the name is only claimed on first publish at L8 |
+| Q2 | **Embedding model + dimension** | 🔴 **Open, and blocking L2**, see below |
 | Q3 | **PDF parser default.** `pymupdf4llm` is AGPL-3.0 | ✅ **Resolved.** `pypdfium2` (BSD-3/Apache-2.0) is the default and is implemented. Every parser dependency was licence-checked: all permissive, no AGPL anywhere |
 | Q4 | **Is there a real corpus?** | ✅ **Resolved by its documented default.** None exists. `tests/fixtures/build_corpus.py` generates 20 council-shaped documents across ten formats. See the caveat below |
 | Q5 | **Second corpus for the agnosticism gate** | ⬜ Open, not needed until v1.0. Pick any public document set unlike council minutes |
 
-### Q2 — resolved, but not the way this document proposed
+### Q2: resolved, but not the way this document proposed
 
 **The recommendation here was `BAAI/bge-m3` via `fastembed`. That is not
-implementable: bge-m3 is in no fastembed model list — not dense, not sparse,
+implementable: bge-m3 is in no fastembed model list: not dense, not sparse,
 not late-interaction.** The research log (§2) had always assumed bge-m3 would
 be served by TEI or a gateway; the in-process path was invented in this
 document and never checked.
@@ -124,21 +124,21 @@ document and never checked.
 tier-3 locked field is exactly what both design documents already agreed on;
 Apache-2.0; and the smallest of the permissively-licensed 1024-dimension models
 fastembed actually serves. It runs in-process with no API key, which is what
-the original reasoning was really protecting — `offline.yml` keeps proving
+the original reasoning was really protecting: `offline.yml` keeps proving
 something past L1 and the eval loop stays free.
 
 Other permissively-licensed 1024-dim options, if the corpus ever argues for
 one: `BAAI/bge-large-en-v1.5` (MIT), `snowflake/snowflake-arctic-embed-l`
 (Apache-2.0), `intfloat/multilingual-e5-large` (MIT, and the one to reach for
 if documents stop being English). **`jinaai/jina-embeddings-v3` is excluded on
-purpose** — 1024 dims and otherwise a fine model, but CC-BY-NC-4.0 is
+purpose**, 1024 dims and otherwise a fine model, but CC-BY-NC-4.0 is
 non-commercial.
 
 `providers/local.py` carries these widths in `KNOWN_DIMENSIONS` and checks them
 against the config at construction, so a mismatch is refused before a corpus is
 embedded rather than surfacing as a shape error on the first search.
 
-### Q4 — the caveat worth knowing
+### Q4: the caveat worth knowing
 
 The fixture corpus is synthetic and was written by the same process that wrote the extractors. When metadata coverage came in below the 90% gate, **both** the extractor and the fixtures were changed: a format-based `doc_type` fallback was added (a real gap), *and* three fixtures gained approval dates while four gained programme references (making the corpus more like real council papers, but also adjusting the thing being measured). Real documents will behave differently. Treat the current coverage figures as a floor on a friendly corpus, not as a measured property of the extractor.
 
@@ -212,7 +212,7 @@ all      = ["ledgerkb[local,postgres,docling,crawl,obs,eval,pdf]"]
 [project.scripts]
 lkb = "ledgerkb.cli.main:app"
 
-[dependency-groups]                      # PEP 735 — dev only, never shipped
+[dependency-groups]                      # PEP 735, dev only, never shipped
 dev = ["pytest>=8", "pytest-asyncio", "pytest-cov", "hypothesis", "respx",
        "ruff", "mypy", "import-linter", "pytest-examples"]
 
@@ -233,7 +233,7 @@ markers = ["live: requires real provider credentials"]
 
 ---
 
-## 6. Core contracts — write these first
+## 6. Core contracts. Write these first
 
 `src/ledgerkb/core/ports.py`:
 
@@ -270,7 +270,7 @@ class Store(Protocol):
     # ... see 02-ARCHITECTURE.md §3 for the full surface
 ```
 
-`core/models.py` — Pydantic models for `Document`, `DocumentVersion`, `Chunk`, `Entity`, `Assertion`, `Evidence`, `ChangeEvent`, `Answer`, `Claim`, `RunRecord`. Field definitions are in [`02-ARCHITECTURE.md §3`](./02-ARCHITECTURE.md).
+`core/models.py`: Pydantic models for `Document`, `DocumentVersion`, `Chunk`, `Entity`, `Assertion`, `Evidence`, `ChangeEvent`, `Answer`, `Claim`, `RunRecord`. Field definitions are in [`02-ARCHITECTURE.md §3`](./02-ARCHITECTURE.md).
 
 **Two invariants to encode as validators, not conventions:**
 - An `Assertion` cannot be constructed without at least one `Evidence`.
@@ -369,11 +369,11 @@ CREATE INDEX idx_assert_active ON assertion(workspace_id, status) WHERE invalid_
 CREATE INDEX idx_assert_stale ON assertion(workspace_id, stale_after) WHERE status = 'active';
 ```
 
-Migrations are plain numbered SQL (`001_init.sql`, `002_…`) with a `schema_version` table. No Alembic — the schema is small and additive.
+Migrations are plain numbered SQL (`001_init.sql`, `002_…`) with a `schema_version` table. No Alembic, the schema is small and additive.
 
 ---
 
-## 8. Config and profiles — the tuning surface
+## 8. Config and profiles: the tuning surface
 
 **One file holds every knob that exists.** Versioned, and stamped into every export's build receipt so any output is reproducible.
 
@@ -409,10 +409,10 @@ profile = "default"
 
 Approximately **20 free · 4 gated · 3 locked · 8 fixed**. Implement the tier as an attribute of each config field, so validation enforces it rather than documentation asking nicely.
 
-**Tier 1 — free.** Hot, no rebuild:
+**Tier 1: free.** Hot, no rebuild:
 `dense_k` · `sparse_k` · `rrf_k` · `rerank_to` · `max_tokens` · `overlap` · `density_probe` · `tier1` parser · chat model per stage · temperature · concurrency · `max_cost_usd_per_run` · `max_docs_per_run` · staleness defaults · `otlp_endpoint` · `semconv_version` · log level · store path
 
-**Tier 2 — gated.** Changing these invalidates derived data. The CLI must state what will be rebuilt and refuse to leave the store inconsistent:
+**Tier 2: gated.** Changing these invalidates derived data. The CLI must state what will be rebuilt and refuse to leave the store inconsistent:
 
 | Knob | Forces |
 |---|---|
@@ -421,7 +421,7 @@ Approximately **20 free · 4 gated · 3 locked · 8 fixed**. Implement the tier 
 | Profile `entity_types` / `predicates` | Re-extraction |
 | `auto_merge` | Re-run resolution |
 
-**Tier 3 — locked after first use.** Requires an explicit destructive command (`lkb reindex --confirm`):
+**Tier 3: locked after first use.** Requires an explicit destructive command (`lkb reindex --confirm`):
 
 | Knob | Why |
 |---|---|
@@ -429,7 +429,7 @@ Approximately **20 free · 4 gated · 3 locked · 8 fixed**. Implement the tier 
 | Store backend | A migration, not a setting |
 | Tokenizer | Chunk boundaries shift, breaking existing offsets |
 
-**Tier 4 — not exposed.** These have **no config key at any level**. Do not add one, and reject PRs that do:
+**Tier 4: not exposed.** These have **no config key at any level**. Do not add one, and reject PRs that do:
 
 | Invariant | Why it must not be switchable |
 |---|---|
@@ -444,11 +444,11 @@ Approximately **20 free · 4 gated · 3 locked · 8 fixed**. Implement the tier 
 
 ### 8.2 The escape hatch
 
-Config-only would be too rigid for a library, but the extension point is **Protocol ports, not weakened invariants.** Supply your own `Store`, `Chunker`, `Reranker`, `ChatModel` or `Parser` — full power, through code you own. What is *not* available is a flag that silently disables a guarantee.
+Config-only would be too rigid for a library, but the extension point is **Protocol ports, not weakened invariants.** Supply your own `Store`, `Chunker`, `Reranker`, `ChatModel` or `Parser`. That is full power, through code you own. What is *not* available is a flag that silently disables a guarantee.
 
 Two supporting behaviours to build at L0:
 - Config validation **rejects incoherent combinations loudly at startup**, never misbehaves later.
-- The fully-resolved config is stamped into every export's build receipt, so any artifact can be audited for how it was produced — including whether a custom port was substituted.
+- The fully-resolved config is stamped into every export's build receipt, so any artifact can be audited for how it was produced, including whether a custom port was substituted.
 
 ### 8.3 Profiles
 
@@ -468,7 +468,7 @@ doc_types    = ["minutes","report","register","policy","email","note"]
 [extraction] hints = "Documents are formal meeting records with numbered agenda items."
 ```
 
-**The tuning loop** — the golden set is the only arbiter:
+**The tuning loop.** The golden set is the only arbiter:
 
 ```bash
 lkb eval run --tag baseline
@@ -489,13 +489,13 @@ lkb eval compare baseline trigram-090     # metric deltas + per-question regress
 | `redteam.yml` | PR + weekly | promptfoo injection suite; zero criticals |
 | `release.yml` | Tag | Build · test · **PyPI Trusted Publishing (OIDC)** · sigstore attestation · CycloneDX SBOM · GitHub release |
 
-**All tests default to the fake provider** — zero API calls, zero cost, zero flake. Real-provider tests are marked `@pytest.mark.live` and run only in `drift.yml` with credentials.
+**All tests default to the fake provider**, zero API calls, zero cost, zero flake. Real-provider tests are marked `@pytest.mark.live` and run only in `drift.yml` with credentials.
 
 Also enforced: Conventional Commits, DCO sign-off, protected `main`, PR review required, Renovate for dependency updates, `pip-audit` in `ci.yml`.
 
 ---
 
-## 10. Next session — finish L2
+## 10. Next session: finish L2
 
 **Half of L2 is in.** `providers/openai_compat.py`, `providers/local.py`,
 `providers/factory.py`, `index/embed.py`, `index/rrf.py`, `index/hybrid.py`,
@@ -504,7 +504,7 @@ Migrations 003 and 004 moved two invariants into the schema.
 
 **What is left is the measurement, and it is blocked on the corpus.**
 
-### The corpus problem — read this before writing a golden set
+### The corpus problem, read this before writing a golden set
 
 The fixture corpus produces **55 chunks**. The defaults are `dense_k = 50` and
 `sparse_k = 50`, so each arm is asked for roughly 91% of the entire corpus and
@@ -512,20 +512,20 @@ RRF fuses two lists that both contain nearly everything. `recall@20` asks the
 retriever to return 36% of the corpus. Every strategy scores about 1.0.
 
 **The L2 gate as written cannot go red**, which means passing it would prove
-nothing. Two of its criteria — "hybrid beats dense-only *and* BM25-only" and
-"contextual headers improve recall@20 by ≥ 5 points" — are unmeasurable at this
+nothing. Two of its criteria, "hybrid beats dense-only *and* BM25-only" and
+"contextual headers improve recall@20 by ≥ 5 points", are unmeasurable at this
 size. Fix the corpus before writing the questions, not after.
 
 1. **Grow it to ~200 documents / 3–5k chunks.** `tests/fixtures/build_corpus.py`
    is generative, so this is parameterisation rather than authoring, and the
    corpus stays reviewable source instead of a committed binary.
 2. **Change the metrics.** `recall@5` and `nDCG@10` as headline, plus MRR, plus
-   a hard-negatives subset — questions whose answer chunk shares vocabulary with
+   a hard-negatives subset: questions whose answer chunk shares vocabulary with
    at least three decoys. Those are the only questions that discriminate.
 3. **Require a bootstrap confidence interval on the hybrid delta**, not merely a
    positive number. With 40 questions a 5-point difference is two questions.
 4. **Write the questions from the documents alone, before running retrieval.**
-   Q4's caveat — that the extractor and the fixtures were adjusted together —
+   Q4's caveat, that the extractor and the fixtures were adjusted together,
    applies doubly here, where both the questions and the documents would be
    synthetic and written by the same process.
 5. **Bring Q5's second corpus forward** from v1.0 to now. Any public document
@@ -533,20 +533,20 @@ size. Fix the corpus before writing the questions, not after.
 
 ### Then
 
-6. **`index/contextualise.py`** — but default it **off** and make the A/B earn
+6. **`index/contextualise.py`**, but default it **off** and make the A/B earn
    it. `chunking.contextual_headers` is now `False` by default for exactly this
    reason. The baseline to beat is not "no context": it is the **heading arm**,
    which already carries "Planning Committee Minutes > Item 4 > Decision"
    deterministically, offline and free. If the deterministic path captures most
    of the gain on structured minutes, that is a publishable result and it
    deletes the highest-volume LLM call in the system.
-7. **`index/rerank.py`** — behind the existing `Reranker` port, defaulted off,
+7. **`index/rerank.py`**, behind the existing `Reranker` port, defaulted off,
    in its own extra. A cross-encoder is either an API call (breaks
    `offline.yml`) or a torch dependency (breaks the install gate).
 8. **Record the embedding model in the store and detect a change**, which the
    gate asks for. `search_dense` now raises a named `InvariantError` on a width
    mismatch, but nothing yet compares the stamped model to the configured one on
-   the index path — `check_transition` is still only called by `lkb doctor`.
+   the index path, `check_transition` is still only called by `lkb doctor`.
 
 ### Watch out for
 
@@ -554,14 +554,14 @@ size. Fix the corpus before writing the questions, not after.
   `chunk.body` is a generated column and the FTS index follows it by trigger.
 - **The budget guard aborts.** `max_cost_usd_per_run` has no override, by design.
 - **Keep `offline.yml` green.** The default embedder is local, but fastembed
-  downloads weights on *first use* — so a job inside a network namespace must
+  downloads weights on *first use*, so a job inside a network namespace must
   warm the model cache before it enters, or stay on the fake providers.
 
 ### Earlier gates, for reference
 
-**L0 gate** ✅ — clean install on all three OSes · `mypy --strict` green · `lkb init && lkb doctor` with zero API keys · every core model round-trips through SQLite unchanged.
+**L0 gate** ✅, clean install on all three OSes · `mypy --strict` green · `lkb init && lkb doctor` with zero API keys · every core model round-trips through SQLite unchanged.
 
-**L1 gate** ✅ — 20/20 fixtures ingest with zero unhandled exceptions · 55/55 chunks slice back byte-identical (plus a Hypothesis property over arbitrary input) · all five metadata fields ≥ 95% · 10/10 injection fixtures caught with the benign decoy untouched · 5/5 malicious archives refused · the whole path runs with no network and no API key.
+**L1 gate** ✅, 20/20 fixtures ingest with zero unhandled exceptions · 55/55 chunks slice back byte-identical (plus a Hypothesis property over arbitrary input) · all five metadata fields ≥ 95% · 10/10 injection fixtures caught with the benign decoy untouched · 5/5 malicious archives refused · the whole path runs with no network and no API key.
 
 ---
 
@@ -571,8 +571,8 @@ size. Fix the corpus before writing the questions, not after.
 - **Ports before implementations.** A new capability starts as a Protocol.
 - **Invariants are constraints, not conventions.** Assertions without evidence must be *impossible to construct*, not merely discouraged.
 - **Tier 4 invariants get no config key.** See §8.1. A PR that adds one is rejected regardless of how convenient it is.
-- **Deterministic over probabilistic.** If a check can be code instead of an LLM, make it code — that is the design principle behind quote verification, the closed schema, and RRF.
+- **Deterministic over probabilistic.** If a check can be code instead of an LLM, make it code, that is the design principle behind quote verification, the closed schema, and RRF.
 - **The golden set is the arbiter.** No knob is tuned by feel.
-- **Fail loud, degrade gracefully.** A parse failure names the document and keeps the other 55 usable — never all-or-nothing.
+- **Fail loud, degrade gracefully.** A parse failure names the document and keeps the other 55 usable, never all-or-nothing.
 - **Product contains no domain logic.** If a `P` stage needs some, it belongs in the library.
 - Conventional Commits · DCO sign-off · SemVer · `core/` gets a stability commitment at v1.0.0.

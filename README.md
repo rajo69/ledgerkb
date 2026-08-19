@@ -1,9 +1,9 @@
-# Steel City AI — Intelligence Engine
+# ledgerkb
 
 Turning scattered information into usable knowledge.
 
 An open-source Python library (`ledgerkb`) that compiles scattered documents into a queryable,
-exportable knowledge base which **maintains a position over time** — and tells you what changed
+exportable knowledge base which **maintains a position over time**, and tells you what changed
 when a new document arrives. A web product is built on top of it.
 
 **Core idea:** one append-only ledger of evidence-bearing assertions. The RAG index, knowledge
@@ -59,7 +59,7 @@ and no model at all. `--explain` prints where each arm placed every candidate
 and what the fused score was.
 
 Nothing in the test suite touches a provider, and no stage up to here needs an
-API key — embedding included, because the default embedder runs in-process. That is enforced, not hoped for: a separate CI workflow runs the whole
+API key, embedding included, because the default embedder runs in-process. That is enforced, not hoped for: a separate CI workflow runs the whole
 suite, and a full ingest, with egress blocked.
 
 **The invariant everything rests on:** for every chunk,
@@ -78,21 +78,15 @@ instead of another model's opinion.
 | [`docs/01-PRODUCT-SPEC.md`](docs/01-PRODUCT-SPEC.md) | Users, flows, output picker, states, success criteria, demo script |
 | [`docs/00-RESEARCH-LOG.md`](docs/00-RESEARCH-LOG.md) | Every technology choice with evidence, verdict, and what couldn't be verified |
 
-## Source material
-
-Two PDFs — the Steel City AI challenge brief by Alex Paul Kelly, and the original
-Technical PRD this plan revises — are kept out of the repository. Everything
-derived from them is in `docs/`.
-
 ## Deliverables it produces
 
 | Artifact | What it is |
 |---|---|
 | `Briefing.pdf` | Newcomer briefing + executive overview |
-| `Knowledge_Graph.okf` | OKF v0.2 bundle (zipped) — portable markdown, opens in any editor |
+| `Knowledge_Graph.okf` | OKF v0.2 bundle (zipped), portable markdown, opens in any editor |
 | `Entities_Relationships.json` | Machine-readable semantic network (+ GraphML / Mermaid / Cypher) |
 | `Governance_Guide.md` | Two-year maintenance and ownership plan, generated from live state |
-| Change report | What's new, still valid, outdated, contradicted — with preserved history |
+| Change report | What's new, still valid, outdated, contradicted, with preserved history |
 
 ## Licence
 

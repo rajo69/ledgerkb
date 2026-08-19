@@ -1,4 +1,4 @@
-# Architecture — The Intelligence Engine
+# Architecture: The Intelligence Engine
 
 **Version:** 1.0 · **Date:** 2026-08-07
 **Companion docs:** [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) (why these choices) · [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) (what we're building)
@@ -66,9 +66,9 @@ The PRD proposed a "parallel tri-engine" writing three semantic formats concurre
                                         └──────────────────────────────────────┘
 ```
 
-**Why this split.** The UI is token-streaming, edge-cached and iterated on constantly — Vercel. Ingestion is long-running, memory-hungry, stateful and bursty — Railway. Forcing either onto the other's platform means fighting it.
+**Why this split.** The UI is token-streaming, edge-cached and iterated on constantly: Vercel. Ingestion is long-running, memory-hungry, stateful and bursty: Railway. Forcing either onto the other's platform means fighting it.
 
-**Service sizing** (revise after measurement — research §8.1):
+**Service sizing** (revise after measurement, research §8.1):
 
 | Service | Memory | Scaling | Notes |
 |---|---|---|---|
@@ -169,7 +169,7 @@ create index on chunk (workspace_id, version_id);
 **Three deliberate details:**
 
 1. `text` is the **verbatim source span, never rewritten**. This is what deterministic quote verification (§6.4) checks against. If we ever paraphrased into `text`, citation verification would become impossible.
-2. `context_header` is separate and is concatenated only for indexing. Anthropic's Contextual Retrieval, applied to **both** the dense and the keyword index — the generated column guarantees they can never disagree.
+2. `context_header` is separate and is concatenated only for indexing. Anthropic's Contextual Retrieval, applied to **both** the dense and the keyword index. The generated column guarantees they can never disagree.
 3. `char_start`/`char_end` make every citation a **precise span**, not a whole page.
 
 ### 3.3 The assertion ledger
@@ -230,7 +230,7 @@ create index on assertion (workspace_id, stale_after) where status = 'active';
 - `modality='inferred'` **requires** `confidence < 1.0` and evidence for the premises.
 - Contradictions produce **two active assertions marked `disputed`**, never a merge.
 
-**The bitemporal pair is what makes belief revision work.** `valid_from/valid_to` is world time; `asserted_at/invalid_at` is system time. That combination answers *"as of 12 June, what did we believe was true about Q3?"* — a question a latest-state snapshot structurally cannot answer.
+**The bitemporal pair is what makes belief revision work.** `valid_from/valid_to` is world time; `asserted_at/invalid_at` is system time. That combination answers *"as of 12 June, what did we believe was true about Q3?"*, a question a latest-state snapshot structurally cannot answer.
 
 ### 3.4 Entities and resolution
 
@@ -287,7 +287,7 @@ create table knowledge_page (
 );
 ```
 
-Fully derived — droppable and rebuildable from the ledger at any time. It exists as a table so the wiki is browsable in-app without an export, and so human `verified` entries survive rebuilds.
+Fully derived, droppable and rebuildable from the ledger at any time. It exists as a table so the wiki is browsable in-app without an export, and so human `verified` entries survive rebuilds.
 
 ### 3.6 Change events
 
@@ -313,13 +313,13 @@ create table change_event (
 );
 ```
 
-The change report is `SELECT * FROM change_event WHERE run_id = ?` — rendered, not recomputed. Reports are therefore stable artifacts, identical every time they are opened.
+The change report is `SELECT * FROM change_event WHERE run_id = ?`, rendered, not recomputed. Reports are therefore stable artifacts, identical every time they are opened.
 
 ---
 
 ## 4. The pipeline
 
-Eleven stages, each an idempotent `pgmq` job keyed by `(version_id, stage)`. Any stage can be replayed without corrupting state — essential when parsing costs money and workers get OOM-killed.
+Eleven stages, each an idempotent `pgmq` job keyed by `(version_id, stage)`. Any stage can be replayed without corrupting state, essential when parsing costs money and workers get OOM-killed.
 
 ```
  1 discover    enumerate source → external ids + hashes
@@ -336,9 +336,9 @@ Eleven stages, each an idempotent `pgmq` job keyed by `(version_id, stage)`. Any
 12 materialise rebuild knowledge_page projections
 ```
 
-*(Stage 3's early exit is what makes refresh nearly free — see §5.)*
+*(Stage 3's early exit is what makes refresh nearly free, see §5.)*
 
-### 4.1 Parse — tiered
+### 4.1 Parse: tiered
 
 ```
                     ┌─ text density > 0.6 ─────► pymupdf4llm     (fast, cheap)
@@ -349,11 +349,11 @@ Eleven stages, each an idempotent `pgmq` job keyed by `(version_id, stage)`. Any
   MD/TXT/CSV/JSON ─► native readers
 ```
 
-The probe is a cheap heuristic: extractable characters per page area. It routes the large majority of council PDFs — which are born-digital — down the free path and reserves the 4GB service for documents that genuinely need it.
+The probe is a cheap heuristic: extractable characters per page area. It routes the large majority of council PDFs, which are born-digital, down the free path and reserves the 4GB service for documents that genuinely need it.
 
 Output is normalised markdown **plus a heading tree with character offsets**. The offsets are what make chunk citations page- and span-precise.
 
-### 4.2 Chunk — structure first
+### 4.2 Chunk: structure first
 
 ```python
 def chunk(doc):
@@ -364,7 +364,7 @@ def chunk(doc):
             yield from SemanticChunker(...).split(section)   # Chonkie, within-section
 ```
 
-Council minutes carry their own structure — numbered items, decision headings, resolution blocks. Splitting on those boundaries beats cosine-similarity breakpoints because a decision and its rationale are structurally adjacent even when semantically dissimilar. Chonkie's semantic chunker handles the overflow case where a single section is too long.
+Council minutes carry their own structure: numbered items, decision headings, resolution blocks. Splitting on those boundaries beats cosine-similarity breakpoints because a decision and its rationale are structurally adjacent even when semantically dissimilar. Chonkie's semantic chunker handles the overflow case where a single section is too long.
 
 `heading_path` is retained on every chunk and shown in citations, which is why a citation can read *"Planning Committee Minutes, 12 Mar 2026 › Item 4 › Decision, p.4"*.
 
@@ -407,9 +407,9 @@ class ExtractedAssertion(BaseModel):
 - `modality='inferred'` with `confidence == 1.0` → rejected as incoherent.
 - Unknown predicate → rejected. The schema is closed.
 
-This runs with **zero tool access** — the architectural control against indirect prompt injection (§8).
+This runs with **zero tool access**, the architectural control against indirect prompt injection (§8).
 
-### 4.5 Resolve — the cascade
+### 4.5 Resolve: the cascade
 
 ```
 1. exact normalised name + type match            → merge, method='exact'
@@ -422,7 +422,7 @@ This runs with **zero tool access** — the architectural control against indire
 
 Default is conservative. Unresolved pairs surface to the user rather than being auto-merged. Every decision writes an `entity_merge_log` row with its evidence.
 
-### 4.6 Reconcile — where belief revision happens
+### 4.6 Reconcile: where belief revision happens
 
 For each newly extracted assertion, against active ledger assertions on the same `(subject, predicate)`:
 
@@ -456,7 +456,7 @@ Refresh(source)
   └─ materialise → rebuild affected knowledge_page rows
 ```
 
-A refresh over 200 documents where 3 changed costs three documents of work. This is what lets "manual refresh" be a permanent design position rather than a shortcut — content hashing solves the freshness-cost problem for free at this scale, so no continuous-ingest machinery is needed.
+A refresh over 200 documents where 3 changed costs three documents of work. This is what lets "manual refresh" be a permanent design position rather than a shortcut. Content hashing solves the freshness-cost problem for free at this scale, so no continuous-ingest machinery is needed.
 
 Optional `pg_cron` schedules per source, default off. A nightly `pg_cron` job also sweeps `stale_after < today` and raises governance flags with no LLM cost at all.
 
@@ -481,13 +481,13 @@ from (select * from dense union all select * from sparse) u
 group by id order by score desc limit 30;
 ```
 
-RRF with `k=60`. Set `hnsw.iterative_scan = 'relaxed_order'` for the session — without it, workspace and date filters over an HNSW index silently return too few candidates (research §2.3).
+RRF with `k=60`. Set `hnsw.iterative_scan = 'relaxed_order'` for the session. Without it, workspace and date filters over an HNSW index silently return too few candidates (research §2.3).
 
 ### 6.2 Rerank
 Top 30 → cross-encoder (`bge-reranker-v2-m3`) → top 8. Behind the `Reranker` port, so it can be the gateway or a self-hosted TEI instance.
 
 ### 6.3 Graph augmentation
-Entities detected in the query pull their assertion neighbourhood (1 hop, 2 for `supersedes`/`depends_on`). This is how *"which risks affect more than one project"* gets answered — a question no amount of chunk retrieval reaches, because the answer exists in no single passage. Merged into the evidence set with graph provenance marked.
+Entities detected in the query pull their assertion neighbourhood (1 hop, 2 for `supersedes`/`depends_on`). This is how *"which risks affect more than one project"* gets answered, a question no amount of chunk retrieval reaches, because the answer exists in no single passage. Merged into the evidence set with graph provenance marked.
 
 ### 6.4 Grounded generation with mechanical verification
 
@@ -569,9 +569,9 @@ Phase 2 budget was approved at £2.4m.[^minutes-2026-08-05]
 [^minutes-2026-08-05]: Planning Committee Minutes, 5 Aug 2026, p.3.
 ```
 
-Mapping to OKF's own semantics: `verified` with a `human:` actor is what promotes a page from *machine-confirmed* to *human-reviewed* in OKF's trust tiers. `status: deprecated` is how a superseded decision stays present but visibly dead — matching the ledger's `invalid_at`, not overwriting it.
+Mapping to OKF's own semantics: `verified` with a `human:` actor is what promotes a page from *machine-confirmed* to *human-reviewed* in OKF's trust tiers. `status: deprecated` is how a superseded decision stays present but visibly dead, matching the ledger's `invalid_at`, not overwriting it.
 
-### 7.2 Governance guide — generated, not templated
+### 7.2 Governance guide: generated, not templated
 
 | Section | Query |
 |---|---|
@@ -587,7 +587,7 @@ Mapping to OKF's own semantics: `verified` with a `human:` actor is what promote
 
 ## 8. Security
 
-The threat here is **not** a malicious user typing a jailbreak. It is **indirect prompt injection from ingested documents** — OWASP LLM01, the most widely exploited vulnerability in production deployments, where one poisoned document compromises every user whose query retrieves it.
+The threat here is **not** a malicious user typing a jailbreak. It is **indirect prompt injection from ingested documents**, OWASP LLM01, the most widely exploited vulnerability in production deployments, where one poisoned document compromises every user whose query retrieves it.
 
 | Control | Where | What it does |
 |---|---|---|
@@ -599,7 +599,7 @@ The threat here is **not** a malicious user typing a jailbreak. It is **indirect
 | Quote verification | §6.4 | Injected instructions cannot manufacture a citation that survives |
 | `promptfoo` in CI | Build | Adversarial regression, 50+ vulnerability classes |
 
-**Explicitly rejected: keyword-based guardrails.** Standard guardrails drop to roughly 60% accuracy on benign data because trigger words like "ignore" appear innocently — and council minutes are full of *"the committee resolved to ignore the previous recommendation"*. On this corpus a blunt filter does more damage than the attack it prevents. The PRD's three-product guardrail stack (NeMo + Guardrails AI + Llama Guard) is aimed mostly at user-input safety and is the wrong shape for a document-ingestion threat model.
+**Explicitly rejected: keyword-based guardrails.** Standard guardrails drop to roughly 60% accuracy on benign data because trigger words like "ignore" appear innocently, and council minutes are full of *"the committee resolved to ignore the previous recommendation"*. On this corpus a blunt filter does more damage than the attack it prevents. The PRD's three-product guardrail stack (NeMo + Guardrails AI + Llama Guard) is aimed mostly at user-input safety and is the wrong shape for a document-ingestion threat model.
 
 Data handling: `drive.file` scope only; raw bytes in blob storage with signed URLs; secrets in Railway/Vercel env, never in `NEXT_PUBLIC_*`; per-workspace row-level isolation on every query.
 
@@ -607,7 +607,7 @@ Data handling: `drive.file` scope only; raw bytes in blob storage with signed UR
 
 ## 9. Evaluation
 
-### 9.1 Golden set — build this before the pipeline
+### 9.1 Golden set: build this before the pipeline
 ~40 questions over a fixed corpus snapshot:
 - 20 answerable single-hop
 - 8 multi-hop (require graph augmentation)
@@ -619,10 +619,10 @@ Data handling: `drive.file` scope only; raw bytes in blob storage with signed UR
 
 | Layer | Tool | Gate |
 |---|---|---|
-| Retrieval | Ragas — context precision/recall | recall@20 ≥ 0.95 |
-| Generation | Ragas — faithfulness, answer relevancy | faithfulness ≥ 0.85 |
+| Retrieval | Ragas, context precision/recall | recall@20 ≥ 0.95 |
+| Generation | Ragas, faithfulness, answer relevancy | faithfulness ≥ 0.85 |
 | **Abstention** | Custom | correct-abstention ≥ 0.90 |
-| **Citation validity** | Deterministic | **1.00 — hard gate** |
+| **Citation validity** | Deterministic | **1.00, hard gate** |
 | Entity resolution | Labelled pairs | over-merge ≤ 0.02 |
 | Change report | Human review | precision ≥ 0.90 |
 | CI gates | DeepEval (pytest) | blocks merge |
@@ -631,7 +631,7 @@ Data handling: `drive.file` scope only; raw bytes in blob storage with signed UR
 Correct-abstention is our headline number and no framework provides it off the shelf. It is also the metric most systems in this category quietly fail.
 
 ### 9.3 Tracing
-Langfuse Cloud (MIT core; self-hosting needs ClickHouse + Redis + S3 — heavier than this entire application). Emit OTel `gen_ai.*` attributes, **pinned to a semconv version**: these conventions are still `Development`, none are Stable, and they moved to a separate repo in June 2026. Treat them as a moving target, not a standard.
+Langfuse Cloud (MIT core; self-hosting needs ClickHouse + Redis + S3, heavier than this entire application). Emit OTel `gen_ai.*` attributes, **pinned to a semconv version**: these conventions are still `Development`, none are Stable, and they moved to a separate repo in June 2026. Treat them as a moving target, not a standard.
 
 ---
 
@@ -660,7 +660,7 @@ Assumption: 500 documents, ~15k chunks, one initial build plus weekly refreshes.
 | Langfuse Cloud | $0 (free tier) |
 | **Total** | **~$25–80/mo** |
 
-The dominant lever is the context-header stage. If cost becomes a problem, generate headers only for chunks above a length threshold and inherit the section header otherwise — expected to cut that line by ~60% at small recall cost. **Measure before optimising.**
+The dominant lever is the context-header stage. If cost becomes a problem, generate headers only for chunks above a length threshold and inherit the section header otherwise, expected to cut that line by ~60% at small recall cost. **Measure before optimising.**
 
 Compare: Microsoft GraphRAG is reported at $40–60 in API cost for a *single* 10,000-word document. Choosing our own extraction over that framework is roughly a 100× cost decision (research §3.3).
 
@@ -670,22 +670,22 @@ Compare: Microsoft GraphRAG is reported at $40–60 in API cost for a *single* 1
 
 Ordered so that **something demoable exists after every phase**.
 
-### Phase 0 — Skeleton *(~half a day)*
+### Phase 0: Skeleton *(~half a day)*
 Railway PG18 with `EXTENSIONS=pgvector,pgmq,pg_cron,pg_trgm,pgcrypto`. Verify with `SELECT * FROM pg_available_extensions;` (research §8.2). FastAPI + `pgmq` worker. Next.js + Better Auth. Schema migrated. Health checks green.
 
-### Phase 1 — Ingest → Ask *(~1 day)* ← **first demo**
+### Phase 1: Ingest → Ask *(~1 day)* ← **first demo**
 Upload + link connectors. Tier-0 parsing. Structure-first chunking. Context headers. Hybrid + RRF. Grounded answers with verified citations and abstention. **Golden set written before this phase, not after.**
 
-### Phase 2 — Compile *(~1 day)*
+### Phase 2: Compile *(~1 day)*
 Entity + assertion extraction. Resolution cascade. Explore view. `Entities_Relationships.json`. `Briefing.pdf` via Typst.
 
-### Phase 3 — Refresh & change report *(~1 day)* ← **the winning demo**
+### Phase 3: Refresh & change report *(~1 day)* ← **the winning demo**
 `document_version` diffing. Reconciliation. Bitemporal invalidation. Change report UI. Do not let this slip; steps 1–4 of the demo are table stakes and this is the differentiator.
 
-### Phase 4 — Knowledge layer & governance *(~1 day)*
+### Phase 4: Knowledge layer & governance *(~1 day)*
 OKF v0.2 serialiser. `knowledge_page` materialisation. `stale_after` computation. `Governance_Guide.md`. Full export picker with "all of the above".
 
-### Phase 5 — Harden *(ongoing)*
+### Phase 5: Harden *(ongoing)*
 Google Drive connector (Picker). Docling tier-1. Reranking. CRAG routing. Ragas/DeepEval/promptfoo in CI. Langfuse. Injection defences.
 
 **Drive is Phase 5, not Phase 1, on purpose.** It is the highest-friction connector (OAuth app, consent screen, Picker API key) and the *least* important for proving the idea. Upload and links demonstrate the same pipeline with a fraction of the setup.
@@ -732,7 +732,7 @@ Google Drive connector (Picker). Docling tier-1. Reranking. CRAG routing. Ragas/
 ## 14. Open questions
 
 1. **`pymupdf4llm` is AGPL-3.0** (PyMuPDF). It runs as an isolated ingest step, but if AGPL reach is unacceptable for the intended distribution, substitute `pypdfium2` (Apache/BSD) with some table-quality loss. **Needs a call before Phase 1.**
-2. **Embedding model and dimension must be fixed before the first index build** — changing either forces a full re-index. Decide BGE-M3 (1024) vs Qwen3-Embedding at Phase 1 start.
-3. **Does the OKF repo ship a validator?** If not, write a ~100-line conformance checker — the spec is small and worth owning.
+2. **Embedding model and dimension must be fixed before the first index build**. Changing either forces a full re-index. Decide BGE-M3 (1024) vs Qwen3-Embedding at Phase 1 start.
+3. **Does the OKF repo ship a validator?** If not, write a ~100-line conformance checker, the spec is small and worth owning.
 4. **Confirm the full extension list** on the deployed Railway image (7 of 11 are documented).
 5. **Is there a real corpus?** Every challenge assumes a supplied folder of Sheffield documents that is not present.
