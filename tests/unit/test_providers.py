@@ -217,6 +217,16 @@ class TestFactory:
         with pytest.raises(ConfigError, match="Embedder port"):
             build_embedder(cfg)
 
+    def test_local_is_matched_on_the_hostname_not_a_substring(self) -> None:
+        """A substring test reads https://localhost.example.com as local."""
+        from ledgerkb.providers.factory import _needs_key
+
+        assert _needs_key("http://localhost:11434/v1") is False
+        assert _needs_key("http://127.0.0.1:8000/v1") is False
+        assert _needs_key("https://localhost.example.com/v1") is True
+        assert _needs_key("https://evil-localhost.com/v1") is True
+        assert _needs_key("https://openrouter.ai/api/v1") is True
+
     def test_a_local_endpoint_needs_no_key(self) -> None:
         cfg = Config()
         cfg.chat.base_url = "http://localhost:11434/v1"

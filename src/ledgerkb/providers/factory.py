@@ -7,23 +7,25 @@ your own implementation of the Protocol and nothing downstream notices.
 
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 from ledgerkb.core.config import Config
 from ledgerkb.core.errors import ConfigError
 from ledgerkb.core.ports import ChatModel, Embedder
 from ledgerkb.providers.local import LocalEmbedder
 from ledgerkb.providers.openai_compat import OpenAICompatChat, OpenAICompatEmbedder
 
-LOCAL_BASE_URLS = (
-    "localhost",
-    "127.0.0.1",
-    "0.0.0.0",  # noqa: S104 - matched against a configured URL, never bound to
-    "host.docker.internal",
+LOCAL_HOSTS = frozenset(
+    {"localhost", "127.0.0.1", "::1", "0.0.0.0", "host.docker.internal"}  # noqa: S104
 )
-"""Endpoints that conventionally need no key — Ollama, vLLM, LM Studio, TEI."""
+"""Hosts that conventionally serve a model without a key — Ollama, vLLM,
+LM Studio, TEI. Matched on the parsed hostname, never as a substring: a
+substring test reads ``https://localhost.example.com`` as local."""
 
 
 def _needs_key(base_url: str) -> bool:
-    return not any(host in base_url for host in LOCAL_BASE_URLS)
+    host = (urlsplit(base_url).hostname or "").lower()
+    return host not in LOCAL_HOSTS
 
 
 def build_embedder(cfg: Config) -> Embedder:
