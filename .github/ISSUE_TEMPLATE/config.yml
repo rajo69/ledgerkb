@@ -3,3 +3,6 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/rajo69/ledgerkb/security/advisories/new
     about: Report privately, not as a public issue.
+  - name: Question, or an idea to talk through
+    url: https://github.com/rajo69/ledgerkb/discussions
+    about: Discussions is the right place before an issue exists.

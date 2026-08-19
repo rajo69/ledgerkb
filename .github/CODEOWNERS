@@ -1,0 +1,3 @@
+# Every path, one owner. Review is not enforced by branch protection yet, so
+# this file is a routing hint rather than a gate. See GOVERNANCE.md.
+* @rajo69
