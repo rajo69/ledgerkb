@@ -12,6 +12,7 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
 from ledgerkb import __version__
@@ -111,6 +112,22 @@ default_days = 180
 [extraction]
 hints = ""
 """
+
+
+def safe(value: object, limit: int | None = None) -> str:
+    """Neutralise Rich markup in anything a document controls.
+
+    Console output is styled with Rich markup, and every string below that came
+    out of an ingested file is attacker-controlled under this project's own
+    threat model. Left unescaped, a document containing ``[bold red]APPROVED[/]``
+    restyles our output, and a stray ``[/]`` raises MarkupError and kills the
+    command outright. Quarantined spans make the point concrete: they are
+    printed *because* they are adversarial.
+    """
+    text = str(value)
+    if limit is not None and len(text) > limit:
+        text = text[:limit]
+    return escape(text)
 
 
 def _fail(exc: Exception) -> None:
@@ -326,10 +343,10 @@ def ingest(
         for o in report.outcomes:
             colour = {"ingested": "green", "unchanged": "dim", "failed": "red"}[o.status]
             table.add_row(
-                o.external_id[:60],
+                safe(o.external_id, 60),
                 f"[{colour}]{o.status}[/]",
                 str(o.chunks) if o.chunks else "",
-                o.parser or "",
+                safe(o.parser or ""),
             )
         console.print(table)
 
@@ -346,7 +363,7 @@ def ingest(
 
         # Failures are named. Never a silent count.
         for o in report.failed:
-            err.print(f"  [red]failed[/] {o.external_id}: {o.error}")
+            err.print(f"  [red]failed[/] {safe(o.external_id)}: {safe(o.error)}")
 
         metas = [o.metadata for o in report.ingested if o.metadata]
         if metas:
@@ -377,10 +394,10 @@ def docs() -> None:
             n = len(store.chunks_for_version(version.id)) if version else 0
             table.add_row(
                 d.id[:8],
-                (d.title or "")[:40],
-                d.doc_type or "[dim]-[/]",
+                safe(d.title or "", 40),
+                safe(d.doc_type) if d.doc_type else "[dim]-[/]",
                 str(d.published_at) if d.published_at else "[dim]-[/]",
-                (d.meeting_or_project or "[dim]-[/]")[:30],
+                safe(d.meeting_or_project, 30) if d.meeting_or_project else "[dim]-[/]",
                 str(n),
             )
         console.print(table)
@@ -425,18 +442,18 @@ def chunks(
             console.print("[green]all chunks slice back byte-identical[/]")
 
         for c in rows[:40]:
-            path = " > ".join(c.heading_path) if c.heading_path else "[dim]no heading[/]"
+            path = safe(" > ".join(c.heading_path)) if c.heading_path else "[dim]no heading[/]"
             page = f" p.{c.page_from}" if c.page_from else ""
             console.print(f"\n[bold]{c.ordinal}[/] {path}{page} "
                           f"[dim]{c.char_start}:{c.char_end} ~{c.token_count} tokens[/]")
-            preview = c.text[:200].replace("\n", " ")
+            preview = safe(c.text[:200].replace("\n", " "))
             console.print(f"  {preview}{'...' if len(c.text) > 200 else ''}")
 
         quarantined = store.quarantine_for_version(version.id)
         if quarantined:
             console.print(f"\n[yellow]{len(quarantined)} quarantined span(s)[/]")
             for q in quarantined[:10]:
-                console.print(f"  [dim]{q['reason']}[/] {q['text'][:80]!r}")
+                console.print(f"  [dim]{safe(q['reason'])}[/] {safe(q['text'], 80)!r}")
     finally:
         store.close()
 
@@ -533,10 +550,10 @@ def search(
         console.print()
 
         for position, hit in enumerate(result.hits, start=1):
-            path = " > ".join(hit.heading_path) if hit.heading_path else "[dim]no heading[/]"
+            path = safe(" > ".join(hit.heading_path)) if hit.heading_path else "[dim]no heading[/]"
             page = f" p.{hit.page_from}" if hit.page_from else ""
             console.print(f"[bold]{position}.[/] {path}{page}  [dim]{hit.score:.4f}[/]")
-            console.print(f"   {hit.text[:220].replace(chr(10), ' ')}")
+            console.print(f"   {safe(hit.text[:220].replace(chr(10), ' '))}")
             if explain:
                 ranks = "  ".join(f"{name}#{r}" for name, r in hit.ranks.items()) or "-"
                 console.print(f"   [dim]{hit.chunk_id[:8]}  {ranks}[/]")
