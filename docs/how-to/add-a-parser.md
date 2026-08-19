@@ -5,7 +5,7 @@ friendliest first contribution to the repository.
 
 ## The contract
 
-```python
+```python test="skip"
 class Parser(Protocol):
     name: str
     def can_parse(self, mime: str, path: str) -> bool: ...
@@ -30,7 +30,7 @@ The technique the existing parsers use: build the text by appending to a list
 while tracking the running length, so an offset is recorded at the moment the text
 is appended rather than recovered by searching for it afterwards.
 
-```python
+```python test="skip"
 parts: list[str] = []
 headings: list[Heading] = []
 cursor = 0
@@ -53,7 +53,7 @@ different offsets on different platforms for the same document.
 RTF is in `KNOWN_UNSUPPORTED`, so it currently raises a helpful error. Here is
 what replacing that with a parser looks like.
 
-```python
+```python test="skip"
 # src/ledgerkb/ingest/parsers/rtf.py
 """Tier-0 RTF. Enough for documents that are text with a little formatting."""
 
@@ -89,7 +89,7 @@ class RtfParser:
 
 Then register it, before the text catch-all:
 
-```python
+```python test="skip"
 # src/ledgerkb/ingest/parsers/registry.py
 DEFAULT_PARSERS: tuple[Parser, ...] = (
     PdfParser(),

@@ -271,8 +271,8 @@ print(len(report.ingested), "documents,", report.total_chunks, "chunks")
 
 for hit in store.search_sparse("capital allocation", 3, workspace_id=workspace.id):
     print(" > ".join(hit.heading_path))
-#> Planning Committee Minutes > Item 3: Attercliffe Regeneration > Decision
-#> Planning Committee Minutes > Item 3: Attercliffe Regeneration
+    #> Planning Committee Minutes > Item 3: Attercliffe Regeneration > Decision
+    #> Planning Committee Minutes > Item 3: Attercliffe Regeneration
 ```
 
 That block runs as a test in CI, so it cannot rot.

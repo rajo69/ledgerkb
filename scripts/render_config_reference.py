@@ -26,13 +26,16 @@ from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from ledgerkb.core.config import Config, Profile, Tier, Tiered  # noqa: E402
-from ledgerkb.core.config import _tier_of as tier_of  # noqa: E402
+from ledgerkb.core.config import Config, Profile, Tier, Tiered
+from ledgerkb.core.config import _tier_of as tier_of
 
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = ROOT / "docs" / "reference" / "configuration.md"
 
-BEGIN = "<!-- generated: {name}. Edit src/ledgerkb/core/config.py, then run scripts/render_config_reference.py -->"
+BEGIN = (
+    "<!-- generated: {name}. Edit src/ledgerkb/core/config.py, "
+    "then run scripts/render_config_reference.py -->"
+)
 END = "<!-- end generated: {name} -->"
 
 TIER_LABEL = {
@@ -42,7 +45,7 @@ TIER_LABEL = {
 }
 
 
-def type_name(annotation: Any) -> str:
+def type_name(annotation: Any) -> str:  # noqa: ANN401 - it is an arbitrary annotation
     origin = get_origin(annotation)
     if origin is not None:
         args = ", ".join(type_name(a) for a in get_args(annotation))

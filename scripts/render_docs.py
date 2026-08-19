@@ -203,8 +203,21 @@ def render_roadmap_detail(data: dict[str, Any], stages: list[Stage]) -> str:
     return "\n".join(out).rstrip()
 
 
+def render_status_brief(data: dict[str, Any], stages: list[Stage]) -> str:
+    """The landing page's two lines. Generated for the same reason as the rest:
+    a status stated in prose is a status that drifts."""
+    current = next(s for s in stages if s.id == data["current"])
+    done = [s.id for s in stages if s.status == "done"]
+    return wrap(
+        f"{join(done)} are complete. {current.id}, {current.title.lower()}, is under way "
+        f"with {current.met} of its {len(current.gate)} gate criteria met. Everything "
+        f"after it is designed and gated but not written."
+    )
+
+
 REGIONS = {
     "status": ("README.md", render_status),
+    "status-brief": ("docs/index.md", render_status_brief),
     "roadmap-table": ("ROADMAP.md", render_roadmap_table),
     "roadmap-detail": ("ROADMAP.md", render_roadmap_detail),
 }

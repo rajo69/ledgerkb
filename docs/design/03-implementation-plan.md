@@ -400,7 +400,7 @@ One adapter speaking `/chat/completions` and `/embeddings`. Configure `base_url`
 `[anthropic]` (Messages API + prompt caching), `[bedrock]`, `[vertex]`.
 
 ### Adapter 3 (`[litellm]`)
-Unlocks 100+ providers including non-OpenAI-compatible ones, plus routing, fallbacks and load balancing. One extra, one config line.
+Reaches 100+ providers including non-OpenAI-compatible ones, plus routing, fallbacks and load balancing. One extra, one config line.
 
 ### Capability probing
 Not every provider does structured output the same way. On first use per `(base_url, model)` the library probes and caches a capability record, then degrades through Instructor's modes:

@@ -46,14 +46,15 @@ built to. They are records rather than current reference, and each says so.
 
 ## What is built
 
-L0 and L1 are complete. L2 is half complete: the retrieval machinery is merged and
-the measurement is not done. Everything from grounded answering onward is designed
-and gated but not written.
+<!-- generated: status-brief. Edit docs/stages.toml, then run scripts/render_docs.py -->
+L0 and L1 are complete. L2, index and retrieve, is under way with 2 of its 7 gate criteria
+met. Everything after it is designed and gated but not written.
+<!-- end generated: status-brief -->
 
 The list of what works, and the gate criteria for every stage, is in
 [the roadmap](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md), generated
-from a single machine-readable file so it cannot drift from what is claimed
-elsewhere.
+from the same machine-readable file as the paragraph above, so neither can drift
+from what is claimed elsewhere.
 
 The documentation names the stage for anything that is not built. If you find a
 page claiming a capability that does not exist, that is the most useful bug report

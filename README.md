@@ -173,9 +173,9 @@ sparse = [Hit(chunk_id=c, score=s, text="", method="sparse")
 
 for hit in fuse({"dense": dense, "sparse": sparse}, k=60)[:3]:
     print(hit.chunk_id, hit.ranks)
-#> footbridge {'dense': 2, 'sparse': 1}
-#> budget {'dense': 1, 'sparse': 3}
-#> scc-2026-114 {'sparse': 2}
+    #> footbridge {'dense': 2, 'sparse': 1}
+    #> budget {'dense': 1, 'sparse': 3}
+    #> scc-2026-114 {'sparse': 2}
 ```
 
 `scc-2026-114` is the case for running both arms: a reference number the

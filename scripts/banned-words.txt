@@ -1,0 +1,63 @@
+# Words and phrases that must not appear in this repository's Markdown.
+#
+# They are the current signature of machine-written prose, and readers now
+# discount text containing them. One entry per line, matched case-insensitively
+# on word boundaries. `#` starts a comment.
+#
+# Text inside backticks, inside double quotes, and inside fenced code blocks is
+# exempt, because a rule about a word has to be able to quote the word.
+#
+# Entries are phrases where the single word has an honest technical use:
+# "evaluation harness" is fine, "harness the power of" is not.
+#
+# Add to this file rather than to the script.
+
+# Filler adjectives and verbs
+seamless
+seamlessly
+effortless
+effortlessly
+robust
+delve
+delving
+elevate
+elevates
+unlock
+unlocks
+unlocking
+harness the
+harnessing the
+empower
+empowers
+empowering
+game-changing
+game changer
+cutting-edge
+state-of-the-art
+revolutionise
+revolutionize
+revolutionary
+paradigm shift
+supercharge
+turbocharge
+
+# Openers
+let's dive in
+lets dive in
+buckle up
+in today's fast-paced
+in the world of
+without further ado
+
+# Hedged padding
+it is worth noting that
+it's worth noting that
+it is important to note that
+it is important to understand that
+needless to say
+at the end of the day
+
+# The construction
+is not just
+are not just
+more than just

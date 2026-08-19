@@ -1,8 +1,9 @@
 # Contributing
 
-Thanks for looking. The project is at L2 of fifteen gated stages. What is built,
-what is not, and what L2 still needs are in [ROADMAP.md](ROADMAP.md). Where the
-code lives and what must not break are in [ARCHITECTURE.md](ARCHITECTURE.md).
+Thanks for looking. The project is early, and it moves through fifteen gated
+stages. What is built, what is not, and what the open stage still needs are in
+[ROADMAP.md](ROADMAP.md). Where the code lives and what must not break are in
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## A first change, end to end
 
