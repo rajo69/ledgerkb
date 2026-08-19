@@ -39,6 +39,18 @@ jobs:
         # everything testable without a network.
         run: uv run lint-imports
 
+  docs:
+    name: generated docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: generated regions are up to date
+        # Stage status lives in docs/stages.toml and nowhere else. Editing it
+        # without regenerating is the drift this job exists to stop. Standard
+        # library only, so the runner's own Python is enough.
+        run: python scripts/render_docs.py --check
+
   test:
     name: py${{ matrix.python }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}

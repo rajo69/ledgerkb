@@ -13,13 +13,25 @@ graph, OKF wiki, briefing PDF and change report are all *projections* of that on
 
 ## Status
 
-**L1 complete. L2 half done — documents go in, hybrid retrieval comes out.**
-Core models, ports, config, the SQLite store, tier-0 parsers for ten formats,
-the sanitiser, the structure-first chunker, the OpenAI-compatible and local
-provider adapters, embedding, RRF and three-arm hybrid search are in. What is
-left in L2 is the measurement: a golden set, and the numbers that prove hybrid
-beats either half. Stage gates are in
-[`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md).
+<!-- generated: status. Edit docs/stages.toml, then run scripts/render_docs.py -->
+**Current stage: L2, index and retrieve.** 2 of its 7 gate criteria are met.
+
+- **Library** (L0 to L8): L0 and L1 done; L2 in progress; L3 to L8 not started.
+- **Product** (P1 to P6): not started.
+
+Documents go in and ranked passages come out. Ingest reads files, directories and ZIP
+archives; tier-0 parsers cover ten formats; the sanitiser strips invisible text and
+quarantines instruction-shaped spans; the chunker slices on document structure and every
+chunk slices back to byte-identical source text. Search runs three arms (dense, BM25 and
+heading path), fuses them by rank, and explains where each arm placed every candidate. All
+of it runs with no API key and no network.
+
+Grounded answering, the assertion ledger, the knowledge graph, the change report and the
+exports are designed and gated but not built.
+
+Which L2 criteria are outstanding, and what every other stage commits to, is in
+[ROADMAP.md](ROADMAP.md).
+<!-- end generated: status -->
 
 ```bash
 uv venv
