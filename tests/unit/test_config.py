@@ -48,7 +48,7 @@ class TestIncoherentCombinations:
 
     def test_rerank_cannot_exceed_the_candidate_pool(self, project: Path) -> None:
         p = _write(project, "[retrieval]\ndense_k = 5\nsparse_k = 5\nrerank_to = 50\n")
-        with pytest.raises(ConfigError, match="candidate pool"):
+        with pytest.raises(ConfigError, match="cannot invent candidates"):
             load_config(p)
 
     def test_trigram_must_sit_inside_the_grey_band(self, project: Path) -> None:

@@ -361,6 +361,14 @@ class SqliteStore:
             sql += " AND v.superseded_by IS NULL"
         return sql, params
 
+    def clear_embeddings(self, workspace_id: str) -> int:
+        """Drop every vector in a workspace, for a deliberate re-index."""
+        cur = self.db.execute(
+            "UPDATE chunk SET embedding = NULL WHERE workspace_id = ?", (workspace_id,)
+        )
+        self.db.commit()
+        return int(cur.rowcount)
+
     def search_dense(self, vec: list[float], k: int, **f: Any) -> list[Hit]:
         where, params = self._scope(f)
         rows = self.db.execute(
@@ -420,6 +428,37 @@ class SqliteStore:
             Hit(
                 chunk_id=r["id"],
                 # bm25() returns a negative score, better = more negative
+                score=-float(r["rank"]),
+                text=r["text"],
+                method="sparse",
+                document_id=r["document_id"],
+                version_id=r["version_id"],
+                heading_path=loads(r["heading_path"], []),
+                page_from=r["page_from"],
+            )
+            for r in rows
+        ]
+
+    def search_headings(self, query: str, k: int, **f: Any) -> list[Hit]:
+        """BM25 over the heading path alone.
+
+        Deterministic, free, and it answers a shape of question the body index
+        is bad at: "what did Planning Committee decide about the footbridge" is
+        a heading query wearing a sentence's clothes.
+        """
+        where, params = self._scope(f)
+        sql = (
+            "SELECT c.id, c.version_id, v.document_id, c.text, c.heading_path, c.page_from, "
+            "       bm25(chunk_headings) AS rank "
+            "FROM chunk_headings "
+            "JOIN chunk c ON c.rowid = chunk_headings.rowid "
+            "JOIN document_version v ON v.id = c.version_id "
+            "WHERE chunk_headings MATCH ?" + where + " ORDER BY rank, c.id LIMIT ?"
+        )
+        rows = self.db.execute(sql, [fts_query(query), *params, k]).fetchall()
+        return [
+            Hit(
+                chunk_id=r["id"],
                 score=-float(r["rank"]),
                 text=r["text"],
                 method="sparse",

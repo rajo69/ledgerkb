@@ -304,6 +304,12 @@ class Hit(Base):
     score: float
     text: str
     method: Literal["dense", "sparse", "rrf", "rerank", "graph"]
+    ranks: dict[str, int] = Field(default_factory=dict)
+    """Where each retriever placed this candidate, by retriever name.
+
+    Carried through fusion so an explanation can show why something ranked
+    where it did without re-running either half.
+    """
     document_id: Id | None = None
     version_id: Id | None = None
     heading_path: list[str] = Field(default_factory=list)

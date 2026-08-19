@@ -68,7 +68,7 @@ jobs:
 
       - name: coverage floor
         # A ratchet, not a target. Raise it as coverage grows; never lower it.
-        run: uv run coverage report --fail-under=80
+        run: uv run coverage report --fail-under=85
 
   audit:
     name: dependency audit

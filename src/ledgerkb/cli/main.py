@@ -26,8 +26,12 @@ from ledgerkb.core.config import (
 )
 from ledgerkb.core.errors import ConfigError, LedgerKBError
 from ledgerkb.core.models import Source, Workspace
+from ledgerkb.index.embed import embed_workspace
+from ledgerkb.index.hybrid import explain as explain_hits
+from ledgerkb.index.hybrid import search as hybrid_search
 from ledgerkb.ingest.metadata import coverage_report
 from ledgerkb.ingest.pipeline import IngestPipeline
+from ledgerkb.providers.factory import build_embedder
 from ledgerkb.storage.sqlite.store import SqliteStore
 
 app = typer.Typer(
@@ -439,3 +443,103 @@ def chunks(
 
 if __name__ == "__main__":  # pragma: no cover
     app()
+
+
+# --- L2 commands -------------------------------------------------------------
+
+
+def _embedder(cfg: Config, *, required: bool):  # noqa: ANN202 - returns an Embedder port
+    """Build the embedder, or explain in one line why search is sparse-only."""
+    try:
+        return build_embedder(cfg)
+    except LedgerKBError as exc:
+        if required:
+            _fail(exc)
+        err.print(f"[yellow]dense retrieval unavailable[/] {exc}")
+        return None
+
+
+@app.command()
+def index(
+    rebuild: Annotated[
+        bool, typer.Option("--rebuild", help="Re-embed every chunk, not just new ones.")
+    ] = False,
+) -> None:
+    """Embed the chunks. Local by default, so no API key is needed."""
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+        if rebuild:
+            store.clear_embeddings(ws.id)
+
+        embedder = _embedder(cfg, required=True)
+        pending = len(store.chunks_missing_embeddings(ws.id))
+        if not pending:
+            console.print("[dim]every current chunk already has a vector[/]")
+            return
+
+        console.print(
+            f"embedding [bold]{pending}[/] chunks with [bold]{cfg.embeddings.model}[/] "
+            f"[dim]({cfg.embeddings.dimensions} dims, {cfg.embeddings.provider})[/]"
+        )
+        with console.status("embedding..."):
+            report = embed_workspace(store, cfg, embedder, ws.id)
+
+        console.print(
+            f"[green]{report.embedded} embedded[/] in {report.batches} batches"
+        )
+        # Superseded chunks are deliberately not embedded: retrieval hides them,
+        # so vectorising them would be paying for something never returned.
+        console.print("[dim]superseded versions are kept, but not indexed[/]")
+    finally:
+        store.close()
+
+
+@app.command()
+def search(
+    query: Annotated[str, typer.Argument(help="What to look for.")],
+    k: Annotated[int, typer.Option("--k", help="How many results.")] = 8,
+    explain: Annotated[
+        bool, typer.Option("--explain", help="Show each arm's rank and the fused score.")
+    ] = False,
+    arms: Annotated[
+        str, typer.Option("--arms", help="Comma-separated: dense,sparse,headings.")
+    ] = "dense,sparse,headings",
+    json_out: Annotated[bool, typer.Option("--json", help="Machine-readable output.")] = False,
+) -> None:
+    """Hybrid retrieval. Retrieval only — grounded answering with verified quotes is L3."""
+    import json as _json
+
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+        wanted = tuple(a.strip() for a in arms.split(",") if a.strip())
+        embedder = _embedder(cfg, required=False) if "dense" in wanted else None
+
+        result = hybrid_search(
+            store, cfg, query, embedder=embedder, workspace_id=ws.id, k=k, arms=wanted
+        )
+
+        if json_out:
+            console.print_json(_json.dumps(explain_hits(result)))
+            return
+
+        if not result.hits:
+            console.print("[yellow]nothing matched[/] - the corpus may not be indexed yet")
+            return
+
+        sizes = ", ".join(f"{name} {len(hits)}" for name, hits in sorted(result.arms.items()))
+        console.print(f"[dim]{sizes} -> {len(result.hits)} shown[/]")
+        console.print()
+
+        for position, hit in enumerate(result.hits, start=1):
+            path = " > ".join(hit.heading_path) if hit.heading_path else "[dim]no heading[/]"
+            page = f" p.{hit.page_from}" if hit.page_from else ""
+            console.print(f"[bold]{position}.[/] {path}{page}  [dim]{hit.score:.4f}[/]")
+            console.print(f"   {hit.text[:220].replace(chr(10), ' ')}")
+            if explain:
+                ranks = "  ".join(f"{name}#{r}" for name, r in hit.ranks.items()) or "-"
+                console.print(f"   [dim]{hit.chunk_id[:8]}  {ranks}[/]")
+            console.print()
+    finally:
+        store.close()

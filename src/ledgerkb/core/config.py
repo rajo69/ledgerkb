@@ -147,15 +147,23 @@ class RetrievalConfig(Section):
     dense_k: Annotated[int, FREE] = Field(default=50, ge=1, le=1000)
     sparse_k: Annotated[int, FREE] = Field(default=50, ge=1, le=1000)
     rrf_k: Annotated[int, FREE] = Field(default=60, ge=1)
+    fuse_to: Annotated[int, FREE] = Field(default=30, ge=1, le=2000)
+    """How many fused candidates survive to the reranker. The real pool."""
     rerank_to: Annotated[int, FREE] = Field(default=8, ge=1)
 
     @model_validator(mode="after")
     def _rerank_has_something_to_rank(self) -> RetrievalConfig:
-        pool = self.dense_k + self.sparse_k
-        if self.rerank_to > pool:
+        # Against fuse_to, not dense_k + sparse_k: fusion is what the reranker
+        # actually sees, and the two arms overlap heavily by design.
+        if self.rerank_to > self.fuse_to:
             raise ValueError(
-                f"retrieval.rerank_to ({self.rerank_to}) exceeds the candidate pool "
-                f"dense_k + sparse_k ({pool}) — reranking cannot invent candidates"
+                f"retrieval.rerank_to ({self.rerank_to}) exceeds retrieval.fuse_to "
+                f"({self.fuse_to}) — reranking cannot invent candidates"
+            )
+        if self.fuse_to > self.dense_k + self.sparse_k:
+            raise ValueError(
+                f"retrieval.fuse_to ({self.fuse_to}) exceeds the candidate pool "
+                f"dense_k + sparse_k ({self.dense_k + self.sparse_k})"
             )
         return self
 
