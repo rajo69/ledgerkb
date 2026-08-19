@@ -38,3 +38,6 @@ exports/
 .idea/
 .DS_Store
 Thumbs.db
+
+# mkdocs build output
+site/

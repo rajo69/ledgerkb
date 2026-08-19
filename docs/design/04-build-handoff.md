@@ -4,7 +4,7 @@
 > hand the build to a fresh session. It is the best single account of why the code
 > is shaped the way it is, and section 10 is still the live description of what
 > finishing L2 requires. Stage status in section 0 is historical: the current
-> status is in [ROADMAP.md](../../ROADMAP.md).
+> status is in [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md).
 
 **Version:** 1.2 · **Date:** 2026-08-07
 **Purpose:** Everything a fresh session needs to continue development without re-deriving prior decisions.
@@ -505,7 +505,7 @@ Enforced today: `pip-audit` in `ci.yml`, and Renovate for dependency updates.
 Planned, and not true yet: branch protection on `main`, required pull request
 review, a DCO sign-off check, and a Conventional Commits check. Sign-off and
 Conventional Commits are asked for in
-[CONTRIBUTING.md](../../CONTRIBUTING.md) and followed by hand; nothing rejects a
+[CONTRIBUTING.md](https://github.com/rajo69/ledgerkb/blob/main/CONTRIBUTING.md) and followed by hand; nothing rejects a
 commit that omits them. Enabling the first two is item 5 of phase 5 in the
 documentation plan.
 

@@ -3,7 +3,7 @@
 > **Design record, written 2026-08-07.** The original stage plan and its exit
 > gates. Stage status is no longer tracked here: it lives in
 > [`docs/stages.toml`](../stages.toml) and is rendered into
-> [ROADMAP.md](../../ROADMAP.md). Where a gate has been revised since, the roadmap
+> [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md). Where a gate has been revised since, the roadmap
 > is the current text and this file is the original.
 
 **Version:** 1.0 · **Date:** 2026-08-07

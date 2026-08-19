@@ -4,7 +4,7 @@
 > evidence and the verdict at the time. It is a record of reasoning, not current
 > reference: some findings have since been overtaken, and where that happened the
 > section says so. For what the code does today, start at
-> [ARCHITECTURE.md](../../ARCHITECTURE.md).
+> [ARCHITECTURE.md](https://github.com/rajo69/ledgerkb/blob/main/ARCHITECTURE.md).
 
 **Date:** 2026-08-07
 **Purpose:** Verify every load-bearing technology choice before writing a line of code. Bias: maximum open source, minimum operational surface, deployable on Railway + Vercel today.

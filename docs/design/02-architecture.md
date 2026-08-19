@@ -4,7 +4,7 @@
 > deployed product that does not exist yet. It is a record, not current reference,
 > and three of its sections are superseded (marked in place: section 11, section
 > 12 item 2, and section 14). For the architecture of the code that exists today,
-> read [ARCHITECTURE.md](../../ARCHITECTURE.md).
+> read [ARCHITECTURE.md](https://github.com/rajo69/ledgerkb/blob/main/ARCHITECTURE.md).
 
 **Version:** 1.0 · **Date:** 2026-08-07
 **Companion docs:** [`00-research-log.md`](./00-research-log.md) (why these choices) · [`01-product-spec.md`](./01-product-spec.md) (what we're building)
@@ -678,7 +678,7 @@ Compare: Microsoft GraphRAG is reported at $40–60 in API cost for a *single* 1
 > FastAPI and Next.js from phase 0. The project builds the library first and
 > ships it to PyPI at v1.0.0 before any product stage begins, on SQLite by
 > default. The current plan is fifteen gated stages in
-> [ROADMAP.md](../../ROADMAP.md), generated from
+> [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md), generated from
 > [`docs/stages.toml`](../stages.toml). Kept for the reasoning inside each phase,
 > which mostly carried over.
 
