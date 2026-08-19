@@ -98,35 +98,36 @@ These are the claims worth leading with, because they are true today and they ar
 
 ---
 
-## 3. Decisions needed before phase 2
+## 3. Decisions, resolved
 
-Ask the project owner. Do not guess.
+Answered by the project owner on 2026-08-19. Do not reopen these; build to them.
 
-**D1. The project name.** The README currently opens with a heading naming the challenge event
-that inspired the work. The package is `ledgerkb`, the CLI is `lkb`, the repository is
-`rajo69/ledgerkb`. Recommendation: use `ledgerkb` everywhere, one name, no alternates. The
-alternative worth raising is that the strongest differentiator is the change report rather than
-the ledger, so a name pointing at that could position better. Renaming is cheap now and
-expensive after the PyPI name is claimed at L8.
+**D1. Name: `ledgerkb`, everywhere.** One name across the README, `pyproject.toml`, the GitHub
+repository description, the documentation site and PyPI. No display name separate from the
+package name. The README H1 becomes `ledgerkb` and stops naming the challenge event.
 
-**D2. The one-line description.** Everything else hangs off this. Two candidates, both drawn
-from existing project documents:
+**D2. Description: use both, on different surfaces.** They do different jobs.
 
-- "Turn scattered documents into a knowledge base that maintains a position over time."
-- "Most tools answer questions about your documents. This one keeps a position on them, tells
-  you when that position changes, and shows its working."
+Short form, for `pyproject.toml`, the PyPI summary and the GitHub repository description. This
+is already the value in `pyproject.toml`, so nothing needs to change there:
 
-The first is a description. The second is a pitch. Pick one and use it verbatim in the README,
-`pyproject.toml`, the GitHub repository description and the docs site.
+> Turn scattered documents into a knowledge base that maintains a position over time.
 
-**D3. Publish a documentation site?** MkDocs with the Material theme, deployed to GitHub Pages,
-costs one workflow file and one config file. Recommendation: yes, because the reference
-material (every configuration key, every CLI command, the store schema) is too large for a
-README and too useful to bury in a design document. If the answer is no, phase 3 collapses into
-plain files under `docs/` and everything else in this plan is unaffected.
+Long form, as the opening line of the README, directly under the H1:
 
-**D4. Author and maintainer identity.** `pyproject.toml` currently lists the challenge event as
-the author. It needs a real name or handle, and `CITATION.cff` and `CODEOWNERS` need the same.
+> Most tools answer questions about your documents. This one keeps a position on them, tells you
+> when that position changes, and shows its working.
+
+The long form works because it names the category before naming the difference, which is what
+gives a reader something to compare against in the first five seconds. If it reads as too long
+in place, the clause to cut is "and shows its working", because the citation guarantee is
+covered immediately below in the differentiators. Cut nothing else.
+
+**D3. Documentation site: yes.** MkDocs with the Material theme, deployed to GitHub Pages by a
+workflow. Build it in this pass, as phase 3.
+
+**D4. Author: Rajarshi Nandi.** Full name in `pyproject.toml` `authors` and in `CITATION.cff`.
+GitHub handle `@rajo69` in `CODEOWNERS`. Remove the challenge event from the `authors` field.
 
 ---
 
@@ -656,7 +657,7 @@ That last one is the only check that matters if the others pass and it fails.
 
 ## 14. Suggested order of work
 
-1. Ask for D1 to D4.
+1. Read section 3. The decisions are made; build to them.
 2. Phase 1: `stages.toml`, the renderer, the CI check. Commit.
 3. Strip the attribution and the em dashes across all existing files, mechanically. Commit.
 4. `ARCHITECTURE.md`. Commit.
