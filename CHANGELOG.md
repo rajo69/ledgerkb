@@ -29,8 +29,9 @@ Documents to chunks with correct metadata and offsets, entirely offline.
 - `ingest/pipeline.py`: dedupe by content hash before parsing; a failure names
   its document and the run continues.
 - `lkb ingest`, `lkb docs`, `lkb chunks --verify`.
-- A generated 20-document fixture corpus, 10 injection fixtures and 5 malicious
-  archives, built from reviewable source rather than committed as binaries.
+- A generated 20-document fixture corpus, 10 injection fixtures (nine attacks
+  and one benign decoy) and 5 malicious archives, built from reviewable source
+  rather than committed as binaries.
 - Migration `002_version_text`: the canonical text is stored on the version, so
   the offset invariant is checkable against the store and re-chunking does not
   require re-parsing.

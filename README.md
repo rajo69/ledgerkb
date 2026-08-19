@@ -72,11 +72,11 @@ instead of another model's opinion.
 
 | Doc | What it covers |
 |---|---|
-| [`docs/04-BUILD-HANDOFF.md`](docs/04-BUILD-HANDOFF.md) | **Start here.** Locked decisions, open questions, L0/L1 scaffolding, CI |
-| [`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md) | Gated stages L0–L8 (library) and P1–P6 (product), with exit criteria |
-| [`docs/02-ARCHITECTURE.md`](docs/02-ARCHITECTURE.md) | Data model, pipeline, retrieval, exports, costs, risks, decision record |
-| [`docs/01-PRODUCT-SPEC.md`](docs/01-PRODUCT-SPEC.md) | Users, flows, output picker, states, success criteria, demo script |
-| [`docs/00-RESEARCH-LOG.md`](docs/00-RESEARCH-LOG.md) | Every technology choice with evidence, verdict, and what couldn't be verified |
+| [`docs/design/04-build-handoff.md`](docs/design/04-build-handoff.md) | **Start here.** Locked decisions, open questions, L0/L1 scaffolding, CI |
+| [`docs/design/03-implementation-plan.md`](docs/design/03-implementation-plan.md) | Gated stages L0–L8 (library) and P1–P6 (product), with exit criteria |
+| [`docs/design/02-architecture.md`](docs/design/02-architecture.md) | Data model, pipeline, retrieval, exports, costs, risks, decision record |
+| [`docs/design/01-product-spec.md`](docs/design/01-product-spec.md) | Users, flows, output picker, states, success criteria, demo script |
+| [`docs/design/00-research-log.md`](docs/design/00-research-log.md) | Every technology choice with evidence, verdict, and what couldn't be verified |
 
 ## Deliverables it produces
 

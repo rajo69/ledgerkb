@@ -1,5 +1,9 @@
 # Documentation Plan
 
+> **Design record, written 2026-08-19.** The plan this documentation set was
+> built from, including the research behind it. Kept as a record of why the
+> documentation is shaped the way it is.
+
 **Version:** 1.0 · **Date:** 2026-08-19
 **Purpose:** A complete, executable plan for rewriting this project's documentation so that a
 stranger can understand it, use it, and contribute to it. Written to be run in a fresh session
@@ -42,7 +46,7 @@ gate is green.
 **Current position: L0 and L1 complete, L2 half complete.** The retrieval machinery is built
 and merged. What remains in L2 is the measurement: a golden set, and numbers that show hybrid
 retrieval beating either half alone. That measurement is blocked on the size of the fixture
-corpus, which is documented in `docs/04-BUILD-HANDOFF.md` section 10.
+corpus, which is documented in `docs/design/04-build-handoff.md` section 10.
 
 ### 2.1 What actually works today
 
@@ -256,13 +260,13 @@ new file.
 
 These come from an audit run on 2026-08-15. They are documentation defects that exist right now.
 
-1. **`docs/02-ARCHITECTURE.md` section 11 is a superseded build plan.** It instructs a reader to
+1. **`docs/design/02-architecture.md` section 11 is a superseded build plan.** It instructs a reader to
    start with Postgres, Railway, FastAPI and Next.js, which contradicts the locked decision that
    SQLite is the default store and the library ships before any product. Section 12 item 2 says
    "Postgres for everything" for the same reason. Section 14 lists open questions that are
    resolved elsewhere. Mark all three as superseded, in place, with a pointer to what replaced
    them.
-2. **Governance claims that are not true.** `docs/04-BUILD-HANDOFF.md` section 9 states that the
+2. **Governance claims that are not true.** `docs/design/04-build-handoff.md` section 9 states that the
    default branch is protected, that pull request review is required, and that Renovate,
    Conventional Commits and DCO sign-off are enforced. Renovate now exists. The branch is not
    protected, review is not required, and there is no DCO check. Either enable them or move them
@@ -308,7 +312,7 @@ gate = [
 ]
 ```
 
-Fill every stage from `docs/03-IMPLEMENTATION-PLAN.md`, which already contains the goals, the
+Fill every stage from `docs/design/03-implementation-plan.md`, which already contains the goals, the
 gate criteria, the effort estimates and the risk ratings. Mark L2's gate items honestly: the
 retrieval machinery items are met, the measurement items are not.
 
@@ -417,7 +421,7 @@ Sections:
 
 1. **Bird's eye view.** The problem, and the single organising idea: one append-only ledger of
    evidence-bearing assertions, everything else a projection of it. Reuse the diagram from
-   `docs/02-ARCHITECTURE.md` section 1, which is good.
+   `docs/design/02-architecture.md` section 1, which is good.
 2. **Code map.** Every top-level module under `src/ledgerkb/`, one short paragraph each: what
    lives there, what it is responsible for, what it must not do. Name files and types, but do
    not hyperlink them. Symbol search needs no maintenance and teaches the reader the codebase.

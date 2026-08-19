@@ -1,7 +1,12 @@
 # Product Spec: The Intelligence Engine
 
+> **Design record, written 2026-08-07.** The product this library is eventually
+> for: users, flows, states and the demo it should be able to run. None of it is
+> built. Product work begins at P1, after the library reaches v1.0.0. It is a
+> record of intent, not current reference. See [ROADMAP.md](../../ROADMAP.md).
+
 **Version:** 1.0 · **Date:** 2026-08-07
-**Companion docs:** [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) (evidence) · [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md) (build)
+**Companion docs:** [`00-research-log.md`](./00-research-log.md) (evidence) · [`02-architecture.md`](./02-architecture.md) (build)
 
 ---
 

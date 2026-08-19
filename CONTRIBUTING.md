@@ -1,9 +1,9 @@
 # Contributing
 
 Thanks for looking. The project is early. L1 of the plan in
-[`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md). Current
+[`docs/design/03-implementation-plan.md`](docs/design/03-implementation-plan.md). Current
 state, and where the next stage starts, are in
-[`docs/04-BUILD-HANDOFF.md`](docs/04-BUILD-HANDOFF.md).
+[`docs/design/04-build-handoff.md`](docs/design/04-build-handoff.md).
 
 ## Getting set up
 
@@ -45,7 +45,7 @@ These are not style preferences. They are the reason the system's claims hold.
   evidence, the closed predicate schema, path-traversal guards and budget aborts
   have no setting at any level, however convenient one would be. If a setting
   could make the system lie, it is not a setting. See
-  [`docs/04-BUILD-HANDOFF.md` §8.1](docs/04-BUILD-HANDOFF.md).
+  [`docs/design/04-build-handoff.md` §8.1](docs/design/04-build-handoff.md).
 - **Importing anything into `core/` beyond the stdlib and pydantic.** CI enforces
   it. That purity is what makes everything testable without a network.
 - **Deleting from the ledger.** `invalid_at` is the only mutation, and the
@@ -67,7 +67,7 @@ implementation exists.
 ## Dependencies
 
 Every dependency needs a licence check before it lands; the reasoning behind the
-current set is recorded in [`docs/00-RESEARCH-LOG.md`](docs/00-RESEARCH-LOG.md).
+current set is recorded in [`docs/design/00-research-log.md`](docs/design/00-research-log.md).
 Copyleft licences are not automatically out, but they must be an opt-in extra
 rather than a default, which is why `pypdfium2` (Apache/BSD) is the default PDF
 parser and AGPL-licensed PyMuPDF is an extra.

@@ -1,7 +1,13 @@
 # Implementation Plan: Library First, Product Second
 
+> **Design record, written 2026-08-07.** The original stage plan and its exit
+> gates. Stage status is no longer tracked here: it lives in
+> [`docs/stages.toml`](../stages.toml) and is rendered into
+> [ROADMAP.md](../../ROADMAP.md). Where a gate has been revised since, the roadmap
+> is the current text and this file is the original.
+
 **Version:** 1.0 · **Date:** 2026-08-07
-**Companion docs:** [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) · [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) · [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md)
+**Companion docs:** [`00-research-log.md`](./00-research-log.md) · [`01-product-spec.md`](./01-product-spec.md) · [`02-architecture.md`](./02-architecture.md)
 
 ---
 

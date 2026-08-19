@@ -1,7 +1,13 @@
 # Architecture: The Intelligence Engine
 
+> **Design record, written 2026-08-07.** The full system design, including the
+> deployed product that does not exist yet. It is a record, not current reference,
+> and three of its sections are superseded (marked in place: section 11, section
+> 12 item 2, and section 14). For the architecture of the code that exists today,
+> read [ARCHITECTURE.md](../../ARCHITECTURE.md).
+
 **Version:** 1.0 · **Date:** 2026-08-07
-**Companion docs:** [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) (why these choices) · [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) (what we're building)
+**Companion docs:** [`00-research-log.md`](./00-research-log.md) (why these choices) · [`01-product-spec.md`](./01-product-spec.md) (what we're building)
 
 ---
 
@@ -668,6 +674,14 @@ Compare: Microsoft GraphRAG is reported at $40–60 in API cost for a *single* 1
 
 ## 11. Build phases
 
+> **Superseded.** This section plans a product-first build: Postgres, Railway,
+> FastAPI and Next.js from phase 0. The project builds the library first and
+> ships it to PyPI at v1.0.0 before any product stage begins, on SQLite by
+> default. The current plan is fifteen gated stages in
+> [ROADMAP.md](../../ROADMAP.md), generated from
+> [`docs/stages.toml`](../stages.toml). Kept for the reasoning inside each phase,
+> which mostly carried over.
+
 Ordered so that **something demoable exists after every phase**.
 
 ### Phase 0: Skeleton *(~half a day)*
@@ -697,7 +711,7 @@ Google Drive connector (Picker). Docling tier-1. Reranking. CRAG routing. Ragas/
 | # | Decision | Alternative | Why |
 |---|---|---|---|
 | 1 | Assertion ledger + projections | PRD's parallel tri-engine | Three write paths drift; one ledger cannot |
-| 2 | Postgres for everything | A broker, stream processor, dedicated vector DB, graph DB and cache | One datastore does five jobs; ~$25/mo vs hundreds |
+| 2 | ~~Postgres for everything~~ **Superseded: SQLite by default, Postgres for scale behind the same `Store` protocol.** A library that requires a server is not a library. See [`03-implementation-plan.md` section 1.2](./03-implementation-plan.md) | A broker, stream processor, dedicated vector DB, graph DB and cache | One datastore does five jobs; ~$25/mo vs hundreds |
 | 3 | Manual refresh + content hashing | Continuous ingest | Unchanged docs cost zero; live ingest explicitly out of scope |
 | 4 | Relational graph tables | Neo4j / AGE / Kùzu | 1–2 hop queries; **Kùzu is archived**; AGE not in image |
 | 5 | Bitemporal invalidation | Overwrite on update | The entire change-report feature depends on it |
@@ -730,6 +744,15 @@ Google Drive connector (Picker). Docling tier-1. Reranking. CRAG routing. Ragas/
 ---
 
 ## 14. Open questions
+
+> **Superseded.** All five are resolved, and the resolutions are recorded in
+> [`04-build-handoff.md` section 3](./04-build-handoff.md). In short: 1 resolved
+> to `pypdfium2`, which is implemented and the default; 2 resolved to
+> `mixedbread-ai/mxbai-embed-large-v1` at 1024 dimensions, not BGE-M3, because
+> BGE-M3 is in no fastembed model list; 3 is deferred to L7 with the conformance
+> checker still the plan; 4 no longer applies, since SQLite is the default store;
+> 5 resolved by its documented default, a generated fixture corpus, and no real
+> corpus exists.
 
 1. **`pymupdf4llm` is AGPL-3.0** (PyMuPDF). It runs as an isolated ingest step, but if AGPL reach is unacceptable for the intended distribution, substitute `pypdfium2` (Apache/BSD) with some table-quality loss. **Needs a call before Phase 1.**
 2. **Embedding model and dimension must be fixed before the first index build**. Changing either forces a full re-index. Decide BGE-M3 (1024) vs Qwen3-Embedding at Phase 1 start.

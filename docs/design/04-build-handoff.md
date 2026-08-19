@@ -1,5 +1,11 @@
 # Build Handoff: Start Here
 
+> **Design record, written 2026-08-07 and last revised 2026-08-19.** Written to
+> hand the build to a fresh session. It is the best single account of why the code
+> is shaped the way it is, and section 10 is still the live description of what
+> finishing L2 requires. Stage status in section 0 is historical: the current
+> status is in [ROADMAP.md](../../ROADMAP.md).
+
 **Version:** 1.2 · **Date:** 2026-08-07
 **Purpose:** Everything a fresh session needs to continue development without re-deriving prior decisions.
 
@@ -9,7 +15,7 @@
 
 **L0 and L1 are complete and their gates are green. L2 is under way.**
 
-Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0, `main` protected by CI).
+Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0). CI runs on every pull request; `main` is not branch-protected yet, see section 9.
 
 | Stage | State |
 |---|---|
@@ -31,7 +37,7 @@ ruff check . && mypy && lint-imports      # what CI runs
 - `ingest/`: filesystem and ZIP readers, tier-0 parsers for ten formats, the sanitiser, the structure-first chunker, deterministic metadata extraction, and the pipeline that wires them with content-hash dedupe and per-document failure isolation.
 - `providers/fake.py`: deterministic chat, embedder and reranker. Every test uses these.
 - `cli/`: `init`, `version`, `doctor`, `doctor --tiers`, `ingest`, `docs`, `chunks --verify`.
-- `tests/fixtures/build_corpus.py`: generates 20 mixed-format documents, 10 injection fixtures and 5 malicious archives. Nothing is committed as a binary.
+- `tests/fixtures/build_corpus.py`: generates 20 mixed-format documents, 10 injection fixtures (nine attacks and one benign decoy) and 5 malicious archives. Nothing is committed as a binary.
 - CI: `ci.yml` (ruff, mypy strict on `core`, import contracts, 3 OS × 3 Python, coverage floor) and `offline.yml` (the whole suite **plus a full ingest** inside a network namespace).
 
 **Still empty:** `index/`, `extract/`, `ledger/`, `project/`, `evals/`, `obs/`, `storage/postgres/`, `apps/`.
@@ -67,11 +73,11 @@ Four things differ from what is written below. All four are deliberate.
 
 | Doc | Read when |
 |---|---|
-| **`04-BUILD-HANDOFF.md`** (this) | First. Current state (§0), locked decisions, open questions, and the next stage's starting point (§10) |
-| [`03-IMPLEMENTATION-PLAN.md`](./03-IMPLEMENTATION-PLAN.md) | Before starting any stage: it has the exit gates |
-| [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md) | Designing a component: data model, pipeline, retrieval |
-| [`01-PRODUCT-SPEC.md`](./01-PRODUCT-SPEC.md) | Building UI or deciding behaviour |
-| [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) | Tempted to change a dependency: the evidence is here |
+| **`04-build-handoff.md`** (this) | First. Current state (§0), locked decisions, open questions, and the next stage's starting point (§10) |
+| [`03-implementation-plan.md`](./03-implementation-plan.md) | Before starting any stage: it has the exit gates |
+| [`02-architecture.md`](./02-architecture.md) | Designing a component: data model, pipeline, retrieval |
+| [`01-product-spec.md`](./01-product-spec.md) | Building UI or deciding behaviour |
+| [`00-research-log.md`](./00-research-log.md) | Tempted to change a dependency: the evidence is here |
 
 **Order of work:** L0 → L1 → … → L8 (library, v1.0.0 on PyPI) → P1 → P6 (product). No stage starts until the previous gate is green. **L0 and L1 are done; L2 is next, see §0 and §10.**
 
@@ -150,8 +156,8 @@ The fixture corpus is synthetic and was written by the same process that wrote t
 ledgerkb/
 ├── pyproject.toml
 ├── README.md  LICENSE  CONTRIBUTING.md  CODE_OF_CONDUCT.md  SECURITY.md  CHANGELOG.md
-├── .github/workflows/            ci.yml  offline.yml  drift.yml  release.yml  redteam.yml
-├── docs/                         mkdocs (Diátaxis) + the five design docs
+├── .github/workflows/            ci.yml  offline.yml   (drift/release/redteam are L8)
+├── docs/                         mkdocs (Diátaxis) + design/ (the design records)
 ├── profiles/                     default.toml  council.toml
 ├── golden/                       fixtures + golden sets (YAML)
 ├── tests/
@@ -267,10 +273,10 @@ class Store(Protocol):
     def search_sparse(self, query: str, k: int, **f) -> list["Hit"]: ...
     def add_assertion(self, a: "Assertion", ev: list["Evidence"]) -> str: ...
     def invalidate(self, id: str, by: str, reason: str) -> None: ...
-    # ... see 02-ARCHITECTURE.md §3 for the full surface
+    # ... see 02-architecture.md §3 for the full surface
 ```
 
-`core/models.py`: Pydantic models for `Document`, `DocumentVersion`, `Chunk`, `Entity`, `Assertion`, `Evidence`, `ChangeEvent`, `Answer`, `Claim`, `RunRecord`. Field definitions are in [`02-ARCHITECTURE.md §3`](./02-ARCHITECTURE.md).
+`core/models.py`: Pydantic models for `Document`, `DocumentVersion`, `Chunk`, `Entity`, `Assertion`, `Evidence`, `ChangeEvent`, `Answer`, `Claim`, `RunRecord`. Field definitions are in [`02-architecture.md §3`](./02-architecture.md).
 
 **Two invariants to encode as validators, not conventions:**
 - An `Assertion` cannot be constructed without at least one `Evidence`.
@@ -280,7 +286,7 @@ class Store(Protocol):
 
 ## 7. SQLite schema (L0)
 
-The Postgres DDL is in `02-ARCHITECTURE.md §3`. This is its SQLite counterpart.
+The Postgres DDL is in `02-architecture.md §3`. This is its SQLite counterpart.
 
 ```sql
 CREATE TABLE workspace (id TEXT PRIMARY KEY, name TEXT NOT NULL,
@@ -481,17 +487,27 @@ lkb eval compare baseline trigram-090     # metric deltas + per-question regress
 
 ## 9. CI workflows
 
+Three workflows exist: `ci.yml`, `offline.yml` and the `docs` job inside
+`ci.yml`. The other three below are planned for L8 and are marked as such.
+
 | Workflow | Trigger | Purpose |
 |---|---|---|
 | `ci.yml` | PR, push | ruff · mypy strict on `core` · import-linter · pytest matrix (3.11/3.12/3.13 × linux/mac/win) · coverage ratchet |
 | `offline.yml` | PR | Full ingest→chunk suite **with egress blocked**. Proves no accidental network dependency |
-| `drift.yml` | Nightly | Golden set against pinned models. **Catches silent provider behaviour changes** |
-| `redteam.yml` | PR + weekly | promptfoo injection suite; zero criticals |
-| `release.yml` | Tag | Build · test · **PyPI Trusted Publishing (OIDC)** · sigstore attestation · CycloneDX SBOM · GitHub release |
+| `drift.yml` *(planned, L8)* | Nightly | Golden set against pinned models. **Catches silent provider behaviour changes** |
+| `redteam.yml` *(planned, L8)* | PR + weekly | promptfoo injection suite; zero criticals |
+| `release.yml` *(planned, L8)* | Tag | Build · test · **PyPI Trusted Publishing (OIDC)** · sigstore attestation · CycloneDX SBOM · GitHub release |
 
 **All tests default to the fake provider**, zero API calls, zero cost, zero flake. Real-provider tests are marked `@pytest.mark.live` and run only in `drift.yml` with credentials.
 
-Also enforced: Conventional Commits, DCO sign-off, protected `main`, PR review required, Renovate for dependency updates, `pip-audit` in `ci.yml`.
+Enforced today: `pip-audit` in `ci.yml`, and Renovate for dependency updates.
+
+Planned, and not true yet: branch protection on `main`, required pull request
+review, a DCO sign-off check, and a Conventional Commits check. Sign-off and
+Conventional Commits are asked for in
+[CONTRIBUTING.md](../../CONTRIBUTING.md) and followed by hand; nothing rejects a
+commit that omits them. Enabling the first two is item 5 of phase 5 in the
+documentation plan.
 
 ---
 
@@ -561,7 +577,7 @@ size. Fix the corpus before writing the questions, not after.
 
 **L0 gate** ✅, clean install on all three OSes · `mypy --strict` green · `lkb init && lkb doctor` with zero API keys · every core model round-trips through SQLite unchanged.
 
-**L1 gate** ✅, 20/20 fixtures ingest with zero unhandled exceptions · 55/55 chunks slice back byte-identical (plus a Hypothesis property over arbitrary input) · all five metadata fields ≥ 95% · 10/10 injection fixtures caught with the benign decoy untouched · 5/5 malicious archives refused · the whole path runs with no network and no API key.
+**L1 gate** ✅, 20/20 fixtures ingest with zero unhandled exceptions · 55/55 chunks slice back byte-identical (plus a Hypothesis property over arbitrary input) · all five metadata fields ≥ 95% · nine attack fixtures caught and the benign decoy untouched · 5/5 malicious archives refused · the whole path runs with no network and no API key.
 
 ---
 
