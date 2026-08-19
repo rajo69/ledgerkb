@@ -27,9 +27,16 @@ The controls that matter:
 | **Closed predicate schema** | Extraction cannot invent relationship types outside the profile. |
 | **Path-traversal and zip guards** | A malicious archive cannot write outside the workspace. |
 | **Budget ceilings abort the run** | A prompt that induces runaway generation hits a hard stop. |
+| **Console output escapes document-controlled text** | A document cannot inject rich markup into `lkb` output and forge a heading, a colour or a status. Added 2026-08-19; see `safe()` in `cli/main.py`. |
 
 None of these has a setting that turns it off. That is deliberate: a guarantee
 with an off switch is not a guarantee.
+
+**What is implemented today** is sanitisation and quarantine, the ZIP and
+path-traversal guards, the budget ceiling, and the console escaping. Quote
+verification is L3, the closed predicate schema and the no-tools rule are L4, and
+until those land the controls that depend on them are design positions rather
+than code. [ROADMAP.md](ROADMAP.md) is the source of truth for what exists.
 
 ## Credentials
 
@@ -44,5 +51,5 @@ injection, credential leakage into logs, exports or traces, and dependency
 vulnerabilities.
 
 Out of scope: a model producing a low-quality answer that is nonetheless
-correctly cited and grounded. That is an evaluation issue — please open a normal
+correctly cited and grounded. That is an evaluation issue. Please open a normal
 issue with the golden-set case.

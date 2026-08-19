@@ -1,0 +1,54 @@
+name: docs
+
+# Builds the documentation site on every pull request, and publishes it from
+# main. A build failure on a PR is the point: a broken nav entry or a bad
+# reference should be caught before it is published, not after.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.11.5"
+          enable-cache: true
+      - run: uv python install 3.13
+
+      - name: build
+        # --strict turns a broken internal link or a page missing from the nav
+        # into a failure rather than a warning nobody reads.
+        run: uv run --group docs mkdocs build --strict
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: site
+
+  publish:
+    name: publish to GitHub Pages
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

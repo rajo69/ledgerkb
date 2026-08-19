@@ -1,13 +1,18 @@
-# Product Spec — The Intelligence Engine
+# Product Spec: The Intelligence Engine
+
+> **Design record, written 2026-08-07.** The product this library is eventually
+> for: users, flows, states and the demo it should be able to run. None of it is
+> built. Product work begins at P1, after the library reaches v1.0.0. It is a
+> record of intent, not current reference. See [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md).
 
 **Version:** 1.0 · **Date:** 2026-08-07
-**Companion docs:** [`00-RESEARCH-LOG.md`](./00-RESEARCH-LOG.md) (evidence) · [`02-ARCHITECTURE.md`](./02-ARCHITECTURE.md) (build)
+**Companion docs:** [`00-research-log.md`](./00-research-log.md) (evidence) · [`02-architecture.md`](./02-architecture.md) (build)
 
 ---
 
 ## 1. What this is
 
-**A workspace that turns a pile of scattered documents into a knowledge base you can interrogate, export, and — critically — *update* without losing the history of what you used to believe.**
+**A workspace that turns a pile of scattered documents into a knowledge base you can interrogate, export, and, critically, *update* without losing the history of what you used to believe.**
 
 The one-line positioning:
 
@@ -17,7 +22,7 @@ The one-line positioning:
 
 Every "chat with your documents" tool is stateless. Ask the same question twice, get two independently-derived answers. Add a new document and nothing happens until someone asks the right question.
 
-This product inverts that. Documents are **compiled once** into a persistent knowledge layer — entities, relationships, decisions, actions, risks, each carrying its evidence. Questions are answered *from the knowledge layer*, with the raw documents underneath for verification. When a new document arrives, the system **diffs it against what it already believes** and reports what changed.
+This product inverts that. Documents are **compiled once** into a persistent knowledge layer: entities, relationships, decisions, actions, risks, each carrying its evidence. Questions are answered *from the knowledge layer*, with the raw documents underneath for verification. When a new document arrives, the system **diffs it against what it already believes** and reports what changed.
 
 That produces a capability nothing in the "upload a PDF and chat" category has: **a defensible answer to "has anything changed, and what does it mean?"**
 
@@ -36,19 +41,19 @@ That produces a capability nothing in the "upload a PDF and chat" category has: 
 
 We are designing for three, in priority order.
 
-### 2.1 The Newcomer — *primary*
+### 2.1 The Newcomer, *primary*
 Joins a project or a patch mid-flight. Faces two years of minutes, four half-finished workstreams, and no idea who owns what.
 - **Needs:** orientation in under ten minutes; who's who; what's decided; what's still open.
 - **Job:** *"Get me to the point where I can ask a sensible question in a meeting."*
 - **Artifact:** `Briefing.pdf`.
 
-### 2.2 The Custodian — *the differentiator*
+### 2.2 The Custodian, *the differentiator*
 Responsible for this body of knowledge over time. Officer, project lead, community organiser.
 - **Needs:** to know what's gone stale, what contradicts what, which actions have no owner, and what a new document changed.
 - **Job:** *"Tell me what I need to look at this month."*
 - **Artifact:** `Governance_Guide.md` + the **Change Report**.
 
-### 2.3 The Analyst — *proves the depth*
+### 2.3 The Analyst, *proves the depth*
 Wants the structure, not the prose. Feeding it onward into a graph tool, a database, another agent.
 - **Needs:** machine-readable entities and relationships, explicit-vs-inferred distinction, confidence, source references.
 - **Job:** *"Give me the network so I can query it my way."*
@@ -74,9 +79,9 @@ Everything else is detail.
 
 ### 4.1 Design principle
 
-Three connector types, **one interface**. Each yields a sequence of `(external_id, uri, bytes|text, native_metadata)`. Everything downstream is connector-agnostic — adding SharePoint or Notion later is one adapter, not a pipeline change.
+Three connector types, **one interface**. Each yields a sequence of `(external_id, uri, bytes|text, native_metadata)`. Everything downstream is connector-agnostic. Adding SharePoint or Notion later is one adapter, not a pipeline change.
 
-### 4.2 Connector A — Google Drive (OAuth)
+### 4.2 Connector A: Google Drive (OAuth)
 
 **Flow:** Connect Google Drive → Google consent (`drive.file` only) → **Google Picker** opens → user selects files and/or folders → we index exactly those.
 
@@ -84,22 +89,22 @@ Three connector types, **one interface**. Each yields a sequence of `(external_i
 
 > *"We can only see the files you pick. Not your Drive."*
 
-That is literally true with `drive.file` and it is a strong trust statement for anyone handling council or community data. It also avoids Google's restricted-scope verification and security assessment entirely (see research §1.1) — a product-unblocking decision disguised as a privacy feature.
+That is literally true with `drive.file` and it is a strong trust statement for anyone handling council or community data. It also avoids Google's restricted-scope verification and security assessment entirely (see research §1.1), a product-unblocking decision disguised as a privacy feature.
 
 **Behaviours**
 - Folder selection is expanded at pick time; a **stored folder reference** is re-enumerated on refresh so new files in that folder are found.
 - Native Drive metadata (`modifiedTime`, `owners`, `webViewLink`, MIME) is preserved as document metadata.
 - Google-native formats are exported (Docs → text/markdown, Sheets → CSV).
-- Revoked or trashed files are marked `unavailable` on refresh, **never deleted** — their assertions stay in history.
+- Revoked or trashed files are marked `unavailable` on refresh, **never deleted**, their assertions stay in history.
 
-### 4.3 Connector B — Links
+### 4.3 Connector B: Links
 
 One field, four accepted shapes, auto-detected:
 
 | Input | Behaviour |
 |---|---|
 | Single URL | Fetch and extract one page |
-| Multiple URLs (newline/comma) | Batch — each becomes its own document |
+| Multiple URLs (newline/comma) | Batch, each becomes its own document |
 | `sitemap.xml` | Enumerate, then let the user filter by path prefix before indexing |
 | Domain + depth (`example.gov.uk`, depth 2) | Bounded crawl, same-origin, `robots.txt` respected, hard page cap |
 
@@ -108,12 +113,12 @@ One field, four accepted shapes, auto-detected:
 - PDFs found at URLs route into the document parser, not the HTML extractor.
 - A visible page budget with a running count. The user always knows what they are about to spend.
 
-### 4.4 Connector C — Upload
+### 4.4 Connector C: Upload
 
 Drag-and-drop or file picker. Accepts **multiple files** and **`.zip`**.
 
 - Uploads go **browser → blob storage directly** (no server body-size limit), with progress per file.
-- ZIPs are expanded server-side; **directory structure is preserved as metadata** — `2024/planning/minutes-04-12.pdf` yields year, category and type hints for free, which materially improves the metadata the brief asks for.
+- ZIPs are expanded server-side; **directory structure is preserved as metadata**: `2024/planning/minutes-04-12.pdf` yields year, category and type hints for free, which materially improves the metadata the brief asks for.
 - ZIP safety: path traversal blocked, expansion-ratio bomb detection, per-file and total size caps, nested-archive depth limit.
 - Accepted: PDF, DOCX, PPTX, XLSX, CSV, TXT, MD, HTML, JSON, EML. Rejected types are listed explicitly rather than silently skipped.
 
@@ -129,7 +134,7 @@ After connecting, one table is the home of the workspace:
 
 Per-source: **Refresh**, **View documents**, **Disconnect** (keeps indexed content), **Delete** (removes it).
 
-### 4.6 Refresh semantics — manual, cheap, honest
+### 4.6 Refresh semantics: manual, cheap, honest
 
 Pressing **Refresh** on a source:
 1. Re-enumerates the source (folder contents, sitemap, URL list).
@@ -138,7 +143,7 @@ Pressing **Refresh** on a source:
 4. Re-ingests only what changed.
 5. Runs **reconciliation** and produces a **Change Report** (§6).
 
-Unchanged documents cost nothing. This is what makes manual refresh viable as a permanent design choice rather than a shortcut — a refresh over 200 documents where 3 changed processes 3 documents.
+Unchanged documents cost nothing. This is what makes manual refresh viable as a permanent design choice rather than a shortcut: a refresh over 200 documents where 3 changed processes 3 documents.
 
 Also available: **Refresh all**, and an *optional* `pg_cron` weekly refresh per source, off by default.
 
@@ -148,7 +153,7 @@ Also available: **Refresh all**, and an *optional* `pg_cron` weekly refresh per 
 
 ### 5.1 The answer contract
 
-Every answer is a structured object rendered into three visually distinct zones. This is not decoration — the brief explicitly requires separating facts from interpretation and stating when evidence is insufficient.
+Every answer is a structured object rendered into three visually distinct zones. This is not decoration. The brief explicitly requires separating facts from interpretation and stating when evidence is insufficient.
 
 ```
 ┌─ ANSWER ───────────────────────────────────────────────┐
@@ -157,10 +162,10 @@ Every answer is a structured object rendered into three visually distinct zones.
 ├─ FROM THE DOCUMENTS ──────────────────── 3 sources ────┤
 │ ✓ "Phase 1 approved subject to funding confirmation"    │
 │   Planning Committee Minutes, 12 Mar 2026, p.4     [↗]  │
-│ ✓ "Attercliffe regeneration — status: active"           │
+│ ✓ "Attercliffe regeneration - status: active"           │
 │   Q1 Project Register, 31 Mar 2026, row 12         [↗]  │
 ├─ INTERPRETATION ───────────────────────────────────────┤
-│ ~ The funding condition appears unresolved — no later   │
+│ ~ The funding condition appears unresolved, no later   │
 │   document confirms it. Inferred from absence.          │
 ├─ NOT ANSWERED ─────────────────────────────────────────┤
 │ ! No document states the current phase-2 timeline.      │
@@ -171,7 +176,7 @@ Every answer is a structured object rendered into three visually distinct zones.
 **Rules enforced in code, not by prompt:**
 - Every `✓` fact carries a quote that has been **verified to exist in the cited chunk**. Fails verification → demoted or dropped.
 - `~` interpretation is styled differently and never counted as a citation.
-- `!` gaps name *what* is missing and *why* — a coverage window, an entity with no documents, a date range with nothing in it.
+- `!` gaps name *what* is missing and *why*: a coverage window, an entity with no documents, a date range with nothing in it.
 - **A confident wrong answer is a bug. An abstention with a named gap is correct behaviour.**
 
 ### 5.2 Query modes
@@ -184,11 +189,11 @@ Every answer is a structured object rendered into three visually distinct zones.
 
 ### 5.3 Suggested questions
 
-On an empty workspace we seed the brief's own examples — *What projects are currently active? What decisions have been made? Which actions remain outstanding? Who is responsible for each? What risks or blockers exist? Has any decision changed over time?* — plus one deliberately unanswerable probe, so users see abstention working before they hit it by accident.
+On an empty workspace we seed the brief's own examples: *What projects are currently active? What decisions have been made? Which actions remain outstanding? Who is responsible for each? What risks or blockers exist? Has any decision changed over time?*, plus one deliberately unanswerable probe, so users see abstention working before they hit it by accident.
 
 ---
 
-## 6. The Change Report — the thing worth demoing
+## 6. The Change Report: the thing worth demoing
 
 Triggered by any refresh that finds changes. This is the Shared Final Challenge, and it is the product's sharpest moment.
 
@@ -200,7 +205,7 @@ Source: Planning Committee Minutes, 5 Aug 2026
   ├ Decision: Phase 2 budget approved (£2.4m)
   ├ Risk: Contractor availability flagged
   ├ Person: Priya Raman → Project Lead, Attercliffe
-  └ Action: Funding confirmation — now COMPLETE
+  └ Action: Funding confirmation - now COMPLETE
 
   STILL VALID                                         31
   └ 31 assertions re-confirmed by this document
@@ -229,7 +234,7 @@ Source: Planning Committee Minutes, 5 Aug 2026
 
 ---
 
-## 7. Export — the output picker
+## 7. Export: the output picker
 
 ### 7.1 The picker
 
@@ -265,17 +270,17 @@ EXPORT KNOWLEDGE                              Workspace: Attercliffe
 ### 7.2 What each artifact is
 
 #### `Briefing.pdf`
-Typeset via Typst. Sections map to the brief's Challenge-4 list: executive overview, projects/topics, people and organisations, **decisions made**, **proposed decisions not yet confirmed** (kept separate — this distinction is usually lost), actions with owners and deadlines, risks and blockers, timeline, **disagreements and conflicting information**, unanswered questions. Closes with a one-page newcomer briefing and **the five most important questions to ask next**.
+Typeset via Typst. Sections map to the brief's Challenge-4 list: executive overview, projects/topics, people and organisations, **decisions made**, **proposed decisions not yet confirmed** (kept separate: this distinction is usually lost), actions with owners and deadlines, risks and blockers, timeline, **disagreements and conflicting information**, unanswered questions. Closes with a one-page newcomer briefing and **the five most important questions to ask next**.
 
 Every significant statement carries a source and date. Inferences are visually marked. Where sources conflict, both are printed.
 
 #### `Knowledge_Graph.okf`
-A **ZIP of a conformant OKF v0.2 bundle** — stated plainly in the manifest, because OKF is a directory format and inventing a single-file variant would break interop. Unzip and it validates.
+A **ZIP of a conformant OKF v0.2 bundle**, stated plainly in the manifest, because OKF is a directory format and inventing a single-file variant would break interop. Unzip and it validates.
 
 ```
 knowledge_graph/
-  index.md          okf_version: "0.2" — progressive-disclosure catalogue
-  log.md            chronological history — every ingest, change, revision
+  index.md          okf_version: "0.2" - progressive-disclosure catalogue
+  log.md            chronological history - every ingest, change, revision
   projects/         one .md per project
   people/           one .md per person
   organisations/
@@ -285,7 +290,7 @@ knowledge_graph/
   risks/
 ```
 
-Each concept file carries `type`, `title`, `description`, `sources[]` with per-claim footnotes, `generated: {by, at}`, `verified[]` where a human has reviewed, `status`, `stale_after`, and `tags`. Because the format is markdown, **it opens in Obsidian, VS Code, or a text editor** — a genuinely portable deliverable, not a proprietary blob.
+Each concept file carries `type`, `title`, `description`, `sources[]` with per-claim footnotes, `generated: {by, at}`, `verified[]` where a human has reviewed, `status`, `stale_after`, and `tags`. Because the format is markdown, **it opens in Obsidian, VS Code, or a text editor**, a genuinely portable deliverable, not a proprietary blob.
 
 #### `Entities_Relationships.json`
 ```jsonc
@@ -310,20 +315,20 @@ Each concept file carries `type`, `title`, `description`, `sources[]` with per-c
   "superseded": [ /* edges with invalid_at set, and what replaced them */ ]
 }
 ```
-`modality` (`explicit` | `inferred`) and `confidence` are mandatory on every edge — the brief requires distinguishing inferred relationships and recording confidence for them.
+`modality` (`explicit` | `inferred`) and `confidence` are mandatory on every edge. The brief requires distinguishing inferred relationships and recording confidence for them.
 
 Optional co-exports: **GraphML** (yEd/Gephi), **Mermaid** (paste into any markdown), **Cypher** (`CREATE` statements for Neo4j/Memgraph).
 
 #### `Governance_Guide.md`
-Not a generic essay — **generated from the workspace's actual state**, which is what makes it worth having:
+Not a generic essay. **Generated from the workspace's actual state**, which is what makes it worth having:
 
-- **Ages fastest** — assertions ranked by computed `stale_after`, with the reasoning (deadlines, "subject to", quarterly cadence, explicit review dates).
-- **Needs stronger evidence** — single-source claims, low-confidence inferences, claims resting on one ambiguous sentence.
-- **Needs an owner** — actions with no assignee; projects with no responsible organisation.
-- **Missing relationships** — entities that co-occur repeatedly but are never explicitly linked.
-- **Where a future document changes the picture** — pending decisions, open conditions, unresolved contradictions.
-- **Recommended cadence** — per source type, derived from observed publication rhythm.
-- **Review schedule** — a 24-month calendar of what to re-check and when.
+- **Ages fastest**: assertions ranked by computed `stale_after`, with the reasoning (deadlines, "subject to", quarterly cadence, explicit review dates).
+- **Needs stronger evidence**: single-source claims, low-confidence inferences, claims resting on one ambiguous sentence.
+- **Needs an owner**: actions with no assignee; projects with no responsible organisation.
+- **Missing relationships**: entities that co-occur repeatedly but are never explicitly linked.
+- **Where a future document changes the picture**: pending decisions, open conditions, unresolved contradictions.
+- **Recommended cadence**: per source type, derived from observed publication rhythm.
+- **Review schedule**: a 24-month calendar of what to re-check and when.
 
 #### Build receipt
 Ships with every export: document count and version hashes, models and versions used at each stage, chunk/entity/assertion counts, coverage window (earliest → latest document date), unresolved-duplicate count, contradiction count, retrieval configuration. Makes the export **reproducible and auditable** rather than a snapshot of unknown provenance.
@@ -362,7 +367,7 @@ The states below are where this class of product usually feels broken. They are 
 | **Compiling** | Per-document stage pipeline visible (`fetched → parsed → chunked → indexed → extracted`). Questions answerable against what's already indexed, with a banner saying coverage is partial. |
 | **Partial failure** | 3 of 58 failed → named, with reason and **Retry**. The other 55 are fully usable. Never all-or-nothing. |
 | **Unparseable document** | Marked `low confidence`, kept, excluded from extraction, flagged in the audit view. A scanned fax is not a crash. |
-| **No answer** | The `!` block with named coverage gaps — not "I couldn't find anything". |
+| **No answer** | The `!` block with named coverage gaps, not "I couldn't find anything". |
 | **Contradiction** | Both sides shown side by side with sources. Never resolved silently. |
 | **Injection detected** | Document badged *"contains text resembling instructions to an AI"*, quarantined text viewable, excluded from prompts. Presented as a finding. |
 | **Possible duplicate entities** | Shown as a review queue, not auto-merged. One click to merge or reject; both are logged and reversible. |
@@ -398,7 +403,7 @@ Named so scope stays honest.
 ### 11.2 Measurable
 | Metric | Target |
 |---|---|
-| Citation validity (quote present in cited chunk) | **100%** — enforced, not measured |
+| Citation validity (quote present in cited chunk) | **100%**, enforced, not measured |
 | Correct-abstention rate on unanswerable golden set | ≥ 90% |
 | Retrieval failure rate (top-20, golden set) | ≤ 5% |
 | Ragas faithfulness | ≥ 0.85 |
@@ -411,7 +416,7 @@ Named so scope stays honest.
 2. Ask an answerable question → cited answer with facts and inference separated. **(45s)**
 3. Ask an unanswerable one → clean abstention naming the gap. **(30s)**
 4. Open Explore → the entity graph nobody could see by reading the documents individually. **(45s)**
-5. **Drop the new document. Refresh. Read the change report** — decision superseded, action completed, contradiction flagged. **(90s)**
+5. **Drop the new document. Refresh. Read the change report**: decision superseded, action completed, contradiction flagged. **(90s)**
 6. Export all four artifacts. Open the `.okf` bundle in a text editor to show it is portable markdown, not a black box. **(60s)**
 
 Step 5 is the one that wins. Everything before it is table stakes.

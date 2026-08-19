@@ -1,0 +1,90 @@
+site_name: ledgerkb
+site_description: >-
+  Turn scattered documents into a knowledge base that maintains a position over
+  time.
+site_url: https://rajo69.github.io/ledgerkb/
+repo_url: https://github.com/rajo69/ledgerkb
+repo_name: rajo69/ledgerkb
+edit_uri: edit/main/docs/
+copyright: Apache-2.0
+
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+    - content.action.edit
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+plugins:
+  - search
+
+# Organised by Diataxis: four sections, split by the need each one serves.
+# Tutorials teach, how-to guides solve one problem, reference is for looking
+# things up, explanation is for understanding.
+nav:
+  - Home: index.md
+  - Tutorial:
+      - Your first knowledge base: tutorial/first-knowledge-base.md
+  - How-to guides:
+      - Ingest your own documents: how-to/ingest-your-own-documents.md
+      - Run without an API key: how-to/run-without-an-api-key.md
+      - Use a hosted provider: how-to/use-a-hosted-provider.md
+      - Tune retrieval: how-to/tune-retrieval.md
+      - Add a parser: how-to/add-a-parser.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Configuration: reference/configuration.md
+      - Data model: reference/data-model.md
+      - Ports: reference/ports.md
+      - Store schema: reference/store-schema.md
+  - Explanation:
+      - One ledger: explanation/the-ledger.md
+      - Citations and offsets: explanation/citations-and-offsets.md
+      - Determinism: explanation/determinism.md
+      - Tunability tiers: explanation/tunability-tiers.md
+      - Security model: explanation/security-model.md
+  - Decision records:
+      - Index: adr/index.md
+  - Design records:
+      - Research log: design/00-research-log.md
+      - Product spec: design/01-product-spec.md
+      - Architecture: design/02-architecture.md
+      - Implementation plan: design/03-implementation-plan.md
+      - Build handoff: design/04-build-handoff.md
+      - Documentation plan: design/05-documentation-plan.md
+
+not_in_nav: |
+  stages.toml
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/rajo69/ledgerkb

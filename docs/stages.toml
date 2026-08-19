@@ -1,0 +1,360 @@
+# The one source of truth for where this project is.
+#
+# Every document that states stage status is generated from this file. Edit it,
+# then run `python scripts/render_docs.py`. CI runs the renderer in --check mode,
+# so a status change that does not regenerate the documents fails the build.
+#
+# status is one of: done | in-progress | not-started
+# A gate item's `met` is a fact about the repository, not an intention. If you
+# cannot point at a passing check, it is false.
+
+schema_version = 1
+current = "L2"
+
+# Shown in the README status block. Keep it to a few lines and keep it true:
+# the largest risk in this repository's documentation is claiming more than the
+# code delivers.
+works_today = """
+Documents go in and ranked passages come out. Ingest reads files, directories
+and ZIP archives; tier-0 parsers cover ten formats; the sanitiser strips
+invisible text and quarantines instruction-shaped spans; the chunker slices on
+document structure and every chunk slices back to byte-identical source text.
+Search runs three arms (dense, BM25 and heading path), fuses them by rank, and
+explains where each arm placed every candidate. All of it runs with no API key
+and no network.
+
+Grounded answering, the assertion ledger, the knowledge graph, the change report
+and the exports are designed and gated but not built.
+"""
+
+# --- library track ------------------------------------------------------------
+
+[[stage]]
+id = "L0"
+track = "library"
+title = "Skeleton and contracts"
+status = "done"
+ships = ""
+effort = "~0.5 day"
+risk = "low"
+goal = "The shape everything else fills in."
+summary = """
+Domain models, Protocol ports, config with four tunability tiers, the SQLite
+store and its migrations, deterministic fake providers, and the first CLI
+commands.
+"""
+gate = [
+  { text = "Clean install on Linux, macOS and Windows, under 60s and under 120MB", met = true },
+  { text = "mypy --strict passes on core", met = true },
+  { text = "lkb init and lkb doctor succeed with zero API keys set", met = true },
+  { text = "Every core model round-trips through SQLite unchanged", met = true },
+  { text = "PyPI name confirmed available (it is claimed on first publish at L8)", met = true },
+]
+
+[[stage]]
+id = "L1"
+track = "library"
+title = "Ingest, parse, chunk"
+status = "done"
+ships = ""
+effort = "~1 day"
+risk = "medium"
+goal = "Documents become chunks with correct metadata and exact offsets, entirely offline."
+summary = """
+Filesystem and ZIP readers with traversal, bomb-ratio, depth and size guards.
+Tier-0 parsers for PDF, DOCX, XLSX, PPTX, HTML, EML, CSV, JSON, MD and TXT. A
+sanitiser that removes invisible text and quarantines instruction-shaped spans
+rather than deleting them. Structure-first chunking, deterministic metadata
+extraction, and a pipeline that dedupes by content hash and isolates per-document
+failures.
+"""
+gate = [
+  { text = "A 20-document mixed-format fixture corpus ingests with zero unhandled exceptions", met = true },
+  { text = "Every chunk's char_start:char_end slices back to byte-identical source text, checked by a Hypothesis property over arbitrary input as well as over the corpus", met = true },
+  { text = "All five required metadata fields populated on at least 90% of fixtures, with every miss reported rather than silently null", met = true },
+  { text = "The nine injection fixtures are all caught and the benign decoy is left untouched", met = true },
+  { text = "All five malicious archive fixtures are refused", met = true },
+  { text = "The whole path runs with no network and no API key, enforced by a CI job inside a network namespace", met = true },
+]
+
+[[stage]]
+id = "L2"
+track = "library"
+title = "Index and retrieve"
+status = "in-progress"
+ships = ""
+effort = "~1 day"
+risk = "medium"
+goal = "Hybrid retrieval that beats either half alone."
+summary = """
+An OpenAI-compatible embedder and a local in-process one, reciprocal rank fusion,
+and three retrieval arms: dense vectors, FTS5 BM25 and the heading path. Search
+is scoped to current document versions and every candidate carries a per-arm rank
+explanation. The machinery is merged. What remains is the measurement, which is
+blocked on the size of the fixture corpus.
+"""
+gate = [
+  { text = "--explain prints each candidate's per-arm rank and fused score", met = true },
+  { text = "Retrieval is scoped to current document versions, enforced in the schema", met = true },
+  { text = "A golden set of 40 questions, at least 7 of them unanswerable, written from the documents before retrieval is run", met = false },
+  { text = "recall@20 at or above 0.90 on the answerable questions", met = false },
+  { text = "Hybrid beats dense-only and BM25-only on the same set, measured, printed and committed", met = false },
+  { text = "Contextual headers improve recall@20 by at least 5 points, which is what would justify their cost", met = false },
+  { text = "The embedding model and dimension are recorded in the store and a change is detected on the index path, not only by lkb doctor", met = false },
+]
+
+[[stage]]
+id = "L3"
+track = "library"
+title = "Grounded answering"
+status = "not-started"
+ships = "v0.1.0"
+effort = "~1 day"
+risk = "medium"
+goal = "Cited answers and honest abstention."
+summary = """
+A structured Answer whose every claim carries a chunk id, a verbatim quote, a
+modality and a confidence. Quote verification runs deterministically before any
+answer reaches the caller. CRAG routing retries once and then abstains with named
+coverage gaps rather than reaching for the open web.
+"""
+gate = [
+  { text = "Citation validity is 1.00, asserted rather than measured: a claim whose quote is absent from its cited chunk cannot reach the caller", met = false },
+  { text = "Correct abstention at or above 0.90 on the unanswerable subset", met = false },
+  { text = "Zero hallucinated chunk ids across the golden set", met = false },
+  { text = "Facts and inferences are never conflated in output", met = false },
+  { text = "Published to PyPI, and pip install ledgerkb[local] to ingest to ask works in a clean container in under 5 minutes", met = false },
+]
+
+[[stage]]
+id = "L4"
+track = "library"
+title = "Assertion ledger and extraction"
+status = "not-started"
+ships = ""
+effort = "~1.5 days"
+risk = "high"
+goal = "Documents become claims with evidence."
+summary = """
+The assertion and evidence tables, append-only. Extraction against a closed
+predicate schema, with post-conditions checked in code rather than trusted from
+the model. Extraction calls carry zero tools, which is the architectural control
+against indirect prompt injection. Staleness dates are computed from review
+dates, deadlines, conditional language and source cadence.
+"""
+gate = [
+  { text = "Every assertion has at least one evidence row, enforced by a database constraint", met = false },
+  { text = "Every evidence quote verifies against its chunk", met = false },
+  { text = "Extraction precision at or above 0.85 on a 100-assertion hand-labelled sample", met = false },
+  { text = "Zero out-of-schema predicates across the corpus", met = false },
+  { text = "A test asserts the outgoing extraction request body carries no tools key", met = false },
+  { text = "Cost per 100 documents recorded and within 2x of the architecture estimate", met = false },
+]
+
+[[stage]]
+id = "L5"
+track = "library"
+title = "Entity resolution and graph"
+status = "not-started"
+ships = "v0.3.0"
+effort = "~1.5 days"
+risk = "high"
+goal = "The network, without wrong merges."
+summary = """
+Ten node types and a resolution cascade running exact, alias, trigram, embedding
+grey-band, LLM adjudication with cited evidence, and finally a review queue.
+Merges are soft and logged with evidence, so every one of them is reversible.
+Graph queries run as recursive CTEs over relational tables. Exports to JSON,
+GraphML, Mermaid and Cypher.
+"""
+gate = [
+  { text = "Over-merge rate at or below 0.02 on a labelled pair set, because over-merging is the failure that matters", met = false },
+  { text = "Every merge is reversible and a reversal test passes", met = false },
+  { text = "All five example queries execute and return sensible results on the fixture corpus", met = false },
+  { text = "Graph exports validate: GraphML against its schema, Mermaid renders, Cypher parses", met = false },
+  { text = "Zero edges without a source document reference", met = false },
+]
+
+[[stage]]
+id = "L6"
+track = "library"
+title = "Refresh and change report"
+status = "not-started"
+ships = "v0.4.0"
+effort = "~1.5 days"
+risk = "high"
+goal = "Belief revision with preserved history. This is the differentiator."
+summary = """
+Content-hash diffing classifies every document as unchanged, modified, new or
+disappeared. Reconciliation produces the seven update categories. Invalidation is
+bitemporal: set invalid_at and record what invalidated it, never delete.
+Contradictions become two active disputed assertions and are never merged. The
+change report is rendered from stored change events rather than recomputed.
+"""
+gate = [
+  { text = "Unchanged documents cost zero LLM calls, asserted by a call-counting test", met = false },
+  { text = "\"What did we believe on date D?\" returns the correct historical state", met = false },
+  { text = "All seven update categories are produced on a scripted document containing each", met = false },
+  { text = "Contradictions surface as two assertions, and a blended single answer is a test failure", met = false },
+  { text = "Change-report precision at or above 0.90 against human review of the scripted document", met = false },
+  { text = "A full replay from scratch yields the same final ledger state with LLM calls stubbed", met = false },
+]
+
+[[stage]]
+id = "L7"
+track = "library"
+title = "Projections and exports"
+status = "not-started"
+ships = "v0.5.0"
+effort = "~1.5 days"
+risk = "medium"
+goal = "The four deliverables, all read from the ledger and none recomputing knowledge."
+summary = """
+An OKF v0.2 serialiser in one version-stamped module, plus a conformance checker.
+A briefing document rendered with Typst. A governance guide generated from live
+ledger state. A machine-readable entities and relationships export, plus a flat
+knowledge-items table. Every export carries a build receipt recording the resolved
+config that produced it.
+"""
+gate = [
+  { text = "The OKF bundle passes the conformance checker and opens correctly in Obsidian", met = false },
+  { text = "Every briefing statement carries a source and a date, with inferences visually marked", met = false },
+  { text = "Disagreements appear in the output as disagreements", met = false },
+  { text = "Every governance guide item traces to a real ledger row, with no generic filler", met = false },
+  { text = "--all produces one archive with a manifest and a build receipt", met = false },
+  { text = "Exports are reproducible: the same store state gives byte-identical output, timestamps excluded", met = false },
+]
+
+[[stage]]
+id = "L8"
+track = "library"
+title = "Evals, guardrails, observability"
+status = "not-started"
+ships = "v1.0.0"
+effort = "~2 days"
+risk = "medium"
+goal = "Production posture."
+summary = """
+The eval runner and its deterministic metrics, red-team regression in CI,
+OpenTelemetry spans against a pinned GenAI semantic-convention version, cost and
+token accounting, and budget guards that abort a runaway run. This is the stage
+that claims the PyPI name and commits to core's stability.
+"""
+gate = [
+  { text = "lkb eval run reports every deterministic metric with no LLM judge and no API key", met = false },
+  { text = "DeepEval gates are wired into CI and block a merge", met = false },
+  { text = "The promptfoo red-team suite reports zero critical findings", met = false },
+  { text = "OTel spans validate against the pinned semconv version, verified end to end against an OTLP backend", met = false },
+  { text = "Cost and token accounting is accurate to within 5% of provider-reported usage", met = false },
+  { text = "The budget guard aborts a runaway run at the configured ceiling", met = false },
+  { text = "The documentation site is published and public-API docstring coverage is at or above 90%", met = false },
+  { text = "v1.0.0 on PyPI, with a stability commitment on core", met = false },
+]
+
+# --- product track ------------------------------------------------------------
+# No product stage begins before L8 is green. The product is a thin shell over
+# the library: if a P stage needs domain logic, that logic belongs in the library.
+
+[[stage]]
+id = "P1"
+track = "product"
+title = "Service layer"
+status = "not-started"
+ships = ""
+effort = "~1 day"
+risk = "medium"
+goal = "An HTTP surface over the library."
+summary = """
+FastAPI wrapping ledgerkb, with endpoints for sources, ingest, ask, entities,
+changes and export. A job queue for the long-running work, and server-sent events
+for token streaming.
+"""
+gate = [
+  { text = "Every endpoint is a thin call into the library, with zero domain logic in the API layer", met = false },
+]
+
+[[stage]]
+id = "P2"
+track = "product"
+title = "Web UI core"
+status = "not-started"
+ships = ""
+effort = "~2 days"
+risk = "medium"
+goal = "The ask view, the document list and the graph view."
+summary = """
+Next.js with the three-zone answer contract: facts, interpretation and gaps, kept
+visually distinct.
+"""
+gate = [
+  { text = "Answer rendering is faithful to the library's Answer model: facts and inferences visually distinct, gaps always shown", met = false },
+]
+
+[[stage]]
+id = "P3"
+track = "product"
+title = "Connectors"
+status = "not-started"
+ships = ""
+effort = "~2 days"
+risk = "medium"
+goal = "Getting documents in from somewhere other than a local folder."
+summary = """
+Multi-file and archive upload, link ingestion (single URL, list, sitemap, bounded
+crawl with a preview), and Google Drive through the file picker only.
+"""
+gate = [
+  { text = "The Drive connector never requests a restricted scope, asserted in a test", met = false },
+]
+
+[[stage]]
+id = "P4"
+track = "product"
+title = "Change report and export picker"
+status = "not-started"
+ships = ""
+effort = "~1.5 days"
+risk = "medium"
+goal = "The refresh loop, visible."
+summary = """
+A refresh view, the change report, a multi-select export picker and a download
+history.
+"""
+gate = [
+  { text = "The five-minute demo script in the product spec runs end to end without intervention", met = false },
+]
+
+[[stage]]
+id = "P5"
+track = "product"
+title = "Deploy artifacts"
+status = "not-started"
+ships = ""
+effort = "~1 day"
+risk = "low"
+goal = "Somebody else can run it."
+summary = """
+A compose file, platform configuration, a documented environment, and deploy
+instructions.
+"""
+gate = [
+  { text = "A stranger following the README deploys successfully in under 15 minutes, tested on someone who has not seen the repository", met = false },
+]
+
+[[stage]]
+id = "P6"
+track = "product"
+title = "Hardening"
+status = "not-started"
+ships = ""
+effort = "~1.5 days"
+risk = "medium"
+goal = "The parts that make it usable rather than demonstrable."
+summary = """
+Reranking, tier-1 parsing, tracing wired up, red-team suite in CI, and a pass over
+error states, empty states and accessibility.
+"""
+gate = [
+  { text = "Every state described in the product spec is implemented", met = false },
+  { text = "Lighthouse score at or above 90", met = false },
+]

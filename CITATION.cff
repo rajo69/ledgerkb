@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: ledgerkb
+message: If you use this software, please cite it as below.
+type: software
+authors:
+  - given-names: Rajarshi
+    family-names: Nandi
+    alias: rajo69
+repository-code: https://github.com/rajo69/ledgerkb
+url: https://github.com/rajo69/ledgerkb
+abstract: >-
+  A Python library that turns scattered documents into an append-only,
+  bitemporal ledger of evidence-bearing assertions. The retrieval index, the
+  knowledge graph, a portable wiki export, a briefing document and a change
+  report are projections of that one ledger rather than separate subsystems.
+  Runs with no API key and no network.
+keywords:
+  - knowledge-base
+  - retrieval-augmented-generation
+  - knowledge-graph
+  - bitemporal
+  - provenance
+license: Apache-2.0
+version: 0.0.1
