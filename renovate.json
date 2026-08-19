@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "minimumReleaseAge": "3 days",
+  "lockFileMaintenance": { "enabled": true, "schedule": ["before 6am on monday"] },
+  "packageRules": [
+    {
+      "description": "Minor and patch bumps travel together; there is little to review individually.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "minor and patch"
+    },
+    {
+      "description": "Majors land alone, because the breakage is the point of the review.",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "ruff and mypy are pinned exactly, so their bumps carry a lint diff worth reading on its own.",
+      "matchPackageNames": ["ruff", "mypy"],
+      "groupName": "lint and types"
+    }
+  ]
+}

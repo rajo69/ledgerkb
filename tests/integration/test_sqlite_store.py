@@ -11,6 +11,7 @@ from ledgerkb.core.errors import InvariantError
 from ledgerkb.core.models import (
     Assertion,
     ChangeEvent,
+    DocumentVersion,
     Entity,
     Evidence,
     IngestRun,
@@ -268,6 +269,106 @@ class TestRetrieval:
         store.add_chunks([chunk_factory("no vector here", 0)])
         assert store.search_dense(embedder.embed(["anything"])[0], k=5,
                                   workspace_id=workspace.id) == []
+
+
+class TestVersionScoping:
+    """Retrieval answers what a document says *now*.
+
+    Without this the first re-ingest leaves both generations of a document's
+    chunks live in the index, and a citation can quote wording that was edited
+    out — which verifies perfectly against a chunk nobody should be reading.
+    """
+
+    def _second_version(self, store: SqliteStore, version) -> DocumentVersion:
+        v2 = DocumentVersion(
+            document_id=version.document_id,
+            version_no=2,
+            content_hash="c" * 64,
+            text_hash="d" * 64,
+            parser="pypdfium2",
+            parse_quality=0.94,
+        )
+        store.add_version(v2)
+        return v2
+
+    def test_a_new_version_supersedes_the_old_one(
+        self, store: SqliteStore, version
+    ) -> None:
+        v2 = self._second_version(store, version)
+        assert store.get_version(version.id).superseded_by == v2.id
+        assert store.get_version(v2.id).superseded_by is None
+
+    def test_sparse_search_skips_superseded_chunks(
+        self, store: SqliteStore, workspace, version, chunk_factory
+    ) -> None:
+        store.add_chunks([chunk_factory("The Attercliffe budget was set at £2.4m.", 0)])
+        assert store.search_sparse("attercliffe", k=5, workspace_id=workspace.id)
+
+        self._second_version(store, version)
+        assert store.search_sparse("attercliffe", k=5, workspace_id=workspace.id) == []
+
+    def test_dense_search_skips_superseded_chunks(
+        self, store: SqliteStore, workspace, version, chunk_factory, embedder
+    ) -> None:
+        c = chunk_factory("The Attercliffe budget was set at £2.4m.", 0)
+        c.embedding = embedder.embed([c.embed_text])[0]
+        store.add_chunks([c])
+        q = embedder.embed([c.embed_text])[0]
+        assert store.search_dense(q, k=5, workspace_id=workspace.id)
+
+        self._second_version(store, version)
+        assert store.search_dense(q, k=5, workspace_id=workspace.id) == []
+
+    def test_history_is_still_reachable_on_request(
+        self, store: SqliteStore, workspace, version, chunk_factory
+    ) -> None:
+        """Superseded text is hidden from retrieval, never deleted."""
+        store.add_chunks([chunk_factory("The Attercliffe budget was set at £2.4m.", 0)])
+        self._second_version(store, version)
+        hits = store.search_sparse(
+            "attercliffe", k=5, workspace_id=workspace.id, include_superseded=True
+        )
+        assert hits and "Attercliffe" in hits[0].text
+
+    def test_a_changed_embedding_dimension_is_named_not_a_numpy_error(
+        self, store: SqliteStore, workspace, chunk_factory, embedder
+    ) -> None:
+        c = chunk_factory("Budget decisions for 2026.", 0)
+        c.embedding = embedder.embed([c.embed_text])[0]
+        store.add_chunks([c])
+        with pytest.raises(InvariantError, match="reindex --confirm"):
+            store.search_dense([0.1, 0.2, 0.3], k=5, workspace_id=workspace.id)
+
+
+class TestSparseIndexFollowsTheChunk:
+    """The two indexes derive from one string, enforced by the database.
+
+    `Chunk.embed_text` promised this; before migration 003 the FTS row was
+    written by hand at insert time, so a context header written later reached
+    the dense index and never reached the sparse one.
+    """
+
+    def test_a_context_header_becomes_searchable(
+        self, store: SqliteStore, workspace, chunk_factory
+    ) -> None:
+        c = chunk_factory("Members agreed the revised timetable.", 0)
+        store.add_chunks([c])
+        assert store.search_sparse("Attercliffe", k=5, workspace_id=workspace.id) == []
+
+        store.set_context_headers([(c.id, "From the Attercliffe regeneration report.")])
+        hits = store.search_sparse("Attercliffe", k=5, workspace_id=workspace.id)
+        assert [h.chunk_id for h in hits] == [c.id]
+
+    def test_the_chunk_text_itself_is_never_rewritten(
+        self, store: SqliteStore, workspace, chunk_factory
+    ) -> None:
+        c = chunk_factory("Members agreed the revised timetable.", 0)
+        store.add_chunks([c])
+        store.set_context_headers([(c.id, "A situating header.")])
+        stored = store.get_chunk(c.id)
+        assert stored.text == c.text
+        assert stored.context_header == "A situating header."
+        assert stored.embed_text.endswith(c.text)
 
 
 class TestRunsAndChanges:

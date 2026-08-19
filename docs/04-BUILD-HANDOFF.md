@@ -7,7 +7,7 @@
 
 ## 0. Where the build actually is
 
-**L0 and L1 are complete and their gates are green. L2 is next.**
+**L0 and L1 are complete and their gates are green. L2 is under way.**
 
 Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0, `main` protected by CI).
 
@@ -15,7 +15,7 @@ Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0, `main` pro
 |---|---|
 | **L0** — skeleton and contracts | ✅ done |
 | **L1** — ingest, parse, chunk | ✅ done |
-| **L2** — index and retrieve | ⬅️ **next** |
+| **L2** — index and retrieve | 🟡 **half done** — machinery in, measurement outstanding |
 | L3–L8, P1–P6 | not started |
 
 ```bash
@@ -112,18 +112,31 @@ Each was researched. If you want to change one, read the cited section first.
 | Q4 | **Is there a real corpus?** | ✅ **Resolved by its documented default.** None exists. `tests/fixtures/build_corpus.py` generates 20 council-shaped documents across ten formats. See the caveat below |
 | Q5 | **Second corpus for the agnosticism gate** | ⬜ Open, not needed until v1.0. Pick any public document set unlike council minutes |
 
-### Q2 — decide this before writing any L2 code
+### Q2 — resolved, but not the way this document proposed
 
-**The two design documents disagree**, and the field is tier-3 locked (changing it after the first index build invalidates every stored vector and requires `lkb reindex --confirm`):
+**The recommendation here was `BAAI/bge-m3` via `fastembed`. That is not
+implementable: bge-m3 is in no fastembed model list — not dense, not sparse,
+not late-interaction.** The research log (§2) had always assumed bge-m3 would
+be served by TEI or a gateway; the in-process path was invented in this
+document and never checked.
 
-| Source | Model | Dimensions |
-|---|---|---|
-| §3 of this document, as originally written | `BAAI/bge-m3` | 1024 |
-| The `ledgerkb.toml` in §8, and what `lkb init` currently writes | `qwen/qwen3-embedding-8b` | 1024 |
+**Resolved: `mixedbread-ai/mxbai-embed-large-v1`.** 1024 dimensions, so the
+tier-3 locked field is exactly what both design documents already agreed on;
+Apache-2.0; and the smallest of the permissively-licensed 1024-dimension models
+fastembed actually serves. It runs in-process with no API key, which is what
+the original reasoning was really protecting — `offline.yml` keeps proving
+something past L1 and the eval loop stays free.
 
-Dimensions agree at 1024, so the locked *dimension* is safe either way. The **model name** is the open decision, and it is also a hosting decision: `bge-m3` runs locally through `fastembed` (already in the `local` extra, no API key, keeps the offline guarantee intact for L2); `qwen3-embedding-8b` runs through OpenRouter and needs a key.
+Other permissively-licensed 1024-dim options, if the corpus ever argues for
+one: `BAAI/bge-large-en-v1.5` (MIT), `snowflake/snowflake-arctic-embed-l`
+(Apache-2.0), `intfloat/multilingual-e5-large` (MIT, and the one to reach for
+if documents stop being English). **`jinaai/jina-embeddings-v3` is excluded on
+purpose** — 1024 dims and otherwise a fine model, but CC-BY-NC-4.0 is
+non-commercial.
 
-Recommendation: **`BAAI/bge-m3` via `fastembed`**, because it keeps `offline.yml` meaningful through L2 and makes the eval loop free. If you take that, change the `[embeddings]` block in `DEFAULT_CONFIG` in `src/ledgerkb/cli/main.py` and in `ledgerkb.toml` at the same time.
+`providers/local.py` carries these widths in `KNOWN_DIMENSIONS` and checks them
+against the config at construction, so a mismatch is refused before a corpus is
+embedded rather than surfacing as a shape error on the first search.
 
 ### Q4 — the caveat worth knowing
 
@@ -482,40 +495,67 @@ Also enforced: Conventional Commits, DCO sign-off, protected `main`, PR review r
 
 ---
 
-## 10. Next session — L2, index and retrieve
+## 10. Next session — finish L2
 
-**Goal:** hybrid retrieval that beats either half alone. The exit gate is in [`03-IMPLEMENTATION-PLAN.md §L2`](./03-IMPLEMENTATION-PLAN.md); read it before starting.
+**Half of L2 is in.** `providers/openai_compat.py`, `providers/local.py`,
+`providers/factory.py`, `index/embed.py`, `index/rrf.py`, `index/hybrid.py`,
+`lkb index` and `lkb search --explain --json` all work, offline, with no key.
+Migrations 003 and 004 moved two invariants into the schema.
 
-**Answer Q2 first (§3).** It is tier-3 locked at the first index build, so getting it wrong costs a full re-index.
+**What is left is the measurement, and it is blocked on the corpus.**
 
-### Do this in order
+### The corpus problem — read this before writing a golden set
 
-1. **`providers/openai_compat.py`** — the base adapter, covering ~95% of providers (Plan §6). Behind the `ChatModel` / `Embedder` Protocols that already exist in `core/ports.py`. Nothing else may import a provider SDK directly.
-2. **`providers/local.py`** — `fastembed` embedder, so L2 keeps working with zero API keys and `offline.yml` stays meaningful.
-3. **`index/embed.py`** — batch embedding with the budget guard honoured. The store already has `set_embeddings(pairs)`; `chunk.embedding` is a float32 blob and `chunk.embed_text` is the single string both indexes derive from.
-4. **`index/contextualise.py`** — the 50–100 token header per chunk (Arch §4.3), written to `chunk.context_header`. This is the highest-volume LLM call in the system and the only one worth optimising hard: batch per document, cache the document prefix, use `[chat.cheap]`. **`contextual_headers` is a tier-2 gated setting** — turning it on or off forces a full re-index, and `check_transition` already enforces that.
-5. **`index/rrf.py`** — reciprocal rank fusion over the two hit lists. Pure function, no I/O, fully unit-testable. `retrieval.rrf_k` is free-tier.
-6. **`index/hybrid.py`** — dense + sparse + RRF. Both halves already work in `SqliteStore`.
-7. **`index/rerank.py`** — behind the `Reranker` port; `FakeReranker` exists for tests.
-8. **`lkb ask` / `lkb search`** — retrieval only at L2. Grounded answering with quote verification is L3.
+The fixture corpus produces **55 chunks**. The defaults are `dense_k = 50` and
+`sparse_k = 50`, so each arm is asked for roughly 91% of the entire corpus and
+RRF fuses two lists that both contain nearly everything. `recall@20` asks the
+retriever to return 36% of the corpus. Every strategy scores about 1.0.
 
-### What is already in place for you
+**The L2 gate as written cannot go red**, which means passing it would prove
+nothing. Two of its criteria — "hybrid beats dense-only *and* BM25-only" and
+"contextual headers improve recall@20 by ≥ 5 points" — are unmeasurable at this
+size. Fix the corpus before writing the questions, not after.
 
-| Need | Where |
-|---|---|
-| `Embedder`, `Reranker`, `ChatModel` Protocols | `core/ports.py` |
-| Deterministic fakes for all three | `providers/fake.py` — hash-derived, unit-length, stable across processes |
-| `search_dense` (exact cosine scan) and `search_sparse` (FTS5 BM25) | `storage/sqlite/store.py` |
-| `Hit` model with `method` discriminator | `core/models.py` |
-| Tier enforcement for gated/locked config changes | `core/config.py:check_transition` |
-| A corpus that already chunks cleanly | `tests/fixtures/build_corpus.py` |
+1. **Grow it to ~200 documents / 3–5k chunks.** `tests/fixtures/build_corpus.py`
+   is generative, so this is parameterisation rather than authoring, and the
+   corpus stays reviewable source instead of a committed binary.
+2. **Change the metrics.** `recall@5` and `nDCG@10` as headline, plus MRR, plus
+   a hard-negatives subset — questions whose answer chunk shares vocabulary with
+   at least three decoys. Those are the only questions that discriminate.
+3. **Require a bootstrap confidence interval on the hybrid delta**, not merely a
+   positive number. With 40 questions a 5-point difference is two questions.
+4. **Write the questions from the documents alone, before running retrieval.**
+   Q4's caveat — that the extractor and the fixtures were adjusted together —
+   applies doubly here, where both the questions and the documents would be
+   synthetic and written by the same process.
+5. **Bring Q5's second corpus forward** from v1.0 to now. Any public document
+   set unlike council minutes will do.
+
+### Then
+
+6. **`index/contextualise.py`** — but default it **off** and make the A/B earn
+   it. `chunking.contextual_headers` is now `False` by default for exactly this
+   reason. The baseline to beat is not "no context": it is the **heading arm**,
+   which already carries "Planning Committee Minutes > Item 4 > Decision"
+   deterministically, offline and free. If the deterministic path captures most
+   of the gain on structured minutes, that is a publishable result and it
+   deletes the highest-volume LLM call in the system.
+7. **`index/rerank.py`** — behind the existing `Reranker` port, defaulted off,
+   in its own extra. A cross-encoder is either an API call (breaks
+   `offline.yml`) or a torch dependency (breaks the install gate).
+8. **Record the embedding model in the store and detect a change**, which the
+   gate asks for. `search_dense` now raises a named `InvariantError` on a width
+   mismatch, but nothing yet compares the stamped model to the configured one on
+   the index path — `check_transition` is still only called by `lkb doctor`.
 
 ### Watch out for
 
-- **Never write to `chunk.text`.** Contextual headers go in `context_header`; `embed_text` composes them. Rewriting `text` breaks §0.1 and every citation with it.
-- **`sqlite-vec` is an optional accelerator and still alpha** (`vec` extra). The exact scan is correct and fast enough for the fixture corpus. Do not make it a hard dependency.
-- **The budget guard aborts.** `max_cost_usd_per_run` has no override, by design. Embedding a large corpus must respect it and say so.
-- **Keep `offline.yml` green.** If L2 cannot run without an API key, the offline job stops proving anything — which is why step 2 comes before step 4.
+- **Never write to `chunk.text`.** Context headers go in `context_header`;
+  `chunk.body` is a generated column and the FTS index follows it by trigger.
+- **The budget guard aborts.** `max_cost_usd_per_run` has no override, by design.
+- **Keep `offline.yml` green.** The default embedder is local, but fastembed
+  downloads weights on *first use* — so a job inside a network namespace must
+  warm the model cache before it enters, or stay on the fake providers.
 
 ### Earlier gates, for reference
 

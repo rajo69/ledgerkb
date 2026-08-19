@@ -12,6 +12,7 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
 from ledgerkb import __version__
@@ -26,8 +27,12 @@ from ledgerkb.core.config import (
 )
 from ledgerkb.core.errors import ConfigError, LedgerKBError
 from ledgerkb.core.models import Source, Workspace
+from ledgerkb.index.embed import embed_workspace
+from ledgerkb.index.hybrid import explain as explain_hits
+from ledgerkb.index.hybrid import search as hybrid_search
 from ledgerkb.ingest.metadata import coverage_report
 from ledgerkb.ingest.pipeline import IngestPipeline
+from ledgerkb.providers.factory import build_embedder
 from ledgerkb.storage.sqlite.store import SqliteStore
 
 app = typer.Typer(
@@ -57,14 +62,15 @@ api_key_env = "OPENROUTER_API_KEY"
 model = "deepseek/deepseek-v3.2"
 
 [embeddings]
-provider = "openai_compatible"
-model = "qwen/qwen3-embedding-8b"
+provider = "local"                              # fastembed, in-process, no API key
+model = "mixedbread-ai/mxbai-embed-large-v1"    # Apache-2.0
 dimensions = 1024          # LOCKED after the first index build
 
 [chunking]
-max_tokens = 512
-overlap = 64
-structure_first = true
+max_tokens = 512           # GATED: changing it forces a full re-chunk and re-index
+overlap = 64               # GATED
+structure_first = true     # GATED
+contextual_headers = false # off until the A/B earns the cost
 
 [retrieval]
 dense_k = 50
@@ -106,6 +112,22 @@ default_days = 180
 [extraction]
 hints = ""
 """
+
+
+def safe(value: object, limit: int | None = None) -> str:
+    """Neutralise Rich markup in anything a document controls.
+
+    Console output is styled with Rich markup, and every string below that came
+    out of an ingested file is attacker-controlled under this project's own
+    threat model. Left unescaped, a document containing ``[bold red]APPROVED[/]``
+    restyles our output, and a stray ``[/]`` raises MarkupError and kills the
+    command outright. Quarantined spans make the point concrete: they are
+    printed *because* they are adversarial.
+    """
+    text = str(value)
+    if limit is not None and len(text) > limit:
+        text = text[:limit]
+    return escape(text)
 
 
 def _fail(exc: Exception) -> None:
@@ -321,10 +343,10 @@ def ingest(
         for o in report.outcomes:
             colour = {"ingested": "green", "unchanged": "dim", "failed": "red"}[o.status]
             table.add_row(
-                o.external_id[:60],
+                safe(o.external_id, 60),
                 f"[{colour}]{o.status}[/]",
                 str(o.chunks) if o.chunks else "",
-                o.parser or "",
+                safe(o.parser or ""),
             )
         console.print(table)
 
@@ -341,7 +363,7 @@ def ingest(
 
         # Failures are named. Never a silent count.
         for o in report.failed:
-            err.print(f"  [red]failed[/] {o.external_id}: {o.error}")
+            err.print(f"  [red]failed[/] {safe(o.external_id)}: {safe(o.error)}")
 
         metas = [o.metadata for o in report.ingested if o.metadata]
         if metas:
@@ -372,10 +394,10 @@ def docs() -> None:
             n = len(store.chunks_for_version(version.id)) if version else 0
             table.add_row(
                 d.id[:8],
-                (d.title or "")[:40],
-                d.doc_type or "[dim]-[/]",
+                safe(d.title or "", 40),
+                safe(d.doc_type) if d.doc_type else "[dim]-[/]",
                 str(d.published_at) if d.published_at else "[dim]-[/]",
-                (d.meeting_or_project or "[dim]-[/]")[:30],
+                safe(d.meeting_or_project, 30) if d.meeting_or_project else "[dim]-[/]",
                 str(n),
             )
         console.print(table)
@@ -420,21 +442,121 @@ def chunks(
             console.print("[green]all chunks slice back byte-identical[/]")
 
         for c in rows[:40]:
-            path = " > ".join(c.heading_path) if c.heading_path else "[dim]no heading[/]"
+            path = safe(" > ".join(c.heading_path)) if c.heading_path else "[dim]no heading[/]"
             page = f" p.{c.page_from}" if c.page_from else ""
             console.print(f"\n[bold]{c.ordinal}[/] {path}{page} "
                           f"[dim]{c.char_start}:{c.char_end} ~{c.token_count} tokens[/]")
-            preview = c.text[:200].replace("\n", " ")
+            preview = safe(c.text[:200].replace("\n", " "))
             console.print(f"  {preview}{'...' if len(c.text) > 200 else ''}")
 
         quarantined = store.quarantine_for_version(version.id)
         if quarantined:
             console.print(f"\n[yellow]{len(quarantined)} quarantined span(s)[/]")
             for q in quarantined[:10]:
-                console.print(f"  [dim]{q['reason']}[/] {q['text'][:80]!r}")
+                console.print(f"  [dim]{safe(q['reason'])}[/] {safe(q['text'], 80)!r}")
     finally:
         store.close()
 
 
 if __name__ == "__main__":  # pragma: no cover
     app()
+
+
+# --- L2 commands -------------------------------------------------------------
+
+
+def _embedder(cfg: Config, *, required: bool):  # noqa: ANN202 - returns an Embedder port
+    """Build the embedder, or explain in one line why search is sparse-only."""
+    try:
+        return build_embedder(cfg)
+    except LedgerKBError as exc:
+        if required:
+            _fail(exc)
+        err.print(f"[yellow]dense retrieval unavailable[/] {exc}")
+        return None
+
+
+@app.command()
+def index(
+    rebuild: Annotated[
+        bool, typer.Option("--rebuild", help="Re-embed every chunk, not just new ones.")
+    ] = False,
+) -> None:
+    """Embed the chunks. Local by default, so no API key is needed."""
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+        if rebuild:
+            store.clear_embeddings(ws.id)
+
+        embedder = _embedder(cfg, required=True)
+        pending = len(store.chunks_missing_embeddings(ws.id))
+        if not pending:
+            console.print("[dim]every current chunk already has a vector[/]")
+            return
+
+        console.print(
+            f"embedding [bold]{pending}[/] chunks with [bold]{cfg.embeddings.model}[/] "
+            f"[dim]({cfg.embeddings.dimensions} dims, {cfg.embeddings.provider})[/]"
+        )
+        with console.status("embedding..."):
+            report = embed_workspace(store, cfg, embedder, ws.id)
+
+        console.print(
+            f"[green]{report.embedded} embedded[/] in {report.batches} batches"
+        )
+        # Superseded chunks are deliberately not embedded: retrieval hides them,
+        # so vectorising them would be paying for something never returned.
+        console.print("[dim]superseded versions are kept, but not indexed[/]")
+    finally:
+        store.close()
+
+
+@app.command()
+def search(
+    query: Annotated[str, typer.Argument(help="What to look for.")],
+    k: Annotated[int, typer.Option("--k", help="How many results.")] = 8,
+    explain: Annotated[
+        bool, typer.Option("--explain", help="Show each arm's rank and the fused score.")
+    ] = False,
+    arms: Annotated[
+        str, typer.Option("--arms", help="Comma-separated: dense,sparse,headings.")
+    ] = "dense,sparse,headings",
+    json_out: Annotated[bool, typer.Option("--json", help="Machine-readable output.")] = False,
+) -> None:
+    """Hybrid retrieval. Retrieval only — grounded answering with verified quotes is L3."""
+    import json as _json
+
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+        wanted = tuple(a.strip() for a in arms.split(",") if a.strip())
+        embedder = _embedder(cfg, required=False) if "dense" in wanted else None
+
+        result = hybrid_search(
+            store, cfg, query, embedder=embedder, workspace_id=ws.id, k=k, arms=wanted
+        )
+
+        if json_out:
+            console.print_json(_json.dumps(explain_hits(result)))
+            return
+
+        if not result.hits:
+            console.print("[yellow]nothing matched[/] - the corpus may not be indexed yet")
+            return
+
+        sizes = ", ".join(f"{name} {len(hits)}" for name, hits in sorted(result.arms.items()))
+        console.print(f"[dim]{sizes} -> {len(result.hits)} shown[/]")
+        console.print()
+
+        for position, hit in enumerate(result.hits, start=1):
+            path = safe(" > ".join(hit.heading_path)) if hit.heading_path else "[dim]no heading[/]"
+            page = f" p.{hit.page_from}" if hit.page_from else ""
+            console.print(f"[bold]{position}.[/] {path}{page}  [dim]{hit.score:.4f}[/]")
+            console.print(f"   {safe(hit.text[:220].replace(chr(10), ' '))}")
+            if explain:
+                ranks = "  ".join(f"{name}#{r}" for name, r in hit.ranks.items()) or "-"
+                console.print(f"   [dim]{hit.chunk_id[:8]}  {ranks}[/]")
+            console.print()
+    finally:
+        store.close()

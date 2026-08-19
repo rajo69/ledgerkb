@@ -13,10 +13,12 @@ graph, OKF wiki, briefing PDF and change report are all *projections* of that on
 
 ## Status
 
-**L1 complete — documents go in, chunks come out.** Core models, ports, config,
-the SQLite store, tier-0 parsers for ten formats, the sanitiser, the
-structure-first chunker and the CLI are in. Next is L2: embeddings, hybrid
-retrieval, RRF and rerank. Stage gates are in
+**L1 complete. L2 half done — documents go in, hybrid retrieval comes out.**
+Core models, ports, config, the SQLite store, tier-0 parsers for ten formats,
+the sanitiser, the structure-first chunker, the OpenAI-compatible and local
+provider adapters, embedding, RRF and three-arm hybrid search are in. What is
+left in L2 is the measurement: a golden set, and the numbers that prove hybrid
+beats either half. Stage gates are in
 [`docs/03-IMPLEMENTATION-PLAN.md`](docs/03-IMPLEMENTATION-PLAN.md).
 
 ```bash
@@ -31,11 +33,21 @@ lkb ingest ./documents     # PDF, DOCX, XLSX, PPTX, HTML, EML, CSV, JSON, MD, TX
 lkb docs                   # what was ingested, with its metadata
 lkb chunks <id> --verify   # re-slice every chunk from the stored text
 
+lkb index                  # embed, in-process, no API key
+lkb search "who owns the footbridge decision?" --explain
+
 pytest                     # full suite, no network, no credentials
 ```
 
+**Retrieval runs three arms and fuses them by rank.** Dense finds the passage
+that never uses your words; BM25 finds `SCC/2026/114` and every other reference
+number an embedding smooths away; and a third arm matches the heading path
+(*"Planning Committee Minutes > Item 4 > Decision"*), which costs one FTS query
+and no model at all. `--explain` prints where each arm placed every candidate
+and what the fused score was.
+
 Nothing in the test suite touches a provider, and no stage up to here needs an
-API key. That is enforced, not hoped for: a separate CI workflow runs the whole
+API key — embedding included, because the default embedder runs in-process. That is enforced, not hoped for: a separate CI workflow runs the whole
 suite, and a full ingest, with egress blocked.
 
 **The invariant everything rests on:** for every chunk,

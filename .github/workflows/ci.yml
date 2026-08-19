@@ -26,7 +26,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - run: uv python install 3.13
-      - run: uv sync --group dev --extra local
+      - run: uv sync --locked --group dev --extra local
 
       - name: ruff
         run: uv run ruff check --output-format=github .
@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           start=$(date +%s)
-          uv sync --group dev --extra local --python ${{ matrix.python }}
+          uv sync --locked --group dev --extra local --python ${{ matrix.python }}
           echo "install took $(( $(date +%s) - start ))s"
 
       - name: pytest
@@ -68,7 +68,7 @@ jobs:
 
       - name: coverage floor
         # A ratchet, not a target. Raise it as coverage grows; never lower it.
-        run: uv run coverage report --fail-under=80
+        run: uv run coverage report --fail-under=85
 
   audit:
     name: dependency audit
@@ -79,9 +79,47 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
       - run: uv python install 3.13
-      - run: uv sync --group dev --extra local
+      - run: uv sync --locked --group dev --extra local
       - name: pip-audit
+        # Against the project's own resolved set. `uvx pip-audit` with no
+        # arguments audits the throwaway environment uvx just built for it,
+        # which is not the thing we ship.
         # Reports, but does not block an unrelated PR on an advisory published
-        # that morning. Renovate raises the fix as its own PR.
+        # that morning — Renovate raises the fix as its own PR.
         continue-on-error: true
-        run: uvx pip-audit --strict
+        run: |
+          uv export --format requirements-txt --all-extras --no-emit-project > /tmp/reqs.txt
+          uvx pip-audit -r /tmp/reqs.txt --strict
+
+  floors:
+    name: lowest direct versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv python install 3.11
+      - name: resolve to the declared floors and run the suite
+        # This is what turns every `>=` in pyproject.toml into a claim rather
+        # than a guess. `uv run`, not `uv sync`: against a committed lock,
+        # `uv sync --resolution lowest-direct` reuses the locked versions and
+        # proves nothing.
+        run: >
+          uv run --resolution lowest-direct --group dev --extra local
+          --python 3.11 pytest -q --no-cov
+
+  resolve-fresh:
+    name: latest versions (informational)
+    runs-on: ubuntu-latest
+    # A dependency's breaking release should not redden an unrelated PR. It
+    # should redden this job, where the failure is legible.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv python install 3.13
+      - run: uv sync --upgrade --group dev --extra local
+      - run: uv run pytest -q --no-cov

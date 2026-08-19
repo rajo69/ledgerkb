@@ -210,6 +210,16 @@ class SqliteStore:
         )
 
     def add_version(self, v: DocumentVersion) -> str:
+        """A new version supersedes the one it replaces.
+
+        Marking it is what keeps retrieval out of stale text: without it both
+        generations of a re-ingested document stay in the index, and a citation
+        can point at wording the document no longer contains.
+        """
+        previous = self.db.execute(
+            "SELECT id FROM document_version WHERE document_id = ? AND superseded_by IS NULL",
+            (v.document_id,),
+        ).fetchall()
         self.db.execute(
             "INSERT INTO document_version (id,document_id,version_no,content_hash,text_hash,"
             "blob_uri,mime,bytes,page_count,parser,parse_quality,ingested_at,superseded_by,"
@@ -221,6 +231,12 @@ class SqliteStore:
                 v.text, dumps(v.parse_warnings), dumps(v.metadata_misses),
             ),
         )
+        for row in previous:
+            if row["id"] != v.id:
+                self.db.execute(
+                    "UPDATE document_version SET superseded_by = ? WHERE id = ?",
+                    (v.id, row["id"]),
+                )
         self.db.execute(
             "UPDATE document SET current_version_id = ? WHERE id = ?", (v.id, v.document_id)
         )
@@ -277,12 +293,10 @@ class SqliteStore:
                 for c in rows
             ],
         )
-        # The FTS row is built from embed_text so the dense and sparse indexes
-        # index exactly the same string and can never disagree.
-        self.db.executemany(
-            "INSERT INTO chunk_fts (body, chunk_id) VALUES (?,?)",
-            [(c.embed_text, c.id) for c in rows],
-        )
+        # No FTS insert here on purpose: migration 003 makes `chunk.body` a
+        # generated column and keeps chunk_fts in step by trigger, so the dense
+        # and sparse indexes derive from one string and cannot disagree even if
+        # a context header is written long after ingest.
         self.db.commit()
 
     def _chunk(self, row: sqlite3.Row) -> Chunk:
@@ -313,15 +327,57 @@ class SqliteStore:
         )
         self.db.commit()
 
-    def search_dense(self, vec: list[float], k: int, **f: Any) -> list[Hit]:
-        ws = f.get("workspace_id")
-        sql = "SELECT id, version_id, text, heading_path, page_from, embedding FROM chunk " \
-              "WHERE embedding IS NOT NULL"
-        params: list[Any] = []
-        if ws:
-            sql += " AND workspace_id = ?"
+    def set_context_headers(self, pairs: Iterable[tuple[str, str]]) -> None:
+        """Write the situating headers. The sparse index follows by trigger."""
+        self.db.executemany(
+            "UPDATE chunk SET context_header = ? WHERE id = ?",
+            [(header, cid) for cid, header in pairs],
+        )
+        self.db.commit()
+
+    def chunks_missing_embeddings(self, workspace_id: str) -> list[Chunk]:
+        rows = self.db.execute(
+            "SELECT c.* FROM chunk c "
+            "JOIN document_version v ON v.id = c.version_id "
+            "WHERE c.workspace_id = ? AND c.embedding IS NULL AND v.superseded_by IS NULL "
+            "ORDER BY c.version_id, c.ordinal",
+            (workspace_id,),
+        ).fetchall()
+        return [self._chunk(r) for r in rows]
+
+    def _scope(self, f: dict[str, Any], alias: str = "c") -> tuple[str, list[Any]]:
+        """The filter every search shares.
+
+        Superseded versions are excluded by default. Retrieval answers questions
+        about what a document says *now*; the ledger is where "what did it say in
+        March" lives, and conflating the two is how a citation ends up quoting
+        text that was edited out.
+        """
+        sql, params = "", []
+        if ws := f.get("workspace_id"):
+            sql += f" AND {alias}.workspace_id = ?"
             params.append(ws)
-        rows = self.db.execute(sql, params).fetchall()
+        if not f.get("include_superseded"):
+            sql += " AND v.superseded_by IS NULL"
+        return sql, params
+
+    def clear_embeddings(self, workspace_id: str) -> int:
+        """Drop every vector in a workspace, for a deliberate re-index."""
+        cur = self.db.execute(
+            "UPDATE chunk SET embedding = NULL WHERE workspace_id = ?", (workspace_id,)
+        )
+        self.db.commit()
+        return int(cur.rowcount)
+
+    def search_dense(self, vec: list[float], k: int, **f: Any) -> list[Hit]:
+        where, params = self._scope(f)
+        rows = self.db.execute(
+            "SELECT c.id, c.version_id, v.document_id, c.text, c.heading_path, c.page_from, "
+            "       c.embedding "
+            "FROM chunk c JOIN document_version v ON v.id = c.version_id "
+            "WHERE c.embedding IS NOT NULL" + where,
+            params,
+        ).fetchall()
         if not rows:
             return []
 
@@ -330,16 +386,26 @@ class SqliteStore:
         if qn == 0.0:
             return []
         mat = np.vstack([np.frombuffer(r["embedding"], dtype="<f4") for r in rows])
+        if mat.shape[1] != q.shape[0]:
+            raise InvariantError(
+                f"Stored vectors are {mat.shape[1]}-dimensional but the query is "
+                f"{q.shape[0]}-dimensional. The embedding model changed under an "
+                "existing index; run: lkb reindex --confirm"
+            )
         norms = np.linalg.norm(mat, axis=1)
         norms[norms == 0.0] = np.inf          # zero vectors score 0, never NaN
         scores = (mat @ q) / (norms * qn)
-        top = np.argsort(-scores)[:k]
+        # Stable, so a tie breaks the same way on every platform and numpy
+        # version. Ties are common on boilerplate and a wobbling order would
+        # make the eval numbers wobble with it.
+        top = np.argsort(-scores, kind="stable")[:k]
         return [
             Hit(
                 chunk_id=rows[i]["id"],
                 score=float(scores[i]),
                 text=rows[i]["text"],
                 method="dense",
+                document_id=rows[i]["document_id"],
                 version_id=rows[i]["version_id"],
                 heading_path=loads(rows[i]["heading_path"], []),
                 page_from=rows[i]["page_from"],
@@ -348,20 +414,16 @@ class SqliteStore:
         ]
 
     def search_sparse(self, query: str, k: int, **f: Any) -> list[Hit]:
-        ws = f.get("workspace_id")
+        where, params = self._scope(f)
         sql = (
-            "SELECT c.id, c.version_id, c.text, c.heading_path, c.page_from, "
+            "SELECT c.id, c.version_id, v.document_id, c.text, c.heading_path, c.page_from, "
             "       bm25(chunk_fts) AS rank "
-            "FROM chunk_fts JOIN chunk c ON c.id = chunk_fts.chunk_id "
-            "WHERE chunk_fts MATCH ?"
+            "FROM chunk_fts "
+            "JOIN chunk c ON c.rowid = chunk_fts.rowid "
+            "JOIN document_version v ON v.id = c.version_id "
+            "WHERE chunk_fts MATCH ?" + where + " ORDER BY rank, c.id LIMIT ?"
         )
-        params: list[Any] = [fts_query(query)]
-        if ws:
-            sql += " AND c.workspace_id = ?"
-            params.append(ws)
-        sql += " ORDER BY rank LIMIT ?"
-        params.append(k)
-        rows = self.db.execute(sql, params).fetchall()
+        rows = self.db.execute(sql, [fts_query(query), *params, k]).fetchall()
         return [
             Hit(
                 chunk_id=r["id"],
@@ -369,6 +431,38 @@ class SqliteStore:
                 score=-float(r["rank"]),
                 text=r["text"],
                 method="sparse",
+                document_id=r["document_id"],
+                version_id=r["version_id"],
+                heading_path=loads(r["heading_path"], []),
+                page_from=r["page_from"],
+            )
+            for r in rows
+        ]
+
+    def search_headings(self, query: str, k: int, **f: Any) -> list[Hit]:
+        """BM25 over the heading path alone.
+
+        Deterministic, free, and it answers a shape of question the body index
+        is bad at: "what did Planning Committee decide about the footbridge" is
+        a heading query wearing a sentence's clothes.
+        """
+        where, params = self._scope(f)
+        sql = (
+            "SELECT c.id, c.version_id, v.document_id, c.text, c.heading_path, c.page_from, "
+            "       bm25(chunk_headings) AS rank "
+            "FROM chunk_headings "
+            "JOIN chunk c ON c.rowid = chunk_headings.rowid "
+            "JOIN document_version v ON v.id = c.version_id "
+            "WHERE chunk_headings MATCH ?" + where + " ORDER BY rank, c.id LIMIT ?"
+        )
+        rows = self.db.execute(sql, [fts_query(query), *params, k]).fetchall()
+        return [
+            Hit(
+                chunk_id=r["id"],
+                score=-float(r["rank"]),
+                text=r["text"],
+                method="sparse",
+                document_id=r["document_id"],
                 version_id=r["version_id"],
                 heading_path=loads(r["heading_path"], []),
                 page_from=r["page_from"],

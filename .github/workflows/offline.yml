@@ -35,7 +35,7 @@ jobs:
       - run: uv python install 3.13
 
       - name: install (network still allowed)
-        run: uv sync --group dev --extra local
+        run: uv sync --locked --group dev --extra local
 
       - name: the suite, inside a network namespace
         env:

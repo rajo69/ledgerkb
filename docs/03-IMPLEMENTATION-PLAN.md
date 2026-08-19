@@ -54,15 +54,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-local    = ["fastembed>=0.4", "chonkie>=0.4", "trafilatura>=1.12", "pypdfium2>=4"]
+parsers  = ["pypdfium2>=4,<6", "python-docx>=1.1,<2", "openpyxl>=3.1,<4",
+            "selectolax>=0.3,<1", "python-pptx>=1.0,<2"]
+embed    = ["fastembed>=0.4,<1"]
+extract  = ["instructor>=1.6,<2"]
+local    = ["ledgerkb[parsers,embed]"]
 postgres = ["psycopg[binary]>=3.2", "pgvector>=0.3"]
 docling  = ["docling>=2"]
-crawl    = ["crawl4ai>=0.4"]
 obs      = ["opentelemetry-sdk>=1.27", "opentelemetry-exporter-otlp-proto-http>=1.27"]
-eval     = ["ragas>=0.2", "deepeval>=1.4"]
 litellm  = ["litellm>=1.50"]
 pdf      = ["typst>=0.11"]
-all      = ["ledgerkb[local,postgres,docling,crawl,obs,eval,pdf]"]
+vec      = ["sqlite-vec>=0.1.7"]
+all      = ["ledgerkb[local,extract,postgres,docling,obs,pdf,vec]"]
 
 [dependency-groups]                      # PEP 735 — dev only, never shipped via PyPI
 dev = ["pytest", "pytest-asyncio", "ruff", "mypy", "hypothesis", "respx"]
@@ -336,8 +339,9 @@ Golden sets are YAML in-repo; `lkb eval run --set golden/sheffield.yaml`. A star
 | Budget guards | all | Max tokens / cost / docs per run → abort, never runaway |
 | PII redaction hook | ingest | Opt-in callback; no default classifier |
 
-### Tier 2 — `pip install ledgerkb[guard]`
-Adapters, off by default: **Prompt Guard 2** (injection classifier), **Llama Guard 4** (content classification — note it is *itself* susceptible to injection, so Prompt Guard layers in front), **LLM-Guard**, **NeMo Guardrails** (Colang orchestration).
+### Tier 2 — a `guard` extra, if it is ever built
+**Not shipped.** No `guard` extra exists; this section describes adapters we have
+not written. If it lands, the candidates are: **Prompt Guard 2** (injection classifier), **Llama Guard 4** (content classification — note it is *itself* susceptible to injection, so Prompt Guard layers in front), **LLM-Guard**, **NeMo Guardrails** (Colang orchestration).
 
 ### Explicitly rejected
 **Keyword blocklists.** Standard guardrails drop to ~60% accuracy on benign data because trigger words appear innocently — and council minutes routinely contain *"the committee resolved to ignore the previous recommendation."* On this corpus a blunt filter causes more damage than the attack it prevents.

@@ -93,11 +93,12 @@ class ChatConfig(Section):
 
 
 class EmbeddingsConfig(Section):
-    provider: Annotated[str, FREE] = "openai_compatible"
+    provider: Annotated[str, FREE] = "local"
+    """``local`` runs fastembed in-process; ``openai_compatible`` calls an endpoint."""
     model: Annotated[
         str,
         Tiered(Tier.LOCKED, "every stored vector becomes meaningless"),
-    ] = "qwen/qwen3-embedding-8b"
+    ] = "mixedbread-ai/mxbai-embed-large-v1"
     dimensions: Annotated[
         int,
         Tiered(Tier.LOCKED, "every stored vector becomes meaningless"),
@@ -105,11 +106,28 @@ class EmbeddingsConfig(Section):
     batch_size: Annotated[int, FREE] = Field(default=64, ge=1)
 
 
+RECHUNK = Tiered(Tier.GATED, "a full re-chunk and re-index")
+"""Anything that moves a chunk boundary.
+
+Boundaries are not a quality/cost tradeoff. Chunk ids change when they move,
+and ``assertion_evidence.chunk_id`` is a foreign key — so a boundary change
+leaves stored evidence pointing at a chunk generation that retrieval no longer
+returns. That is a correctness invariant, which by the rule at the top of this
+module means it cannot be free.
+"""
+
+
 class ChunkingConfig(Section):
-    max_tokens: Annotated[int, FREE] = Field(default=512, ge=64, le=8192)
-    overlap: Annotated[int, FREE] = Field(default=64, ge=0)
-    structure_first: Annotated[bool, FREE] = True
-    contextual_headers: Annotated[bool, Tiered(Tier.GATED, "a full re-index")] = True
+    max_tokens: Annotated[int, RECHUNK] = Field(default=512, ge=64, le=8192)
+    overlap: Annotated[int, RECHUNK] = Field(default=64, ge=0)
+    structure_first: Annotated[bool, RECHUNK] = True
+    contextual_headers: Annotated[bool, Tiered(Tier.GATED, "a full re-index")] = False
+    """Off until the A/B earns it.
+
+    The plan gates contextual headers on a >= 5 point recall improvement. A knob
+    that is on before the measurement makes the gate decorative, and this is the
+    highest-volume LLM call in the system.
+    """
     tokenizer: Annotated[
         str,
         Tiered(Tier.LOCKED, "chunk boundaries shift, breaking every existing offset"),
@@ -129,15 +147,23 @@ class RetrievalConfig(Section):
     dense_k: Annotated[int, FREE] = Field(default=50, ge=1, le=1000)
     sparse_k: Annotated[int, FREE] = Field(default=50, ge=1, le=1000)
     rrf_k: Annotated[int, FREE] = Field(default=60, ge=1)
+    fuse_to: Annotated[int, FREE] = Field(default=30, ge=1, le=2000)
+    """How many fused candidates survive to the reranker. The real pool."""
     rerank_to: Annotated[int, FREE] = Field(default=8, ge=1)
 
     @model_validator(mode="after")
     def _rerank_has_something_to_rank(self) -> RetrievalConfig:
-        pool = self.dense_k + self.sparse_k
-        if self.rerank_to > pool:
+        # Against fuse_to, not dense_k + sparse_k: fusion is what the reranker
+        # actually sees, and the two arms overlap heavily by design.
+        if self.rerank_to > self.fuse_to:
             raise ValueError(
-                f"retrieval.rerank_to ({self.rerank_to}) exceeds the candidate pool "
-                f"dense_k + sparse_k ({pool}) — reranking cannot invent candidates"
+                f"retrieval.rerank_to ({self.rerank_to}) exceeds retrieval.fuse_to "
+                f"({self.fuse_to}) — reranking cannot invent candidates"
+            )
+        if self.fuse_to > self.dense_k + self.sparse_k:
+            raise ValueError(
+                f"retrieval.fuse_to ({self.fuse_to}) exceeds the candidate pool "
+                f"dense_k + sparse_k ({self.dense_k + self.sparse_k})"
             )
         return self
 

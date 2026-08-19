@@ -48,7 +48,7 @@ class TestIncoherentCombinations:
 
     def test_rerank_cannot_exceed_the_candidate_pool(self, project: Path) -> None:
         p = _write(project, "[retrieval]\ndense_k = 5\nsparse_k = 5\nrerank_to = 50\n")
-        with pytest.raises(ConfigError, match="candidate pool"):
+        with pytest.raises(ConfigError, match="cannot invent candidates"):
             load_config(p)
 
     def test_trigram_must_sit_inside_the_grey_band(self, project: Path) -> None:
@@ -126,9 +126,33 @@ class TestTiers:
     def test_gated_knob_refuses_unless_confirmed(self) -> None:
         old = Config()
         new = old.model_copy(deep=True)
-        new.chunking.contextual_headers = False
+        new.chunking.contextual_headers = True
         with pytest.raises(GatedSettingError, match="re-index"):
             check_transition(old, new)
+
+    def test_moving_a_chunk_boundary_is_never_free(self) -> None:
+        """Boundaries are a correctness invariant, not a quality knob.
+
+        Chunk ids change when a boundary moves and evidence rows point at chunk
+        ids, so a free-tier re-chunk would leave stored evidence aimed at a
+        generation retrieval no longer returns.
+        """
+        for knob, value in (("max_tokens", 1024), ("overlap", 0), ("structure_first", False)):
+            old = Config()
+            new = old.model_copy(deep=True)
+            setattr(new.chunking, knob, value)
+            with pytest.raises(GatedSettingError, match="re-chunk"):
+                check_transition(old, new)
+
+    def test_contextual_headers_are_off_until_the_ab_earns_them(self) -> None:
+        """The plan gates them on a >= 5 point recall win. On by default would
+        make that gate decorative, and this is the costliest call in the system."""
+        assert Config().chunking.contextual_headers is False
+
+    def test_the_default_embedder_needs_no_api_key(self) -> None:
+        cfg = Config()
+        assert cfg.embeddings.provider == "local"
+        assert cfg.embeddings.dimensions == 1024
 
     def test_gated_knob_reports_rebuilds_when_confirmed(self) -> None:
         old = Config()
