@@ -571,7 +571,8 @@ directive so they are skipped rather than silently ignored. Keep the executed bl
 
 A CI job, or an extension of the existing static job, that fails on:
 
-- any em dash in a tracked Markdown file
+- any em dash (U+2014) in a tracked Markdown file, outside fenced code blocks, since a
+  rule about a character has to be able to quote the character
 - any word from the banned list in section 5.2
 - a relative link that does not resolve
 - a stage status in prose outside a generated region, found by pattern
@@ -623,7 +624,8 @@ The documentation phase is done when all of these pass.
 
 - [ ] `python scripts/render_docs.py --check` exits zero, and fails if `stages.toml` is edited
       without regenerating
-- [ ] `grep -c '—' $(git ls-files '*.md')` returns zero for every tracked Markdown file
+- [ ] No tracked Markdown file contains U+2014, checked by the lint rather than by a grep
+      that would itself contain the character
 - [ ] The documentation lint passes
 - [ ] Every code block in the README and tutorial runs in CI
 - [ ] No tracked file mentions the originating event except one line in the README
