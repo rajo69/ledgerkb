@@ -524,7 +524,7 @@ written. It is not any more, and what replaced this paragraph is
 
 ### The corpus problem, read this before writing a golden set
 
-> **Superseded on 2026-08-21.** The corpus was grown to 195 documents and 4,433
+> **Superseded on 2026-08-21.** The corpus was grown to 196 documents and 4,437
 > chunks, so the problem described below no longer exists. The analysis is kept
 > because it is why the corpus has the shape it does, and recommendations 2, 3
 > and 5 were not adopted and are still open. See

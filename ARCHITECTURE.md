@@ -115,7 +115,7 @@ Nothing outside this directory may import a provider SDK.
 The path from bytes to stored chunks. `readers/fs.py` walks the filesystem;
 `readers/archive.py` expands ZIP archives with guards against path traversal,
 compression ratio, nesting depth and total size. `parsers/` holds tier-0 parsers
-for ten formats behind `registry.py`, which dispatches on the first parser to
+for eleven formats behind `registry.py`, which dispatches on the first parser to
 claim a file and raises a named `ParseError` rather than guessing. `sanitise.py`
 removes invisible text and quarantines instruction-shaped spans without deleting
 them. `chunk.py` splits on document structure. `metadata.py` extracts five fields

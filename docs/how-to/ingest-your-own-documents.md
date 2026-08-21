@@ -19,6 +19,7 @@ refresh works per source and documents are unique on `(source, external_id)`.
 | XLSX | `openpyxl` | One chunk per sheet, cells flattened row-wise |
 | PPTX | `python-pptx` | One chunk per slide, title as heading |
 | HTML | `selectolax` | Scripts, styles, comments and `display:none` removed |
+| RTF | native | Stylesheet and outline levels become the heading path; images are skipped and reported |
 | EML | stdlib `email` | Headers become metadata; the text part is the body |
 | CSV | stdlib `csv` | Header row becomes the field names |
 | JSON | stdlib `json` | Flattened to readable key paths |

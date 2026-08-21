@@ -176,5 +176,5 @@ class TestScaleZeroIsUnchanged:
         every page that documents the anchor set.
         """
         written = build(tmp_path / "anchors")
-        assert len(written) == 20
+        assert len(written) == 21
         assert generated_documents(0) == []

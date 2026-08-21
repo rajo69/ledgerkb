@@ -107,7 +107,7 @@ documents in that corpus give different budget figures, and search returns both.
 - **Product** (P1 to P6): not started.
 
 Documents go in and ranked passages come out. Ingest reads files, directories and ZIP
-archives; tier-0 parsers cover ten formats; the sanitiser strips invisible text and
+archives; tier-0 parsers cover eleven formats; the sanitiser strips invisible text and
 quarantines instruction-shaped spans; the chunker slices on document structure and every
 chunk slices back to byte-identical source text. Search runs three arms (dense, BM25 and
 heading path), fuses them by rank, and explains where each arm placed every candidate. All
@@ -259,8 +259,8 @@ Most useful right now, in order:
 1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
    path. The `Parser` protocol is five lines and the registry makes it one
    registration.
-2. **Questions for the L2 golden set.** The measurement corpus is 195 documents
-   and 4,433 chunks. What it still needs is 40 questions, at least 7 of them
+2. **Questions for the L2 golden set.** The measurement corpus is 196 documents
+   and 4,437 chunks. What it still needs is 40 questions, at least 7 of them
    unanswerable, written from the documents before retrieval is run.
 3. **A how-to guide for a provider you actually use.** Ollama, vLLM, LM Studio,
    TEI. If you got it working, that is the guide.

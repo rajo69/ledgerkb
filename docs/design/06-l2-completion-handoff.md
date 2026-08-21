@@ -11,7 +11,7 @@ one.
 git log --oneline -3
 gh pr list --state open
 uv run pytest --no-cov -q
-python tests/fixtures/build_corpus.py /tmp/c 11   # 195 documents
+python tests/fixtures/build_corpus.py /tmp/c 11   # 196 documents
 ```
 
 Stage status is generated from `docs/stages.toml`. Do not state it anywhere
@@ -129,7 +129,7 @@ red, so passing it would have proved nothing.
 `tests/fixtures/corpus_world.py` now generates a world and
 `build_corpus.build(target, scale)` takes a scale. Scale 0 is the 20 anchor
 documents and remains the default, so every figure quoted in the tutorial and
-the README stays true. `MEASUREMENT_SCALE` is 11: **195 documents, 4,433
+the README stays true. `MEASUREMENT_SCALE` is 11: **196 documents, 4,437
 chunks**.
 
 Size alone was not the point. Every capital programme carries four different
@@ -217,7 +217,7 @@ irreversible in practice.
 
 ## The provider decision, taken
 
-Criterion 4 needs an LLM, one call per chunk, about 2.4M tokens across 4,433
+Criterion 4 needs an LLM, one call per chunk, about 2.4M tokens across 4,437
 requests. Nothing else in L2 needs one: embeddings run locally through
 fastembed with no key.
 

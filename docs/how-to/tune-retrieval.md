@@ -71,7 +71,7 @@ Rule of thumb: each arm should retrieve a small fraction of your chunks. If your
 store is under a few hundred chunks, drop both to 10 or 20 and the fused ordering
 starts to mean something.
 
-This is also why L2's own measurement runs against a generated corpus of 4,433
+This is also why L2's own measurement runs against a generated corpus of 4,437
 chunks rather than the 55-chunk anchor set: at that size the gate could not go
 red, so passing it would have proved nothing. See
 [build the measurement corpus](build-the-measurement-corpus.md).

@@ -7,6 +7,26 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: RTF at tier 0
+
+- `ingest/parsers/rtf.py`: RTF joins the tier-0 formats, with no new
+  dependency. The format is a plain-text container, so the parser is a scanner
+  over groups, control words and escapes. Headings come from the stylesheet and
+  from `\outlinelevel`, which is the pair Word writes. That is also why no
+  existing library was used: the ones that flatten RTF to a string discard the
+  paragraph styles, and a parser that returns no headings returns no heading
+  path for a citation to name.
+- Hidden text (`\v`) and tracked-change deletions are kept out of the text and
+  reported as `hidden:<offset>:<text>`, the shape `parsers/html.py` already
+  uses, so the sanitiser turns them into quarantine records. Word will hide a
+  run on request, which makes it the one injection channel the format offers.
+- `.rtf` leaves `KNOWN_UNSUPPORTED`, so the error message and the parser list
+  agree again.
+- `tests/fixtures/build_corpus.py` generates a 21st document, an RTF board
+  note. It puts the new parser under the corpus offset invariant in
+  `tests/integration/test_ingest_pipeline.py` rather than only under its own
+  unit tests.
+
 ### Decided: Cerebras for the contextual-header measurement
 
 - L2's fourth criterion needs one model call per chunk, about 2.4M tokens, and
@@ -108,8 +128,8 @@ stability commitment at v1.0.0.
   a diff of that file is a diff of the corpus.
 - `build_corpus.build()` takes a `scale`. Scale 0 is the 20 anchor documents
   and is the default, so the tutorial, the README and every existing test keep
-  the figures they already quote. `MEASUREMENT_SCALE` is 195 documents and
-  4,433 chunks.
+  the figures they already quote. `MEASUREMENT_SCALE` is 196 documents and
+  4,437 chunks.
 - This unblocks the four L2 gate criteria that are measurements. At 55 chunks
   a `dense_k` of 50 covered most of the corpus and no retrieval strategy could
   score differently from any other, so the gate could not go red. It now can.
@@ -127,7 +147,7 @@ stability commitment at v1.0.0.
 - `tests/integration/test_measurement_corpus.py` asserts the size condition
   against `RetrievalConfig` rather than against a fixed number, so raising
   `dense_k` without growing the corpus fails the build. It also runs the L1
-  offset invariant over all 4,433 chunks.
+  offset invariant over all 4,437 chunks.
 - The L1 gate criterion no longer pins a document count. Growing the corpus is
   the work that unblocks L2, and a number inside a criterion that is already
   met turned every corpus contribution into a question about editing history.

@@ -82,6 +82,7 @@ nav:
       - 0006 Measurement provenance: adr/0006-measurement-provenance.md
       - 0007 OOXML reproducibility: adr/0007-defer-ooxml-reproducibility.md
       - 0008 Contextual-header provider: adr/0008-provider-for-the-contextual-header-ab.md
+      - 0009 Inadmissible measurements: adr/0009-what-makes-a-measurement-inadmissible.md
   - Design records:
       - Research log: design/00-research-log.md
       - Product spec: design/01-product-spec.md

@@ -6,20 +6,20 @@ it is for, and why it is generated rather than written.
 ## The two sizes
 
 ```bash
-# the anchor corpus: 20 documents, 55 chunks
+# the anchor corpus: 21 documents, 59 chunks
 python tests/fixtures/build_corpus.py ./demo
 
-# the measurement corpus: 195 documents, 4,433 chunks
+# the measurement corpus: 196 documents, 4,437 chunks
 python tests/fixtures/build_corpus.py ./demo 11
 ```
 
 The second argument is the scale. Scale 0 is the anchor set, which is what the
-tutorial uses and what every ingest and offset test runs against: 20 documents
+tutorial uses and what every ingest and offset test runs against: 21 documents
 prove that each format parses as well as 200 do, and they keep the suite fast.
 Scale 11 is `MEASUREMENT_SCALE`, the corpus the L2 retrieval numbers are
 computed on.
 
-Both are written by the same code and share the same 20 anchor documents, so a
+Both are written by the same code and share the same 21 anchor documents, so a
 question written against the anchor set is still valid against the larger one.
 
 ## Why the larger one exists
@@ -31,7 +31,7 @@ strategy scores about the same. `recall@20` asks for 36% of the corpus.
 
 L2's gate has four criteria that are measurements, including "hybrid beats
 dense-only and BM25-only". None of them can fail at that size, and a gate that
-cannot fail proves nothing. At 4,433 chunks, `dense_k = 50` is about 1% of the
+cannot fail proves nothing. At 4,437 chunks, `dense_k = 50` is about 1% of the
 corpus and `recall@20` asks for less than half of one percent.
 
 There is a test for this, in `tests/integration/test_measurement_corpus.py`,

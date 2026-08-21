@@ -6,7 +6,7 @@
 
 L2's fourth criterion asks whether contextual headers improve `recall@20` by at
 least 5 points, "which is what would justify their cost". Measuring it means
-generating a header for every chunk: 4,433 calls, roughly 2.4M tokens, each call
+generating a header for every chunk: 4,437 calls, roughly 2.4M tokens, each call
 small.
 
 This is the only part of L2 that needs a language model. Embeddings run

@@ -10,7 +10,7 @@ difference is two questions, and a bare positive number is not evidence that
 hybrid retrieval beats either half.
 
 That recommendation was made while the corpus was 55 chunks, when no metric
-could have discriminated. The corpus is now 4,433 chunks, so the question of
+could have discriminated. The corpus is now 4,437 chunks, so the question of
 which metric to use became live rather than academic.
 
 The gate in `docs/stages.toml` still says: a golden set of 40 questions with at

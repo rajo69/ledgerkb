@@ -56,9 +56,10 @@ amount and the financial year as literal tokens. The second test exists because
 helping the dense arm must not quietly remove the handle the sparse arm is
 entitled to.
 
-Document and chunk counts did not change, at 195 and 4,433, because chunking
-splits on headings and no section crossed the 512-token boundary. No documented
-figure needed updating.
+Varying the wording changed no counts, because chunking splits on headings and
+no section crossed the 512-token boundary. The corpus is 196 documents and 4,437
+chunks, and it reached those figures by gaining the RTF anchor from #1, not by
+anything in this decision.
 
 The phrasing banks are prose, so anyone editing `corpus_world.py` can flatten
 them back into a template without noticing what they cost. The tests are the

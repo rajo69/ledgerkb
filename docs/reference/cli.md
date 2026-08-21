@@ -50,7 +50,7 @@ total size.
 |---|---|
 | `--source NAME` | Name for this source. Defaults to `local` |
 
-Formats: PDF, DOCX, XLSX, PPTX, HTML, EML, CSV, JSON, MD, TXT. A file no parser
+Formats: PDF, DOCX, XLSX, PPTX, HTML, EML, RTF, CSV, JSON, MD, TXT. A file no parser
 claims raises a named error rather than being guessed at as text.
 
 Output is one row per document with its status, chunk count and the parser that

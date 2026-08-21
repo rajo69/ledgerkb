@@ -50,8 +50,11 @@ different offsets on different platforms for the same document.
 
 ## A worked example: RTF
 
-RTF is in `KNOWN_UNSUPPORTED`, so it currently raises a helpful error. Here is
-what replacing that with a parser looks like.
+RTF was the format this guide was written against, and it now ships. The
+sketch below is the shape. The finished parser is
+`src/ledgerkb/ingest/parsers/rtf.py`, and it is worth reading beside this
+page, because everything of interest in it lives in the one function the
+sketch leaves unimplemented.
 
 ```python test="skip"
 # src/ledgerkb/ingest/parsers/rtf.py
@@ -97,7 +100,7 @@ DEFAULT_PARSERS: tuple[Parser, ...] = (
     XlsxParser(),
     PptxParser(),
     HtmlParser(),
-    RtfParser(),           # new
+    RtfParser(),
     EmailParser(),
     CsvParser(),
     JsonParser(),
@@ -108,8 +111,9 @@ DEFAULT_PARSERS: tuple[Parser, ...] = (
 Order matters. The first parser that claims a file wins, so specific formats go
 before general ones and `TextParser` stays last.
 
-Remove `.rtf` from `KNOWN_UNSUPPORTED` in the same change, or the helpful error
-will now be a lie.
+Remove your format from `KNOWN_UNSUPPORTED` in the same change, or the helpful
+error becomes a lie. `.rtf` left that table when the parser above landed;
+`.doc`, `.xls`, `.ppt`, `.pages` and `.odt` are still in it.
 
 ## Failing well
 

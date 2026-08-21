@@ -107,7 +107,7 @@ An OpenAI-compatible embedder and a local in-process one, reciprocal rank fusion
 retrieval arms: dense vectors, FTS5 BM25 and the heading path. Search is scoped to current
 document versions and every candidate carries a per-arm rank explanation. The machinery is
 merged, the store now records which model made its vectors and refuses a second one on the
-index path, and the corpus that blocked the measurement is built: 195 documents and 4,433
+index path, and the corpus that blocked the measurement is built: 196 documents and 4,437
 chunks, against 50 dense candidates. What remains is the golden set and the four numbers
 that come from running it.
 

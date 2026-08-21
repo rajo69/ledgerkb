@@ -22,7 +22,7 @@ This is why L2 stayed open for weeks with its machinery merged.
 Grow the fixture corpus to a size where the shipped defaults are a choice rather
 than a formality. `tests/fixtures/corpus_world.py` generates a world, and
 `build_corpus.build(target, scale)` takes a scale. `MEASUREMENT_SCALE` produces
-195 documents and 4,433 chunks, at which `dense_k = 50` is about 1% of the
+196 documents and 4,437 chunks, at which `dense_k = 50` is about 1% of the
 corpus.
 
 Scale 0 remains the 20 anchor documents and remains the default, so every figure

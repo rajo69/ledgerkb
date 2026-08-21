@@ -133,8 +133,8 @@ Current, and specific:
    path for scanned documents. The `Parser` protocol is two methods, and
    `ingest/parsers/registry.py` makes a new format a single registration. Read
    `parsers/plain.py` for the smallest complete example.
-2. **Questions for the L2 golden set.** The measurement corpus is now 195
-   documents and 4,433 chunks, so the corpus is no longer what blocks L2. The
+2. **Questions for the L2 golden set.** The measurement corpus is now 196
+   documents and 4,437 chunks, so the corpus is no longer what blocks L2. The
    golden set is: 40 questions, at least 7 of them unanswerable, written from
    the documents before any retrieval is run. Read
    [how-to/build-the-measurement-corpus.md](docs/how-to/build-the-measurement-corpus.md)
