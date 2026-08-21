@@ -41,3 +41,8 @@ Thumbs.db
 
 # mkdocs build output
 site/
+
+# Claude Code session transcripts, written into the repository root. Local
+# working notes, not project history. Anchored to the root so a fixture .txt
+# elsewhere is unaffected.
+/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt

@@ -1,8 +1,9 @@
 # L2 completion handoff
 
-Written 2026-08-21, for a session starting cold. Read this before touching
-retrieval. [04-build-handoff.md](04-build-handoff.md) is still the wider
-reference; its "corpus problem" section is superseded by this one.
+Written 2026-08-21 and updated the same day, for a session starting cold. Read
+it before touching retrieval. [04-build-handoff.md](04-build-handoff.md) is
+still the wider reference; its "corpus problem" section is superseded by this
+one.
 
 ## Verify you are where this document thinks you are
 
@@ -18,21 +19,24 @@ else, and do not edit the generated regions by hand.
 
 ## Where L2 actually is
 
-Gate 2 of 7. The machinery has been merged since `76d010c`: an OpenAI-compatible
+Gate 3 of 7. The machinery has been merged since `76d010c`: an OpenAI-compatible
 embedder, a local in-process one, RRF, three arms (dense, BM25, heading path),
-version-scoped search, and `--explain`. Two criteria are met and stay met.
+version-scoped search, and `--explain`. Migration 005 added `embedding_space`,
+so the store now records which model made its vectors and `lkb index` refuses a
+second one.
 
-The five open criteria, and what each needs:
+**Every remaining criterion is a measurement.** There is no code-only work left
+in L2, which is a change from how this stage has looked until now.
 
 | Criterion | Blocked on | Exists today |
 |---|---|---|
 | Golden set, 40 questions, 7+ unanswerable | somebody writing them | `golden/` is empty |
-| recall@20 >= 0.90 | a measurement harness | `src/ledgerkb/eval/` is an empty package |
+| recall@20 >= 0.90 | a measurement harness | `src/ledgerkb/evals/` is an empty package |
 | Hybrid beats dense-only and BM25-only | the same harness | nothing |
 | Contextual headers +5 points | `index/contextualise.py` **and an LLM** | neither |
-| Embedding model and dimension in the store | a migration | no such columns in `storage/migrations/` |
 
-The last one is unblocked, self-contained, and the obvious first commit.
+The harness is the obvious first commit: two of the four criteria need it, and
+it needs no key and no decision from anybody.
 
 ## What changed this session, and why
 
@@ -51,6 +55,16 @@ Size alone was not the point. Every capital programme carries four different
 budget figures across four quarters, so a question about an allocation has one
 correct chunk and three decoys sharing nearly all of its vocabulary. Without
 that, 200 unrelated documents retrieve as easily as 20.
+
+**The store learned which model made its vectors.** Migration 005 adds
+`embedding_space`, and `guard_embedding_space` on the index path refuses to add
+vectors from a second model. The case that made it worth doing is two models of
+the same width: their vectors sit in different geometries, cosine distance
+between them is still a number, and the index returns a confidently ranked list
+of noise without raising. `config_stamp` and `lkb doctor` already reported the
+drift, and reporting was not enough, because the damage is done by a command the
+report does not stop. The refusal fires even when nothing is left to embed,
+which is the case the CLI's early return used to walk past.
 
 **Three decisions, so they are not relitigated:**
 
@@ -83,9 +97,9 @@ irreversible in practice.
    retriever returned measure the retriever against itself.
    [../how-to/build-the-measurement-corpus.md](../how-to/build-the-measurement-corpus.md)
    lists the question shapes that discriminate.
-5. **Build the eval harness**, then run recall@20 and the hybrid-versus-arms
-   comparison. Commit the numbers as a file. A figure that lives only in
-   terminal scrollback is not a met criterion.
+5. **Build the eval harness** in `src/ledgerkb/evals/`, then run recall@20 and
+   the hybrid-versus-arms comparison. Commit the numbers as a file. A figure
+   that lives only in terminal scrollback is not a met criterion.
 6. **Contextual headers**, or a written descope. See the open decision below.
 7. **Update `docs/stages.toml`** and run `scripts/render_docs.py`. Then update
    this document to say what the numbers were.
@@ -140,4 +154,7 @@ worth arguing for before L3 depends on these numbers.
   at the byte level. It will matter at L6, where content-hash diffing decides
   what changed.
 - **`scripts/try_real_rtf.py` is scaffolding.** It reads the parser out of the
-  PR ref to test a real Word file. Delete it once RTF has landed.
+  PR ref to run a real Word file through it. Delete it once RTF has landed.
+  It has already done its job: a Word-written `.rtf` with a tracked change on a
+  budget figure showed the parser dropping the pound sign out of the visible
+  text, which is reported on #1.
