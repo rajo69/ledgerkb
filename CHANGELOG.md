@@ -7,6 +7,27 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: a format for the golden set
+
+- `ledgerkb.evals.golden` defines what an eval question is and loads a TOML
+  file of them. It contains no questions: L2's gate requires those to be written
+  from the documents before retrieval is run, and nobody can write them until
+  there is a format to write them in.
+- Relevance is a document and a verbatim quote, not a chunk id. Chunk ids are
+  minted at ingest and change on every rebuild, so a golden set keyed on them
+  would rot the first time the pipeline was re-run.
+- `resolve()` locates each quote in the store and raises if no chunk contains
+  it. Scoring an unfindable quote as a miss would report a wrong question as a
+  retrieval failure, and the two are indistinguishable in a recall number.
+- `answerable` is stated, never inferred from whether spans are present, so a
+  half-written question cannot silently become one of the seven unanswerable
+  ones and meet the gate by accident.
+- Structural problems are reported together on load. The gate counts are
+  reported by `gate_problems()` rather than raised, because a file with 12
+  questions in it is what writing a golden set looks like on the way to 40.
+- The format is documented in
+  [docs/how-to/build-the-measurement-corpus.md](docs/how-to/build-the-measurement-corpus.md).
+
 ### Added: measurements carry their provenance
 
 - `ledgerkb.evals.provenance` collects the header ADR 0006 specifies, and

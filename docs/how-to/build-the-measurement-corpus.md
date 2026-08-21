@@ -97,6 +97,56 @@ discriminate:
   unanswerable, and they have to be plausible: a programme that does not exist
   in a ward that does, or a figure for a quarter outside the window.
 
+## The file format
+
+One TOML file, loaded by `ledgerkb.evals.golden.load`. It records the corpus
+scale it was written against, because a golden set is only meaningful against
+one corpus, and the results header records which.
+
+```toml
+corpus_scale = 11
+
+[[question]]
+id = "attercliffe-allocation-2026-27"
+question = "What capital allocation was approved for Attercliffe in 2026/27?"
+answerable = true
+shape = "figure-across-quarters"
+
+[[question.relevant]]
+document = "planning-committee-minutes-2026-03-11.md"
+quote = "capital allocation of GBP 2.4m"
+
+[[question]]
+id = "hillsborough-skyway"
+question = "What was allocated to the Hillsborough Skyway Programme?"
+answerable = false
+shape = "unanswerable"
+note = "No such programme. The ward is real, which is what makes it plausible."
+```
+
+**Relevance is a quote, not a chunk id.** Chunk ids are minted at ingest, so
+they change every time the corpus is rebuilt and a golden set keyed on them
+would rot the first time anybody re-ran the pipeline. Naming the document and a
+span of its text survives a rebuild, and it gives the file a self-check: `resolve`
+locates each quote in the store and refuses if no chunk contains it. That refusal
+matters more than it looks. Scoring an unfindable quote as a miss would report a
+wrong question as a retrieval failure, and the two are indistinguishable in a
+recall number.
+
+Keep the quote to the shortest span that actually carries the answer. A long
+quote spanning a heading boundary becomes a test of where the chunker split
+rather than of what the retriever found.
+
+`answerable` is stated rather than inferred from whether spans are present, so
+a question somebody left half written cannot silently become one of the seven
+unanswerable ones and meet the gate by accident. `shape` is checked against the
+list above, because a typo would otherwise invent a category of one.
+
+Structural mistakes are all reported together on load. The counts the gate asks
+for, 40 questions and at least 7 unanswerable, are reported by `gate_problems()`
+rather than raised, because a file with 12 questions in it is what writing a
+golden set looks like on the way to 40.
+
 ## Known limitation
 
 The corpus is synthetic, and the same process wrote the documents and the code

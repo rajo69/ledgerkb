@@ -129,7 +129,13 @@ irreversible in practice.
    criterion, not a style preference: questions written after seeing what the
    retriever returned measure the retriever against itself.
    [../how-to/build-the-measurement-corpus.md](../how-to/build-the-measurement-corpus.md)
-   lists the question shapes that discriminate.
+   lists the question shapes that discriminate and documents the file format.
+   The format itself is done, in `evals/golden.py`, and holds no questions:
+   relevance is a document plus a verbatim quote rather than a chunk id, so the
+   file survives a corpus rebuild, and `resolve()` refuses a quote no chunk
+   contains rather than scoring it as a miss. This is the one part of step 4
+   that did not have to wait for the corpus to freeze, and writing the questions
+   still does.
 5. **Build the eval harness** in `src/ledgerkb/evals/`, then run recall@20 and
    the hybrid-versus-arms comparison. The output format is already decided in
    [0006](../adr/0006-measurement-provenance.md): a Markdown and a JSON file in
