@@ -16,7 +16,7 @@ current = "L2"
 # code delivers.
 works_today = """
 Documents go in and ranked passages come out. Ingest reads files, directories
-and ZIP archives; tier-0 parsers cover ten formats; the sanitiser strips
+and ZIP archives; tier-0 parsers cover eleven formats; the sanitiser strips
 invisible text and quarantines instruction-shaped spans; the chunker slices on
 document structure and every chunk slices back to byte-identical source text.
 Search runs three arms (dense, BM25 and heading path), fuses them by rank, and

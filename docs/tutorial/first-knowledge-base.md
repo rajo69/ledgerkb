@@ -3,7 +3,7 @@
 Twenty minutes, from nothing to a searchable corpus with a citation you can
 verify. No API key, no network beyond the install, no account anywhere.
 
-By the end you will have ingested twenty documents in ten formats, searched them
+By the end you will have ingested twenty-one documents in eleven formats, searched them
 three different ways, and checked that a citation points at exactly the characters
 it claims to.
 
@@ -53,13 +53,13 @@ No key is set, and nothing in this tutorial needs one.
 ## 2. Get some documents
 
 If you have a folder of your own, use it. If not, the repository can generate a
-corpus of twenty council-shaped documents across ten formats:
+corpus of twenty-one council-shaped documents across eleven formats:
 
 ```bash
 python /path/to/ledgerkb/tests/fixtures/build_corpus.py ./demo
 ```
 
-That writes `./demo/corpus` with twenty documents, plus `./demo/injections` and
+That writes `./demo/corpus` with twenty-one documents, plus `./demo/injections` and
 `./demo/archives`, which are the hostile fixtures the test suite uses. Ignore
 those two for now.
 
@@ -73,13 +73,14 @@ lkb ingest ./demo/corpus
 document                                      status    chunks  parser
 action-log-2026-03.csv                        ingested       1  csv
 annual-governance-statement-2025-26.pdf       ingested       1  pypdfium2
+attercliffe-board-note-2026-04-22.rtf         ingested       4  rtf
 attercliffe-programme-board-2026-04.pptx      ingested       3  python-pptx
 cabinet-minutes-2026-04-08.md                 ingested       4  text
 footbridge-options-appraisal.docx             ingested       4  python-docx
 planning-committee-minutes-2026-03-11.md      ingested       8  text
 [14 more rows, elided]
 
-20 ingested, 0 unchanged, 0 failed - 55 chunks
+21 ingested, 0 unchanged, 0 failed - 59 chunks
 
 metadata coverage
   title                100%

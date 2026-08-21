@@ -2,7 +2,7 @@
 
 Q4 in the build handoff asked whether a real corpus exists. It does not — there
 are no Sheffield documents in this repository — so the default applies: a
-synthetic 20-document corpus, generated rather than committed as binaries.
+synthetic 21-document corpus, generated rather than committed as binaries.
 
 Generated, because a PDF or XLSX checked into git is an opaque blob that nobody
 reviews and that no reviewer can diff. Generating them means the *content* is
@@ -372,13 +372,57 @@ def _pdf(path: Path, title: str, pages: list[str]) -> None:
     path.write_bytes(bytes(out))
 
 
+def _rtf_escape(text: str) -> str:
+    r"""Text to RTF body text.
+
+    Braces and backslashes are the format's own delimiters, and anything above
+    ASCII becomes a ``\'hh`` escape in the code page the header declares. The
+    result is a pure-ASCII file, which is what a conformant RTF writer emits.
+    """
+    out: list[str] = []
+    for ch in text:
+        if ch in "\\{}":
+            out.append("\\" + ch)
+        elif ord(ch) < 128:
+            out.append(ch)
+        else:
+            try:
+                out.append(f"\\'{ch.encode('cp1252')[0]:02x}")
+            except UnicodeEncodeError:
+                out.append(f"\\u{ord(ch)}?")
+    return "".join(out)
+
+
+def _rtf(path: Path, title: str, blocks: list[tuple[str, str]]) -> None:
+    r"""A Word-shaped RTF, written by hand.
+
+    No RTF-writing dependency, for the same reason as the PDF above: the corpus
+    must build from the same extra that reads it, and the RTF parser is a reader
+    only. Headings are written the way Word writes them, as a numbered style
+    reference plus an outline level, because that pair is what the parser reads.
+    """
+    parts = [
+        r"{\rtf1\ansi\ansicpg1252\deff0",
+        r"{\fonttbl{\f0\froman Times New Roman;}}",
+        r"{\colortbl;\red0\green0\blue0;}",
+        r"{\stylesheet{\s0\ql Normal;}{\s1\b\fs32 heading 1;}"
+        r"{\s2\b\fs28 heading 2;}}",
+        r"{\info{\title " + _rtf_escape(title) + r"}{\author Committee Services}}",
+    ]
+    styles = {"h1": r"\pard\s1\outlinelevel0 ", "h2": r"\pard\s2\outlinelevel1 "}
+    for style, text in blocks:
+        parts.append(styles.get(style, r"\pard\plain ") + _rtf_escape(text) + r"\par")
+    parts.append("}")
+    path.write_bytes("".join(parts).encode("ascii"))
+
+
 def _csv(path: Path, rows: list[list[str]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as fh:
         csv.writer(fh).writerows(rows)
 
 
 def build(target: Path) -> list[Path]:
-    """Write the 20-document corpus. Returns the paths, in a stable order."""
+    """Write the 21-document corpus. Returns the paths, in a stable order."""
     target.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
 
@@ -544,6 +588,26 @@ def build(target: Path) -> list[Path]:
         ],
     )
     written.append(target / "annual-governance-statement-2025-26.pdf")
+
+    # 21 — rtf
+    _rtf(
+        target / "attercliffe-board-note-2026-04-22.rtf",
+        "Attercliffe Programme Board Note",
+        [
+            ("h1", "Attercliffe Programme Board Note"),
+            ("p", "Note of the meeting held on 22 April 2026, Town Hall."),
+            ("h2", "Budget"),
+            ("p", "The revised capital allocation of \u00a32.9m was noted, superseding "
+                  "the \u00a32.4m approved by Planning Committee on 11 March 2026."),
+            ("h2", "Footbridge works"),
+            ("p", "Option B was confirmed at \u00a3500,000 on whole-life cost grounds. "
+                  "The contractor\u2019s programme runs to March 2027."),
+            ("h2", "Actions"),
+            ("p", "Action 5.1 \u2014 The Programme Director to confirm the drawdown "
+                  "profile before the June report."),
+        ],
+    )
+    written.append(target / "attercliffe-board-note-2026-04-22.rtf")
 
     return written
 

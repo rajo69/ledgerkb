@@ -129,14 +129,14 @@ One maintainer, so the honest promise is a small one and it is kept:
 
 Current, and specific:
 
-1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
+1. **A parser for a format not yet covered.** ODT, EPUB, or a better PDF
    path for scanned documents. The `Parser` protocol is two methods, and
    `ingest/parsers/registry.py` makes a new format a single registration. Read
    `parsers/plain.py` for the smallest complete example.
 2. **More document types in the fixture corpus generator.**
    `tests/fixtures/build_corpus.py` is generative, so this is parameters rather
    than authoring, and the corpus stays reviewable source instead of committed
-   binaries. This is the work blocking L2's gate: 55 chunks cannot support a
+   binaries. This is the work blocking L2's gate: 59 chunks cannot support a
    recall measurement.
 3. **A how-to guide for a provider you actually run.** Ollama, vLLM, LM Studio,
    TEI. If you got it working, that is the guide.

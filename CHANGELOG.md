@@ -7,6 +7,26 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: RTF at tier 0
+
+- `ingest/parsers/rtf.py`: RTF joins the tier-0 formats, with no new
+  dependency. The format is a plain-text container, so the parser is a scanner
+  over groups, control words and escapes. Headings come from the stylesheet and
+  from `\outlinelevel`, which is the pair Word writes. That is also why no
+  existing library was used: the ones that flatten RTF to a string discard the
+  paragraph styles, and a parser that returns no headings returns no heading
+  path for a citation to name.
+- Hidden text (`\v`) and tracked-change deletions are kept out of the text and
+  reported as `hidden:<offset>:<text>`, the shape `parsers/html.py` already
+  uses, so the sanitiser turns them into quarantine records. Word will hide a
+  run on request, which makes it the one injection channel the format offers.
+- `.rtf` leaves `KNOWN_UNSUPPORTED`, so the error message and the parser list
+  agree again.
+- `tests/fixtures/build_corpus.py` generates a 21st document, an RTF board
+  note. It puts the new parser under the corpus offset invariant in
+  `tests/integration/test_ingest_pipeline.py` rather than only under its own
+  unit tests.
+
 ### Added: L2 index and retrieve (half)
 
 The retrieval machinery. What is outstanding is the measurement, which is

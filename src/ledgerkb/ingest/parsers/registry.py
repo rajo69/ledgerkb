@@ -18,6 +18,7 @@ from ledgerkb.ingest.parsers.html import HtmlParser
 from ledgerkb.ingest.parsers.office import DocxParser, PptxParser, XlsxParser
 from ledgerkb.ingest.parsers.pdf import PdfParser
 from ledgerkb.ingest.parsers.plain import CsvParser, EmailParser, JsonParser, TextParser
+from ledgerkb.ingest.parsers.rtf import RtfParser
 
 DEFAULT_PARSERS: tuple[Parser, ...] = (
     PdfParser(),
@@ -25,6 +26,7 @@ DEFAULT_PARSERS: tuple[Parser, ...] = (
     XlsxParser(),
     PptxParser(),
     HtmlParser(),
+    RtfParser(),
     EmailParser(),
     CsvParser(),
     JsonParser(),
@@ -37,7 +39,6 @@ KNOWN_UNSUPPORTED = {
     ".doc": "legacy Word (.doc)",
     ".xls": "legacy Excel (.xls)",
     ".ppt": "legacy PowerPoint (.ppt)",
-    ".rtf": "RTF",
     ".pages": "Apple Pages",
     ".odt": "OpenDocument Text",
 }

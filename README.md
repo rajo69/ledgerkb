@@ -107,7 +107,7 @@ documents in that corpus give different budget figures, and search returns both.
 - **Product** (P1 to P6): not started.
 
 Documents go in and ranked passages come out. Ingest reads files, directories and ZIP
-archives; tier-0 parsers cover ten formats; the sanitiser strips invisible text and
+archives; tier-0 parsers cover eleven formats; the sanitiser strips invisible text and
 quarantines instruction-shaped spans; the chunker slices on document structure and every
 chunk slices back to byte-identical source text. Search runs three arms (dense, BM25 and
 heading path), fuses them by rank, and explains where each arm placed every candidate. All
@@ -138,7 +138,7 @@ lkb doctor --tiers  # every knob that exists, its tier, and what changing it cos
 ```
 
 Then point it at some documents. Anything in PDF, DOCX, XLSX, PPTX, HTML, EML,
-CSV, JSON, MD or TXT, as a file, a directory or a ZIP archive:
+RTF, CSV, JSON, MD or TXT, as a file, a directory or a ZIP archive:
 
 ```bash
 lkb ingest ./your-documents
@@ -256,10 +256,10 @@ above hold.
 
 Most useful right now, in order:
 
-1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
+1. **A parser for a format not yet covered.** ODT, EPUB, or a better PDF
    path. The `Parser` protocol is five lines and the registry makes it one
    registration.
-2. **More document types in the fixture corpus generator.** The corpus is 55
+2. **More document types in the fixture corpus generator.** The corpus is 59
    chunks, which is too small to measure retrieval on. Growing it is the thing
    blocking L2's gate.
 3. **A how-to guide for a provider you actually use.** Ollama, vLLM, LM Studio,
