@@ -579,7 +579,14 @@ def search(
         )
 
         if json_out:
-            console.print_json(_json.dumps(explain_hits(result)))
+            # Straight to stdout rather than through the console. `print_json`
+            # syntax-highlights whenever colour is on, and colour is on whenever
+            # the caller's shell exports FORCE_COLOR, so `--json | jq` was
+            # handed escape codes in the middle of the document it was about to
+            # parse. `--json` is a contract with a pipe, and a pipe is exactly
+            # the case that has no terminal to be styled for.
+            # ensure_ascii keeps this printable on a cp1252 Windows console.
+            print(_json.dumps(explain_hits(result), indent=2))
             return
 
         if not result.hits:

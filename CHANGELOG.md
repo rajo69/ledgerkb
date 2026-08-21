@@ -129,6 +129,12 @@ default `dense_k` of 50 means every strategy scores about 1.0.
 
 ### Fixed
 
+- `lkb search --json` writes to stdout instead of through the styling console.
+  It went through `print_json`, which syntax-highlights whenever colour is on,
+  so anyone whose shell exports `FORCE_COLOR` had escape codes inside the
+  document they were about to parse and `lkb search --json | jq` failed for
+  them and for nobody else. A pipe is precisely the case with no terminal to
+  style for.
 - `lkb` escapes document-controlled text before printing it. Console output is
   styled with rich markup, and a document is untrusted input, so a crafted title
   could otherwise forge a heading or a status in the output.

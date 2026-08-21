@@ -144,6 +144,34 @@ class TestSearch:
         rows = json.loads(out)
         assert rows and {"chunk_id", "score", "ranks"} <= set(rows[0])
 
+    def test_json_output_stays_machine_readable_when_colour_is_on(
+        self, workdir: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`--json` is a contract with a pipe, and a pipe has no terminal.
+
+        It used to go through `console.print_json`, which syntax-highlights
+        whenever colour is on, so anyone whose shell exported FORCE_COLOR got
+        escape codes inside the document they were about to parse: `lkb search
+        --json | jq` failed for them and for nobody else.
+
+        The console is replaced rather than the environment set, because rich
+        decides about colour when a Console is constructed and this one is built
+        when `cli.main` is imported. Setting FORCE_COLOR from inside the test is
+        far too late, and a test written that way passes against the bug.
+        """
+        from rich.console import Console
+
+        import ledgerkb.cli.main as cli
+
+        monkeypatch.setattr(
+            cli, "console", Console(force_terminal=True, color_system="truecolor")
+        )
+        run("init", ".")
+        run("ingest", "./papers")
+        out = run("search", "Attercliffe", "--arms", "sparse", "--json").output
+        assert "\x1b[" not in out, "escape codes in --json output"
+        assert json.loads(out)
+
     def test_searching_an_empty_store_says_so_rather_than_failing(
         self, workdir: Path
     ) -> None:
