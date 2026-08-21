@@ -88,7 +88,7 @@ def chunk_factory(workspace: Workspace, version: DocumentVersion):
 
 @pytest.fixture(scope="session")
 def corpus_root(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """The 20-document fixture corpus, plus injection and archive fixtures.
+    """The 21-document fixture corpus, plus injection and archive fixtures.
 
     Built once per session rather than committed, so the content stays
     reviewable source instead of an opaque binary nobody diffs.

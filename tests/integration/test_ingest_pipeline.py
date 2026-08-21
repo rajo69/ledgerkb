@@ -29,10 +29,10 @@ def report(pipeline: IngestPipeline, store: SqliteStore, workspace: Workspace, c
 
 
 class TestCorpusIngests:
-    """20-document fixture corpus ingests with zero unhandled exceptions."""
+    """21-document fixture corpus ingests with zero unhandled exceptions."""
 
     def test_every_document_is_accounted_for(self, report, corpus: Path) -> None:
-        assert len(report.outcomes) == len(list(corpus.iterdir())) == 20
+        assert len(report.outcomes) == len(list(corpus.iterdir())) == 21
 
     def test_nothing_failed(self, report) -> None:
         assert report.failed == [], [
@@ -45,7 +45,7 @@ class TestCorpusIngests:
     def test_all_tier_zero_parsers_were_exercised(self, report) -> None:
         used = {o.parser for o in report.ingested}
         assert used == {
-            "text", "csv", "json", "email", "selectolax",
+            "text", "csv", "json", "email", "selectolax", "rtf",
             "pypdfium2", "python-docx", "openpyxl", "python-pptx",
         }
 
@@ -123,7 +123,7 @@ class TestDedupe:
                         kind="upload", label="fixtures")
         second = pipeline.ingest_path(corpus, workspace.id, source)
 
-        assert len(second.unchanged) == 20
+        assert len(second.unchanged) == 21
         assert second.ingested == []
         assert second.total_chunks == 0
 
