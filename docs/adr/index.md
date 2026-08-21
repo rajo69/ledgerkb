@@ -4,8 +4,25 @@ From 2026-08-19 onward, a decision significant enough to be re-litigated gets it
 own file here: numbered, dated, and saying what was decided, what the alternative
 was, and why.
 
-Nothing is here yet. Everything decided before that date lives in the design
-records, where it was written at the time:
+| # | Decision | Status |
+|---|---|---|
+| [0001](0001-keep-the-l2-gate-metrics.md) | Keep the L2 gate metrics as written | accepted |
+| [0002](0002-grow-the-corpus.md) | Grow the corpus rather than lower the retrieval defaults | accepted |
+| [0003](0003-vary-the-phrasing.md) | Vary the phrasing of generated facts | accepted |
+| [0004](0004-record-the-embedding-space.md) | Record the embedding space and refuse a model swap | accepted |
+| [0005](0005-outside-contributions.md) | Request changes rather than merging with a maintainer fix | accepted |
+| [0006](0006-measurement-provenance.md) | Every committed measurement carries its provenance | accepted |
+| [0007](0007-defer-ooxml-reproducibility.md) | Defer the OOXML byte-reproducibility fix | accepted |
+| [0008](0008-provider-for-the-contextual-header-ab.md) | Provider for the contextual-header A/B | accepted |
+| [0009](0009-what-makes-a-measurement-inadmissible.md) | What makes a measurement inadmissible | accepted |
+
+0001 through 0007 were written on 2026-08-21, after the decisions rather than
+with them. That is worth knowing when reading them: they are accurate about what
+was decided and why, and they were not what the decision was made from. The
+practice from here is to write the record with the decision.
+
+Everything decided before 2026-08-19 lives in the design records, where it was
+written at the time:
 
 - **Technology choices**, with the evidence and a verdict, in
   [`design/00-research-log.md`](../design/00-research-log.md).

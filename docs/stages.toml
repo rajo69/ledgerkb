@@ -69,7 +69,7 @@ extraction, and a pipeline that dedupes by content hash and isolates per-documen
 failures.
 """
 gate = [
-  { text = "A 20-document mixed-format fixture corpus ingests with zero unhandled exceptions", met = true },
+  { text = "A mixed-format fixture corpus ingests with zero unhandled exceptions", met = true },
   { text = "Every chunk's char_start:char_end slices back to byte-identical source text, checked by a Hypothesis property over arbitrary input as well as over the corpus", met = true },
   { text = "All five required metadata fields populated on at least 90% of fixtures, with every miss reported rather than silently null", met = true },
   { text = "The nine injection fixtures are all caught and the benign decoy is left untouched", met = true },
@@ -90,8 +90,11 @@ summary = """
 An OpenAI-compatible embedder and a local in-process one, reciprocal rank fusion,
 and three retrieval arms: dense vectors, FTS5 BM25 and the heading path. Search
 is scoped to current document versions and every candidate carries a per-arm rank
-explanation. The machinery is merged. What remains is the measurement, which is
-blocked on the size of the fixture corpus.
+explanation. The machinery is merged, the store now records which model made its
+vectors and refuses a second one on the index path, and the corpus that blocked
+the measurement is built: 196 documents and 4,437 chunks, against 50 dense
+candidates. What remains is the golden set and the four numbers that come from
+running it.
 """
 gate = [
   { text = "--explain prints each candidate's per-arm rank and fused score", met = true },
@@ -100,7 +103,7 @@ gate = [
   { text = "recall@20 at or above 0.90 on the answerable questions", met = false },
   { text = "Hybrid beats dense-only and BM25-only on the same set, measured, printed and committed", met = false },
   { text = "Contextual headers improve recall@20 by at least 5 points, which is what would justify their cost", met = false },
-  { text = "The embedding model and dimension are recorded in the store and a change is detected on the index path, not only by lkb doctor", met = false },
+  { text = "The embedding model and dimension are recorded in the store and a change is detected on the index path, not only by lkb doctor", met = true },
 ]
 
 [[stage]]

@@ -17,6 +17,7 @@ and a numbered file is easier to read than a generated one.
 | `002_version_text.sql` | Stores the canonical text on the version, plus `parse_warnings` and `metadata_misses` |
 | `003_fts_and_versions.sql` | Moves the full-text index onto a generated column maintained by trigger, and scopes retrieval to current versions |
 | `004_heading_index.sql` | A second FTS table over the heading path, which is the third retrieval arm |
+| `005_embedding_space.sql` | Records which model produced a workspace's vectors, so a second model cannot be added to the index |
 
 `lkb init` and `lkb doctor` both report the schema version. `store.migrate()`
 runs anything outstanding and returns the version it reached.
@@ -38,6 +39,7 @@ runs anything outstanding and returns the version it reached.
 | `ingest_run`, `change_event` | What a run saw and what changed |
 | `run_record` | Per-stage model, tokens, cost, duration, error |
 | `config_stamp` | The resolved config, so a tier transition is detectable on the next run |
+| `embedding_space` | Which model and dimension a workspace's vectors were made with |
 
 ## Vectors
 
@@ -51,6 +53,20 @@ cleanly everywhere cannot require it.
 
 A width mismatch between a stored vector and a query vector raises a named
 `InvariantError` rather than returning nonsense.
+
+Width is the easy half. Two models of the *same* width produce vectors that sit
+in different geometries, and cosine distance between them is still a number, so
+mixing them yields a confidently ranked list of noise with nothing raised and
+nothing empty. `embedding_space` records the model each workspace was indexed
+with, and `lkb index` refuses to add vectors from a different one. The record is
+per workspace, is written before the first batch so an interrupted run still
+leaves it, and is deleted with the vectors by `lkb index --rebuild`, which is
+the sanctioned way to change model.
+
+It records what the embedder reported, not what the config asked for. A provider
+that resolves an alias or falls back differs from its own config, and the vectors
+follow the provider. `config_stamp` is the record of intent; this is the record
+of fact.
 
 ## Keyword search
 

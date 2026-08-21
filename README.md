@@ -24,14 +24,13 @@ $ lkb ingest ./corpus
 document                                      status    chunks  parser
 action-log-2026-03.csv                        ingested       1  csv
 annual-governance-statement-2025-26.pdf       ingested       1  pypdfium2
-attercliffe-board-note-2026-04-22.rtf         ingested       4  rtf
 attercliffe-programme-board-2026-04.pptx      ingested       3  python-pptx
 cabinet-minutes-2026-04-08.md                 ingested       4  text
 footbridge-options-appraisal.docx             ingested       4  python-docx
 planning-committee-minutes-2026-03-11.md      ingested       8  text
 [14 more rows, elided]
 
-21 ingested, 0 unchanged, 0 failed - 59 chunks
+20 ingested, 0 unchanged, 0 failed - 55 chunks
 
 metadata coverage
   title                100%
@@ -102,7 +101,7 @@ documents in that corpus give different budget figures, and search returns both.
 ## Status
 
 <!-- generated: status. Edit docs/stages.toml, then run scripts/render_docs.py -->
-**Current stage: L2, index and retrieve.** 2 of its 7 gate criteria are met.
+**Current stage: L2, index and retrieve.** 3 of its 7 gate criteria are met.
 
 - **Library** (L0 to L8): L0 and L1 done; L2 in progress; L3 to L8 not started.
 - **Product** (P1 to P6): not started.
@@ -139,7 +138,7 @@ lkb doctor --tiers  # every knob that exists, its tier, and what changing it cos
 ```
 
 Then point it at some documents. Anything in PDF, DOCX, XLSX, PPTX, HTML, EML,
-RTF, CSV, JSON, MD or TXT, as a file, a directory or a ZIP archive:
+CSV, JSON, MD or TXT, as a file, a directory or a ZIP archive:
 
 ```bash
 lkb ingest ./your-documents
@@ -257,12 +256,12 @@ above hold.
 
 Most useful right now, in order:
 
-1. **A parser for a format not yet covered.** ODT, EPUB, or a better PDF
+1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
    path. The `Parser` protocol is five lines and the registry makes it one
    registration.
-2. **More document types in the fixture corpus generator.** The corpus is 59
-   chunks, which is too small to measure retrieval on. Growing it is the thing
-   blocking L2's gate.
+2. **Questions for the L2 golden set.** The measurement corpus is 196 documents
+   and 4,437 chunks. What it still needs is 40 questions, at least 7 of them
+   unanswerable, written from the documents before retrieval is run.
 3. **A how-to guide for a provider you actually use.** Ollama, vLLM, LM Studio,
    TEI. If you got it working, that is the guide.
 

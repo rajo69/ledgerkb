@@ -62,16 +62,19 @@ numbers directly is a fudge factor wearing a formula's clothes.
 
 ## Sizing `dense_k` and `sparse_k` to your corpus
 
-The defaults assume a corpus much larger than the fixture set. On a 55-chunk store
-`dense_k = 50` asks the dense arm for 91 percent of everything, so both lists
-contain nearly the whole corpus and fusion has almost nothing to discriminate
-with. That is the reason L2's gate cannot currently go red, and it is documented
-rather than glossed over in
-[the build handoff, section 10](../design/04-build-handoff.md).
+The defaults assume a corpus much larger than the anchor fixture set. On a
+55-chunk store `dense_k = 50` asks the dense arm for 91 percent of everything, so
+both lists contain nearly the whole corpus and fusion has almost nothing to
+discriminate with.
 
 Rule of thumb: each arm should retrieve a small fraction of your chunks. If your
 store is under a few hundred chunks, drop both to 10 or 20 and the fused ordering
 starts to mean something.
+
+This is also why L2's own measurement runs against a generated corpus of 4,437
+chunks rather than the 55-chunk anchor set: at that size the gate could not go
+red, so passing it would have proved nothing. See
+[build the measurement corpus](build-the-measurement-corpus.md).
 
 ## Chunking, which matters more
 

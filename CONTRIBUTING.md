@@ -129,15 +129,17 @@ One maintainer, so the honest promise is a small one and it is kept:
 
 Current, and specific:
 
-1. **A parser for a format not yet covered.** ODT, EPUB, or a better PDF
+1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
    path for scanned documents. The `Parser` protocol is two methods, and
    `ingest/parsers/registry.py` makes a new format a single registration. Read
    `parsers/plain.py` for the smallest complete example.
-2. **More document types in the fixture corpus generator.**
-   `tests/fixtures/build_corpus.py` is generative, so this is parameters rather
-   than authoring, and the corpus stays reviewable source instead of committed
-   binaries. This is the work blocking L2's gate: 59 chunks cannot support a
-   recall measurement.
+2. **Questions for the L2 golden set.** The measurement corpus is now 196
+   documents and 4,437 chunks, so the corpus is no longer what blocks L2. The
+   golden set is: 40 questions, at least 7 of them unanswerable, written from
+   the documents before any retrieval is run. Read
+   [how-to/build-the-measurement-corpus.md](docs/how-to/build-the-measurement-corpus.md)
+   first, because a question written against a document you have not read is
+   worse than no question.
 3. **A how-to guide for a provider you actually run.** Ollama, vLLM, LM Studio,
    TEI. If you got it working, that is the guide.
 4. **`lkb doctor` reporting which projections are stale.** Useful now, and more

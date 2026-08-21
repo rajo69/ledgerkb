@@ -94,7 +94,7 @@ The SQLite schema is not a passive container. It refuses deletes on the ledger,
 refuses a second write to `invalid_at`, refuses to mutate a document version's
 hashes, maintains the full-text index from a generated column by trigger, and
 rejects an inferred assertion claiming full confidence. Read
-`migrations/001_init.sql` through `004_heading_index.sql` before changing
+`migrations/001_init.sql` through `005_embedding_space.sql` before changing
 anything about how data is written.
 
 ### `providers/`
@@ -124,8 +124,10 @@ dedupes by content hash before parsing, and isolates per-document failures.
 
 ### `index/`
 
-Retrieval. `embed.py` embeds chunks and queries. `rrf.py` is reciprocal rank
-fusion, and is pure: no store, no provider, no I/O. `hybrid.py` runs the three
+Retrieval. `embed.py` embeds chunks and queries, and holds
+`guard_embedding_space`, which is what stops one index from collecting vectors
+from two models. `rrf.py` is reciprocal rank fusion, and is pure: no store, no
+provider, no I/O. `hybrid.py` runs the three
 arms (dense vectors, FTS5 BM25 over the chunk body, and FTS5 over the heading
 path), fuses them, optionally reranks, and keeps each arm's own ranked list so
 `--explain` and the evals can tell a retrieval win from a lucky ordering.
@@ -139,11 +141,15 @@ because output is styled with Rich markup and a document is untrusted input.
 
 ### Still empty
 
-`extract/`, `ledger/`, `project/`, `evals/` and `obs/` are packages with nothing
-in them but an `__init__.py`. So is `storage/postgres/`, and so is `apps/` at the
+`extract/`, `ledger/`, `project/` and `obs/` are packages with nothing in them
+but an `__init__.py`. So is `storage/postgres/`, and so is `apps/` at the
 repository root. They are named here because the layering contract already knows
 about them, so the shape of the system is settled even where the code is not.
 What each will hold is in [ROADMAP.md](ROADMAP.md) under L4 to L8 and P1.
+
+`evals/` is no longer among them. It holds the measurement machinery L2 needs:
+the provenance header a committed result carries, the golden set format, and the
+retrieval metrics. None of it runs retrieval, and no measurement has been taken.
 
 ## 3. Invariants
 
@@ -185,6 +191,17 @@ citation can point at text no longer in the document. *Enforced by*
 certainty.** *Enforced by* a Pydantic validator on `Assertion` and a `CHECK`
 constraint in the schema, so it is impossible to construct rather than
 discouraged.
+
+**One index holds vectors from one model.** Two models of the same width produce
+vectors in different geometries, and cosine distance between them is still a
+number, so a mixed index returns a confidently ranked list of noise without
+raising and without looking empty. `embedding_space` records the model each
+workspace was indexed with, taken from what the embedder reported rather than
+from what the config asked for. *Enforced by* `guard_embedding_space` on the
+index path, which refuses a mismatch even when there is nothing left to embed,
+and by `lkb index --rebuild` being the only way to change model. `lkb doctor`
+reports it, but reporting is not the mechanism: the damage would be done by a
+command the report does not stop.
 
 ### Invariants that are absences
 

@@ -3,8 +3,23 @@
 Every test here runs against the fake providers and a temp-file SQLite store —
 no network, no credentials, no cost.
 """
+# ruff: noqa: E402 - the colour guard below has to run before any import that
+# builds a rich Console, so imports cannot all sit at the top of this file.
 
 from __future__ import annotations
+
+import os
+
+# Before any ledgerkb import, because `cli/main.py` builds its `Console` at
+# import time and rich reads these variables when a Console is constructed, not
+# when it prints. A fixture would run far too late.
+#
+# The human-readable output is meant to be coloured; the CLI tests just assert
+# on plain substrings. Without this, six of them fail for anyone whose shell
+# exports FORCE_COLOR, and pass in CI, which is the worst way round: the failure
+# appears only on the contributor's machine and looks like their fault.
+for _forced in ("FORCE_COLOR", "CLICOLOR_FORCE"):
+    os.environ.pop(_forced, None)
 
 from collections.abc import Iterator
 from pathlib import Path

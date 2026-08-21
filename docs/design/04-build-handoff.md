@@ -113,7 +113,7 @@ Each was researched. If you want to change one, read the cited section first.
 | # | Question | State |
 |---|---|---|
 | Q1 | **PyPI name.** Is `ledgerkb` available? | ✅ **Resolved.** Available (so are `okfkit` and `attestkb`). Availability is not reservation, the name is only claimed on first publish at L8 |
-| Q2 | **Embedding model + dimension** | 🔴 **Open, and blocking L2**, see below |
+| Q2 | **Embedding model + dimension** | ✅ **Resolved**, though not the way this document proposed, see below. Since 2026-08-21 the store also records which model made its vectors and refuses a second one |
 | Q3 | **PDF parser default.** `pymupdf4llm` is AGPL-3.0 | ✅ **Resolved.** `pypdfium2` (BSD-3/Apache-2.0) is the default and is implemented. Every parser dependency was licence-checked: all permissive, no AGPL anywhere |
 | Q4 | **Is there a real corpus?** | ✅ **Resolved by its documented default.** None exists. `tests/fixtures/build_corpus.py` generates 20 council-shaped documents across ten formats. See the caveat below |
 | Q5 | **Second corpus for the agnosticism gate** | ⬜ Open, not needed until v1.0. Pick any public document set unlike council minutes |
@@ -518,9 +518,17 @@ documentation plan.
 `lkb index` and `lkb search --explain --json` all work, offline, with no key.
 Migrations 003 and 004 moved two invariants into the schema.
 
-**What is left is the measurement, and it is blocked on the corpus.**
+**What is left is the measurement.** It was blocked on the corpus when this was
+written. It is not any more, and what replaced this paragraph is
+[06-l2-completion-handoff.md](06-l2-completion-handoff.md).
 
 ### The corpus problem, read this before writing a golden set
+
+> **Superseded on 2026-08-21.** The corpus was grown to 196 documents and 4,437
+> chunks, so the problem described below no longer exists. The analysis is kept
+> because it is why the corpus has the shape it does, and recommendations 2, 3
+> and 5 were not adopted and are still open. See
+> [06-l2-completion-handoff.md](06-l2-completion-handoff.md) for what is left.
 
 The fixture corpus produces **55 chunks**. The defaults are `dense_k = 50` and
 `sparse_k = 50`, so each arm is asked for roughly 91% of the entire corpus and

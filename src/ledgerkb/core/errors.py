@@ -82,3 +82,13 @@ class ProviderError(LedgerKBError):
 
 class BudgetExceededError(LedgerKBError):
     """A run hit its cost or document ceiling and aborted. Not suppressible."""
+
+
+class GoldenSetError(LedgerKBError):
+    """A golden set is malformed, or disagrees with the corpus it is scored on.
+
+    Raised rather than warned because both failures corrupt a measurement in the
+    same direction: a question whose quote no chunk contains scores zero, and a
+    zero from a wrong question is indistinguishable from a zero from a retriever
+    that missed.
+    """

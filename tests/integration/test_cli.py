@@ -144,6 +144,34 @@ class TestSearch:
         rows = json.loads(out)
         assert rows and {"chunk_id", "score", "ranks"} <= set(rows[0])
 
+    def test_json_output_stays_machine_readable_when_colour_is_on(
+        self, workdir: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`--json` is a contract with a pipe, and a pipe has no terminal.
+
+        It used to go through `console.print_json`, which syntax-highlights
+        whenever colour is on, so anyone whose shell exported FORCE_COLOR got
+        escape codes inside the document they were about to parse: `lkb search
+        --json | jq` failed for them and for nobody else.
+
+        The console is replaced rather than the environment set, because rich
+        decides about colour when a Console is constructed and this one is built
+        when `cli.main` is imported. Setting FORCE_COLOR from inside the test is
+        far too late, and a test written that way passes against the bug.
+        """
+        from rich.console import Console
+
+        import ledgerkb.cli.main as cli
+
+        monkeypatch.setattr(
+            cli, "console", Console(force_terminal=True, color_system="truecolor")
+        )
+        run("init", ".")
+        run("ingest", "./papers")
+        out = run("search", "Attercliffe", "--arms", "sparse", "--json").output
+        assert "\x1b[" not in out, "escape codes in --json output"
+        assert json.loads(out)
+
     def test_searching_an_empty_store_says_so_rather_than_failing(
         self, workdir: Path
     ) -> None:
@@ -156,6 +184,62 @@ class TestIndex:
         """No chunks means no embedding work, and no download either."""
         run("init", ".")
         assert "already has a vector" in run("index").output
+
+    @pytest.fixture
+    def swappable_embedder(self, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+        """Stand in for the local provider, so no model is downloaded.
+
+        Append to the returned list to change which model the next `lkb index`
+        believes it is configured with.
+        """
+        from ledgerkb.providers.fake import FakeEmbedder
+
+        names = ["model/a"]
+
+        def build(cfg):
+            return FakeEmbedder(name=names[-1], dimensions=cfg.embeddings.dimensions)
+
+        monkeypatch.setattr("ledgerkb.cli.main.build_embedder", build)
+        return names
+
+    def test_swapping_the_model_is_refused_and_rebuild_is_the_way_out(
+        self, workdir: Path, swappable_embedder: list[str]
+    ) -> None:
+        """The whole point, through the command a user actually runs."""
+        run("init", ".")
+        run("ingest", "./papers")
+        assert "embedded" in run("index").output
+
+        swappable_embedder.append("model/b")
+        refused = run("index", expect=1).output
+        assert "model/a" in refused and "model/b" in refused
+        assert "--rebuild" in refused
+
+        assert "embedded" in run("index", "--rebuild").output
+        assert "vectors  model/b" in run("doctor").output
+
+    def test_a_swap_is_caught_even_with_nothing_left_to_embed(
+        self, workdir: Path, swappable_embedder: list[str]
+    ) -> None:
+        """The case the command's own early return used to walk straight past.
+
+        Nothing pending means no work, so without the check this reported
+        success, changed nothing, and left every later query vectorised by a
+        model the index knows nothing about.
+        """
+        run("init", ".")
+        run("ingest", "./papers")
+        run("index")
+        assert "already has a vector" in run("index").output
+
+        swappable_embedder.append("model/b")
+        assert "model/a" in run("index", expect=1).output
+
+    def test_doctor_says_nothing_about_vectors_before_there_are_any(
+        self, workdir: Path
+    ) -> None:
+        run("init", ".")
+        assert "vectors" not in run("doctor").output
 
 
 class TestHostileDocumentsCannotDriveTheConsole:

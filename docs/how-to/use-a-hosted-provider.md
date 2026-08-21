@@ -53,6 +53,41 @@ Anything OpenAI-compatible works with no extra code:
 | Local servers | Ollama, vLLM, llama.cpp, LM Studio, SGLang, TGI |
 | Embedding servers | Hugging Face TEI, Infinity, Ollama |
 
+## Running against Cerebras
+
+This is the endpoint the contextual-header measurement will use when it is
+written, decided in
+[ADR 0008](../adr/0008-provider-for-the-contextual-header-ab.md). Nothing calls
+it yet, for the reason at the top of this page.
+
+```toml
+[chat]
+provider    = "openai_compatible"
+base_url    = "https://api.cerebras.ai/v1"
+model       = "gpt-oss-120b"
+api_key_env = "CEREBRAS_API_KEY"
+
+[chat.cheap]
+model = "gpt-oss-120b"     # the same model; the free tier has nothing cheaper
+```
+
+```bash
+export CEREBRAS_API_KEY=csk-...
+lkb doctor          # confirms the variable is set, without printing it
+```
+
+Embeddings stay local. Nothing about this section changes the `[embeddings]`
+block, which runs in-process through fastembed with no key, and the whole
+deterministic path still works with this endpoint unreachable.
+
+The free tier is capped per day rather than per request, which will matter for
+the one job that is going to use it. Generating a context header for every chunk
+of the measurement corpus is roughly 2.4M tokens against a 1M daily allowance,
+so it is a job measured in days and interrupted at least twice. Write it to
+resume when the time comes:
+`context_header` is a column on `chunk`, so the work outstanding is the chunks
+that do not have one, and repeating a finished chunk is a no-op.
+
 ## Running against Ollama
 
 ```toml
