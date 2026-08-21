@@ -354,17 +354,27 @@ class TestTheCommandIsRecorded:
         assert header.command == "lkb evals run --scale 11"
 
     def test_the_default_does_not_carry_the_path_it_was_run_from(
-        self, indexed: SqliteStore, workspace, config: Config, monkeypatch: pytest.MonkeyPatch
+        self,
+        indexed: SqliteStore,
+        workspace,
+        config: Config,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """A committed result should not name somebody's home directory."""
-        monkeypatch.setattr(
-            "sys.argv", [r"C:\Users\someone\.venv\Scripts\lkb", "evals", "run"]
-        )
+        """A committed result should not name somebody's home directory.
+
+        The fake ``argv[0]`` is built from ``tmp_path`` rather than written as a
+        literal, because a literal is a literal for one platform: a Windows path
+        has no directory part on POSIX, so the test would pass by accident there
+        and prove nothing.
+        """
+        launcher = tmp_path / "not-in-the-result" / "lkb"
+        monkeypatch.setattr("sys.argv", [str(launcher), "evals", "run"])
         header = collect(
             store=indexed, cfg=config, workspace_id=workspace.id, corpus_scale=11
         )
-        assert "someone" not in header.command
-        assert header.command.startswith("lkb evals run")
+        assert "not-in-the-result" not in header.command
+        assert header.command == "lkb evals run"
 
 
 def replace_field(header: Provenance, **kw: object) -> Provenance:
