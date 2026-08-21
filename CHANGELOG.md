@@ -7,6 +7,31 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: the L2 measurement corpus
+
+- `tests/fixtures/corpus_world.py`: a small invented world (12 capital
+  programmes, 9 committees, 11 months of meetings) that the large fixture
+  corpus is generated from. Nothing in it is random and nothing is seeded, so
+  a diff of that file is a diff of the corpus.
+- `build_corpus.build()` takes a `scale`. Scale 0 is the 20 anchor documents
+  and is the default, so the tutorial, the README and every existing test keep
+  the figures they already quote. `MEASUREMENT_SCALE` is 195 documents and
+  4,433 chunks.
+- This unblocks the four L2 gate criteria that are measurements. At 55 chunks
+  a `dense_k` of 50 covered most of the corpus and no retrieval strategy could
+  score differently from any other, so the gate could not go red. It now can.
+- Every programme in the world carries four different budget figures across
+  four quarters, so a question about an allocation has one correct chunk and
+  three decoys that share nearly all of its vocabulary. Size alone would not
+  have made the measurement discriminate.
+- `tests/integration/test_measurement_corpus.py` asserts the size condition
+  against `RetrievalConfig` rather than against a fixed number, so raising
+  `dense_k` without growing the corpus fails the build. It also runs the L1
+  offset invariant over all 4,433 chunks.
+- The L1 gate criterion no longer pins a document count. Growing the corpus is
+  the work that unblocks L2, and a number inside a criterion that is already
+  met turned every corpus contribution into a question about editing history.
+
 ### Added: L2 index and retrieve (half)
 
 The retrieval machinery. What is outstanding is the measurement, which is

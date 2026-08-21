@@ -28,6 +28,17 @@ import sys
 import zipfile
 from pathlib import Path
 
+try:
+    from tests.fixtures.corpus_world import generated_documents
+except ImportError:  # pragma: no cover - run directly rather than as a package
+    from corpus_world import generated_documents  # type: ignore[no-redef]
+
+# The scale the L2 retrieval measurement runs against. Chosen so that the
+# corpus is large enough for dense_k = 50 to be a small fraction of it rather
+# than most of it, which is the condition the L2 gate could not meet at 59
+# chunks. The exact figures it produces are printed by running this file.
+MEASUREMENT_SCALE = 11
+
 # --- source content ----------------------------------------------------------
 
 MINUTES_MD = """# Planning Committee Minutes
@@ -377,8 +388,16 @@ def _csv(path: Path, rows: list[list[str]]) -> None:
         csv.writer(fh).writerows(rows)
 
 
-def build(target: Path) -> list[Path]:
-    """Write the 20-document corpus. Returns the paths, in a stable order."""
+def build(target: Path, scale: int = 0) -> list[Path]:
+    """Write the corpus. Returns the paths, in a stable order.
+
+    ``scale`` controls the generated documents that follow the 20 anchors.
+    Scale 0 is the anchors alone, which is what the ingest and offset tests
+    use: they are checking that every format parses, and 20 documents prove
+    that as well as 200 do while keeping the suite fast. ``MEASUREMENT_SCALE``
+    is the corpus the L2 retrieval measurement needs, and it is large enough
+    that ``dense_k`` no longer covers most of it.
+    """
     target.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
 
@@ -545,6 +564,39 @@ def build(target: Path) -> list[Path]:
     )
     written.append(target / "annual-governance-statement-2025-26.pdf")
 
+    written += _write_generated(target, scale)
+    return written
+
+
+_WRITERS = {
+    "md": lambda p, v: p.write_text(v, encoding="utf-8"),
+    "txt": lambda p, v: p.write_text(v, encoding="utf-8"),
+    "html": lambda p, v: p.write_text(v, encoding="utf-8"),
+    "eml": lambda p, v: p.write_text(v, encoding="utf-8"),
+    "json": lambda p, v: p.write_text(json.dumps(v, indent=2), encoding="utf-8"),
+    "csv": lambda p, v: _csv(p, v),
+    "docx": lambda p, v: _docx(p, p.stem, v),
+    "xlsx": lambda p, v: _xlsx(p, v, p.stem),
+    "pptx": lambda p, v: _pptx(p, p.stem, v),
+    "pdf": lambda p, v: _pdf(p, p.stem, v),
+}
+
+
+def _write_generated(target: Path, scale: int) -> list[Path]:
+    """Write the generated half of the corpus.
+
+    Scale 0 writes nothing, which is what the anchor-only callers want. The
+    documents themselves come from ``corpus_world.py``: this function only
+    routes each one to the writer for its format.
+    """
+    if scale <= 0:
+        return []
+
+    written: list[Path] = []
+    for doc in generated_documents(scale):
+        path = target / doc.name
+        _WRITERS[doc.kind](path, doc.payload)
+        written.append(path)
     return written
 
 
@@ -703,7 +755,8 @@ def build_malicious_archives(target: Path) -> list[Path]:
 
 if __name__ == "__main__":  # pragma: no cover
     root = Path(sys.argv[1] if len(sys.argv) > 1 else "corpus")
-    docs = build(root / "corpus")
+    scale = int(sys.argv[2]) if len(sys.argv) > 2 else 0
+    docs = build(root / "corpus", scale=scale)
     inj = build_injections(root / "injections")
     arc = build_malicious_archives(root / "archives")
     print(f"{len(docs)} documents, {len(inj)} injections, {len(arc)} archives -> {root}")

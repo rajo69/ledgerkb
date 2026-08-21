@@ -59,6 +59,7 @@ nav:
       - Use a hosted provider: how-to/use-a-hosted-provider.md
       - Tune retrieval: how-to/tune-retrieval.md
       - Add a parser: how-to/add-a-parser.md
+      - Build the measurement corpus: how-to/build-the-measurement-corpus.md
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md

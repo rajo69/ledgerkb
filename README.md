@@ -259,9 +259,9 @@ Most useful right now, in order:
 1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
    path. The `Parser` protocol is five lines and the registry makes it one
    registration.
-2. **More document types in the fixture corpus generator.** The corpus is 55
-   chunks, which is too small to measure retrieval on. Growing it is the thing
-   blocking L2's gate.
+2. **Questions for the L2 golden set.** The measurement corpus is 195 documents
+   and 4,433 chunks. What it still needs is 40 questions, at least 7 of them
+   unanswerable, written from the documents before retrieval is run.
 3. **A how-to guide for a provider you actually use.** Ollama, vLLM, LM Studio,
    TEI. If you got it working, that is the guide.
 

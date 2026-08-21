@@ -86,7 +86,7 @@ content hash and isolates per-document failures.
 
 Gate:
 
-- [x] A 20-document mixed-format fixture corpus ingests with zero unhandled exceptions
+- [x] A mixed-format fixture corpus ingests with zero unhandled exceptions
 - [x] Every chunk's char_start:char_end slices back to byte-identical source text,
       checked by a Hypothesis property over arbitrary input as well as over the corpus
 - [x] All five required metadata fields populated on at least 90% of fixtures, with
@@ -106,7 +106,9 @@ Gate:
 An OpenAI-compatible embedder and a local in-process one, reciprocal rank fusion, and three
 retrieval arms: dense vectors, FTS5 BM25 and the heading path. Search is scoped to current
 document versions and every candidate carries a per-arm rank explanation. The machinery is
-merged. What remains is the measurement, which is blocked on the size of the fixture corpus.
+merged, and the corpus that blocked the measurement is built: 195 documents and 4,433
+chunks, against 50 dense candidates. What remains is the golden set and the four numbers
+that come from running it.
 
 Gate:
 
