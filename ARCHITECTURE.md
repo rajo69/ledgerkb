@@ -141,11 +141,15 @@ because output is styled with Rich markup and a document is untrusted input.
 
 ### Still empty
 
-`extract/`, `ledger/`, `project/`, `evals/` and `obs/` are packages with nothing
-in them but an `__init__.py`. So is `storage/postgres/`, and so is `apps/` at the
+`extract/`, `ledger/`, `project/` and `obs/` are packages with nothing in them
+but an `__init__.py`. So is `storage/postgres/`, and so is `apps/` at the
 repository root. They are named here because the layering contract already knows
 about them, so the shape of the system is settled even where the code is not.
 What each will hold is in [ROADMAP.md](ROADMAP.md) under L4 to L8 and P1.
+
+`evals/` is no longer among them. It holds the measurement machinery L2 needs:
+the provenance header a committed result carries, the golden set format, and the
+retrieval metrics. None of it runs retrieval, and no measurement has been taken.
 
 ## 3. Invariants
 
