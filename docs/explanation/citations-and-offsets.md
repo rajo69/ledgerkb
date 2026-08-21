@@ -60,7 +60,7 @@ was already true.
 
 1. **A Hypothesis property test** over arbitrary generated input, including text
    that sanitisation modifies and text it leaves alone.
-2. **The full fixture corpus.** 55 chunks across ten formats, sliced back and
+2. **The full fixture corpus.** 59 chunks across eleven formats, sliced back and
    compared.
 3. **`lkb chunks <doc_id> --verify`**, which re-slices every stored chunk from the
    stored document text. That one works on your documents rather than on the

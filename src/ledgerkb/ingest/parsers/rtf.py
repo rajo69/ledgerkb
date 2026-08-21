@@ -10,12 +10,16 @@ readable.
 
 Recovered: paragraph text, headings (stylesheet names and ``\outlinelevel``),
 tabs, line and page breaks, table cell text in reading order, and the escape
-forms (``\\``, ``\'hh``, ``\uN``, control symbols).
+forms (``\\``, ``\'hh``, ``\uN``, control symbols). Stylesheet names are matched
+in English only, so a document from a localised Word gets its headings from
+``\outlinelevel`` alone, that being the half of the pair that does not name a
+language.
 
-Dropped: images and embedded objects (reported as warnings), list numbering, and
-table geometry, so a table becomes tab-separated cell text. Hence a
-``parse_quality`` of 0.8 rather than the 1.0 a format scores when the bytes are
-already exactly the text.
+Dropped: images, embedded objects and footnotes (each reported as a warning,
+because a footnote is often where the condition attached to a decision lives),
+page headers and footers, list numbering, and table geometry, so a table becomes
+tab-separated cell text. Hence a ``parse_quality`` of 0.8 rather than the 1.0 a
+format scores when the bytes are already exactly the text.
 
 Hidden text (``\v``) and tracked-change deletions are the reason this parser
 carries an invisible-text defence at all. Word will hide a run on request, and
@@ -48,7 +52,7 @@ SKIP_DESTINATIONS = frozenset(
 
 # Groups that are skipped but worth telling the operator about, because
 # something visible in the source document is absent from the text.
-NOTABLE_SKIPS = {"pict": "image", "object": "embedded object"}
+NOTABLE_SKIPS = {"pict": "image", "object": "embedded object", "footnote": "footnote"}
 
 # Control words that hide the run that follows them, within their group.
 HIDING = frozenset({"v", "deleted"})
@@ -228,6 +232,10 @@ def _strip_control_words(data: bytes) -> tuple[str, list[Heading], list[str]]:
                 skip_at = None
             depth -= 1
             was_hidden = hidden
+            # Before hidden changes, not after. A pending byte belongs to the
+            # run it was written in, and flush_bytes picks its buffer by
+            # reading hidden, so flushing later files it under the wrong one.
+            flush_bytes()
             if stack:
                 uc, hidden = stack.pop()
             if was_hidden and not hidden:
@@ -332,6 +340,7 @@ def _strip_control_words(data: bytes) -> tuple[str, list[Heading], list[str]]:
 
         if word in HIDING:
             was_hidden = hidden
+            flush_bytes()   # same reason as the } handler, in reverse
             hidden = param != 0
             if was_hidden and not hidden:
                 flush_hidden()

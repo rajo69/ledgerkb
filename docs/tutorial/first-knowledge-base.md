@@ -134,8 +134,8 @@ lkb index
 ```
 
 ```
-embedding 55 chunks with mixedbread-ai/mxbai-embed-large-v1 (1024 dims, local)
-55 embedded in 1 batches
+embedding 59 chunks with mixedbread-ai/mxbai-embed-large-v1 (1024 dims, local)
+59 embedded in 1 batches
 superseded versions are kept, but not indexed
 ```
 

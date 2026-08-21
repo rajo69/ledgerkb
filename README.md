@@ -24,13 +24,14 @@ $ lkb ingest ./corpus
 document                                      status    chunks  parser
 action-log-2026-03.csv                        ingested       1  csv
 annual-governance-statement-2025-26.pdf       ingested       1  pypdfium2
+attercliffe-board-note-2026-04-22.rtf         ingested       4  rtf
 attercliffe-programme-board-2026-04.pptx      ingested       3  python-pptx
 cabinet-minutes-2026-04-08.md                 ingested       4  text
 footbridge-options-appraisal.docx             ingested       4  python-docx
 planning-committee-minutes-2026-03-11.md      ingested       8  text
 [14 more rows, elided]
 
-20 ingested, 0 unchanged, 0 failed - 55 chunks
+21 ingested, 0 unchanged, 0 failed - 59 chunks
 
 metadata coverage
   title                100%

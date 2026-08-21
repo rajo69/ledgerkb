@@ -399,3 +399,62 @@ def test_a_word_wrapped_image_is_reported_exactly_once() -> None:
     )
     assert doc.text == "Before.After."
     assert doc.warnings == ["skipped image at offset 0"]
+
+
+@pytest.mark.parametrize(
+    ("body", "text", "warning"),
+    [
+        (
+            r"The cost was \'a3{\v secret} and rising.",
+            "The cost was \u00a3 and rising.",
+            "hidden:0:secret",
+        ),
+        (
+            r"Total is {\v secret \'a3}9.",
+            "Total is 9.",
+            "hidden:0:secret \u00a3",
+        ),
+        (
+            r"Budget \'a3{\deleted 2.4}2.9m confirmed.",
+            "Budget \u00a32.9m confirmed.",
+            "hidden:0:2.4",
+        ),
+        (
+            r"a\v hidden\'a3\v0 b",
+            "ab",
+            "hidden:0:hidden\u00a3",
+        ),
+    ],
+)
+def test_a_pending_hex_byte_belongs_to_the_run_it_was_written_in(
+    body: str, text: str, warning: str
+) -> None:
+    r"""A ``\'hh`` byte buffered across a hidden-state change went to the wrong buffer.
+
+    ``flush_bytes`` chooses ``para`` or ``hidden_run`` by reading ``hidden``, so
+    flushing after the transition files a visible byte as deleted, or leaks a
+    hidden one into the text without quarantining it. Row three is the ordinary
+    shape: a currency symbol followed by a tracked deletion, which is what a
+    budget figure looks like in any document that has been through review.
+
+    The older hidden-text tests cannot see this, because every hidden run in
+    them ends on an ASCII character, which flushes through ``emit`` first.
+    """
+    doc = parse(r"{\rtf1\ansi\pard " + body + r"\par}")
+    assert doc.text == text
+    assert doc.warnings == [warning]
+
+
+def test_a_footnote_is_reported_rather_than_silently_dropped() -> None:
+    """In committee papers the condition attached to a decision is the footnote.
+
+    Dropping it at tier 0 is defensible. Going quiet about it is not.
+    """
+    doc = parse(
+        r"{\rtf1\ansi\pard The allocation was approved."
+        r"{\footnote Subject to the Section 106 agreement completing"
+        r" before 30 June 2026.} End.\par}"
+    )
+    assert "Section 106" not in doc.text
+    assert doc.text == "The allocation was approved. End."
+    assert doc.warnings == ["skipped footnote at offset 0"]
