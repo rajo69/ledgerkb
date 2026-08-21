@@ -34,7 +34,7 @@ produces an honest subset rather than four half-built features.
 |---|---|---|---|---|
 | L0 | Skeleton and contracts | done | 5/5 | - |
 | L1 | Ingest, parse, chunk | done | 6/6 | - |
-| **L2** | Index and retrieve | in progress | 2/7 | - |
+| **L2** | Index and retrieve | in progress | 3/7 | - |
 | L3 | Grounded answering | not started | 0/5 | v0.1.0 |
 | L4 | Assertion ledger and extraction | not started | 0/6 | - |
 | L5 | Entity resolution and graph | not started | 0/5 | v0.3.0 |
@@ -106,7 +106,8 @@ Gate:
 An OpenAI-compatible embedder and a local in-process one, reciprocal rank fusion, and three
 retrieval arms: dense vectors, FTS5 BM25 and the heading path. Search is scoped to current
 document versions and every candidate carries a per-arm rank explanation. The machinery is
-merged, and the corpus that blocked the measurement is built: 195 documents and 4,433
+merged, the store now records which model made its vectors and refuses a second one on the
+index path, and the corpus that blocked the measurement is built: 195 documents and 4,433
 chunks, against 50 dense candidates. What remains is the golden set and the four numbers
 that come from running it.
 
@@ -121,7 +122,7 @@ Gate:
       committed
 - [ ] Contextual headers improve recall@20 by at least 5 points, which is what would
       justify their cost
-- [ ] The embedding model and dimension are recorded in the store and a change is
+- [x] The embedding model and dimension are recorded in the store and a change is
       detected on the index path, not only by lkb doctor
 
 ### L3. Grounded answering

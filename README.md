@@ -101,7 +101,7 @@ documents in that corpus give different budget figures, and search returns both.
 ## Status
 
 <!-- generated: status. Edit docs/stages.toml, then run scripts/render_docs.py -->
-**Current stage: L2, index and retrieve.** 2 of its 7 gate criteria are met.
+**Current stage: L2, index and retrieve.** 3 of its 7 gate criteria are met.
 
 - **Library** (L0 to L8): L0 and L1 done; L2 in progress; L3 to L8 not started.
 - **Product** (P1 to P6): not started.

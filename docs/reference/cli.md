@@ -86,6 +86,13 @@ needs no API key and no network. Only chunks without an embedding are processed.
 
 Chunks belonging to superseded document versions are kept but not indexed.
 
+The first run records which model and dimension produced the vectors. A later run
+with a different embedder is refused rather than allowed to mix two geometries in
+one index, and the refusal happens even when there is nothing left to embed, since
+that is the case that would otherwise report success and change nothing. Use
+`--rebuild` to drop the existing vectors and re-embed with the new model.
+`lkb doctor` shows the recorded model whenever a workspace has been indexed.
+
 ## `lkb search QUERY`
 
 Hybrid retrieval. Retrieval only: grounded answering with verified quotes is L3

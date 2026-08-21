@@ -7,6 +7,26 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: the store records which model made its vectors
+
+- Migration `005_embedding_space.sql` adds `embedding_space`, one row per
+  workspace holding the model and dimension its vectors were made with.
+- `lkb index` refuses to add vectors from a different embedder to an existing
+  index. Two models of the same width produce vectors in different geometries,
+  and cosine distance between them is still a number, so the failure was silent:
+  search returned a confidently ranked list of noise, and L3 would have cited it.
+- The refusal fires even when there is nothing left to embed. A model swapped on
+  a fully embedded workspace has no pending chunks, and previously the command
+  reported success, changed nothing, and left every later query vectorised by a
+  model the index knew nothing about.
+- It records what the embedder reported rather than what the config asked for.
+  `config_stamp` is the record of intent; this is the record of fact.
+- `lkb index --rebuild` clears the record with the vectors, so changing model
+  stays a one-command operation. `lkb doctor` shows the recorded model, and says
+  nothing when a workspace has never been indexed.
+- This meets the last L2 criterion that was not waiting on a measurement, taking
+  the gate to 3 of 7.
+
 ### Added: the L2 measurement corpus
 
 - `tests/fixtures/corpus_world.py`: a small invented world (12 capital

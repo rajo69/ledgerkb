@@ -27,7 +27,7 @@ from ledgerkb.core.config import (
 )
 from ledgerkb.core.errors import ConfigError, LedgerKBError
 from ledgerkb.core.models import Source, Workspace
-from ledgerkb.index.embed import embed_workspace
+from ledgerkb.index.embed import embed_workspace, guard_embedding_space
 from ledgerkb.index.hybrid import explain as explain_hits
 from ledgerkb.index.hybrid import search as hybrid_search
 from ledgerkb.ingest.metadata import coverage_report
@@ -236,6 +236,8 @@ def _check_store(cfg: Config, root: Path) -> None:
                     for line in rebuilds:
                         console.print(f"  * {line}")
 
+        _report_embedding_space(store, cfg)
+
         counts = store.counts()
         table = Table(show_header=False, box=None, pad_edge=False)
         for name, n in counts.items():
@@ -243,6 +245,33 @@ def _check_store(cfg: Config, root: Path) -> None:
         console.print(table)
     finally:
         store.close()
+
+
+def _report_embedding_space(store: SqliteStore, cfg: Config) -> None:
+    """What the vectors were actually made with, next to what is configured.
+
+    The index path refuses a mismatch, so this exists to show it coming rather
+    than to catch it. A store that has never been indexed says nothing.
+    """
+    spaces = store.embedding_spaces()
+    if not spaces:
+        return
+
+    configured = (cfg.embeddings.model, cfg.embeddings.dimensions)
+    for _, model, dims in spaces:
+        line = f"vectors  {safe(model)}  [dim]{dims} dims[/]"
+        if (model, dims) == configured:
+            console.print(line)
+            continue
+        console.print(f"{line}  [yellow]not what is configured[/]")
+        console.print(
+            f"         configured: {safe(cfg.embeddings.model)} "
+            f"({cfg.embeddings.dimensions} dims)"
+        )
+        console.print(
+            "         [dim]lkb index refuses this until you run "
+            "lkb index --rebuild[/]"
+        )
 
 
 def _check_credentials(cfg: Config) -> None:
@@ -491,7 +520,16 @@ def index(
 
         embedder = _embedder(cfg, required=True)
         pending = len(store.chunks_missing_embeddings(ws.id))
+
         if not pending:
+            # Still checked, because a model swapped on a fully embedded
+            # workspace has nothing to embed and is the case most worth
+            # catching: without this it reports success and changes nothing,
+            # while every later query is vectorised by the wrong model.
+            try:
+                guard_embedding_space(store, embedder, ws.id, pending=0)
+            except LedgerKBError as exc:
+                _fail(exc)
             console.print("[dim]every current chunk already has a vector[/]")
             return
 
@@ -499,8 +537,11 @@ def index(
             f"embedding [bold]{pending}[/] chunks with [bold]{cfg.embeddings.model}[/] "
             f"[dim]({cfg.embeddings.dimensions} dims, {cfg.embeddings.provider})[/]"
         )
-        with console.status("embedding..."):
-            report = embed_workspace(store, cfg, embedder, ws.id)
+        try:
+            with console.status("embedding..."):
+                report = embed_workspace(store, cfg, embedder, ws.id)
+        except LedgerKBError as exc:
+            _fail(exc)
 
         console.print(
             f"[green]{report.embedded} embedded[/] in {report.batches} batches"

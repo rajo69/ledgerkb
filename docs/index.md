@@ -47,7 +47,7 @@ built to. They are records rather than current reference, and each says so.
 ## What is built
 
 <!-- generated: status-brief. Edit docs/stages.toml, then run scripts/render_docs.py -->
-L0 and L1 are complete. L2, index and retrieve, is under way with 2 of its 7 gate criteria
+L0 and L1 are complete. L2, index and retrieve, is under way with 3 of its 7 gate criteria
 met. Everything after it is designed and gated but not written.
 <!-- end generated: status-brief -->
 

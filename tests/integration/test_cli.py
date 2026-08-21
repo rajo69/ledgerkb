@@ -157,6 +157,62 @@ class TestIndex:
         run("init", ".")
         assert "already has a vector" in run("index").output
 
+    @pytest.fixture
+    def swappable_embedder(self, monkeypatch: pytest.MonkeyPatch) -> list[str]:
+        """Stand in for the local provider, so no model is downloaded.
+
+        Append to the returned list to change which model the next `lkb index`
+        believes it is configured with.
+        """
+        from ledgerkb.providers.fake import FakeEmbedder
+
+        names = ["model/a"]
+
+        def build(cfg):
+            return FakeEmbedder(name=names[-1], dimensions=cfg.embeddings.dimensions)
+
+        monkeypatch.setattr("ledgerkb.cli.main.build_embedder", build)
+        return names
+
+    def test_swapping_the_model_is_refused_and_rebuild_is_the_way_out(
+        self, workdir: Path, swappable_embedder: list[str]
+    ) -> None:
+        """The whole point, through the command a user actually runs."""
+        run("init", ".")
+        run("ingest", "./papers")
+        assert "embedded" in run("index").output
+
+        swappable_embedder.append("model/b")
+        refused = run("index", expect=1).output
+        assert "model/a" in refused and "model/b" in refused
+        assert "--rebuild" in refused
+
+        assert "embedded" in run("index", "--rebuild").output
+        assert "vectors  model/b" in run("doctor").output
+
+    def test_a_swap_is_caught_even_with_nothing_left_to_embed(
+        self, workdir: Path, swappable_embedder: list[str]
+    ) -> None:
+        """The case the command's own early return used to walk straight past.
+
+        Nothing pending means no work, so without the check this reported
+        success, changed nothing, and left every later query vectorised by a
+        model the index knows nothing about.
+        """
+        run("init", ".")
+        run("ingest", "./papers")
+        run("index")
+        assert "already has a vector" in run("index").output
+
+        swappable_embedder.append("model/b")
+        assert "model/a" in run("index", expect=1).output
+
+    def test_doctor_says_nothing_about_vectors_before_there_are_any(
+        self, workdir: Path
+    ) -> None:
+        run("init", ".")
+        assert "vectors" not in run("doctor").output
+
 
 class TestHostileDocumentsCannotDriveTheConsole:
     """Console output is Rich markup, and document text is attacker-controlled.

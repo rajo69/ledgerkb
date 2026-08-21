@@ -121,6 +121,58 @@ class SqliteStore:
         row = self.db.execute("SELECT receipt FROM config_stamp WHERE id = 1").fetchone()
         return json.loads(row["receipt"]) if row else None
 
+    def record_embedding_space(
+        self, workspace_id: str, model: str, dimensions: int
+    ) -> None:
+        """Record which model produced this workspace's vectors.
+
+        Fact, not intent: the model the embedder reported, which is what the
+        vectors were made with. ``stamp_config`` covers intent.
+        """
+        self.db.execute(
+            "INSERT INTO embedding_space (workspace_id, model, dimensions, recorded_at) "
+            "VALUES (?,?,?,?) "
+            "ON CONFLICT(workspace_id) DO UPDATE SET model = excluded.model, "
+            "dimensions = excluded.dimensions, recorded_at = excluded.recorded_at",
+            (workspace_id, model, dimensions, utcnow().isoformat()),
+        )
+        self.db.commit()
+
+    def embedding_space(self, workspace_id: str) -> tuple[str, int] | None:
+        """``(model, dimensions)``, or None if nothing has been embedded here."""
+        row = self.db.execute(
+            "SELECT model, dimensions FROM embedding_space WHERE workspace_id = ?",
+            (workspace_id,),
+        ).fetchone()
+        return (row["model"], int(row["dimensions"])) if row else None
+
+    def embedding_spaces(self) -> list[tuple[str, str, int]]:
+        """``(workspace_id, model, dimensions)`` for every indexed workspace.
+
+        Read-only, for ``lkb doctor``. It must not create a workspace to answer
+        the question, which is why it does not go through the default-workspace
+        helper.
+        """
+        rows = self.db.execute(
+            "SELECT workspace_id, model, dimensions FROM embedding_space "
+            "ORDER BY recorded_at"
+        ).fetchall()
+        return [(r["workspace_id"], r["model"], int(r["dimensions"])) for r in rows]
+
+    def embedded_chunk_count(self, workspace_id: str) -> int:
+        """How many vectors exist, which is what makes a recorded space binding.
+
+        A space recorded by a run that then failed before writing anything must
+        not refuse the next run: there is nothing for a new model to be
+        inconsistent with.
+        """
+        row = self.db.execute(
+            "SELECT COUNT(*) AS n FROM chunk "
+            "WHERE workspace_id = ? AND embedding IS NOT NULL",
+            (workspace_id,),
+        ).fetchone()
+        return int(row["n"])
+
     def close(self) -> None:
         self.db.close()
 
@@ -362,9 +414,17 @@ class SqliteStore:
         return sql, params
 
     def clear_embeddings(self, workspace_id: str) -> int:
-        """Drop every vector in a workspace, for a deliberate re-index."""
+        """Drop every vector in a workspace, for a deliberate re-index.
+
+        The recorded embedding space goes with them. It describes vectors that
+        no longer exist, and keeping it would make ``--rebuild`` refuse the
+        model change that is the usual reason for running it.
+        """
         cur = self.db.execute(
             "UPDATE chunk SET embedding = NULL WHERE workspace_id = ?", (workspace_id,)
+        )
+        self.db.execute(
+            "DELETE FROM embedding_space WHERE workspace_id = ?", (workspace_id,)
         )
         self.db.commit()
         return int(cur.rowcount)
