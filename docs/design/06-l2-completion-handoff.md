@@ -38,6 +38,23 @@ in L2, which is a change from how this stage has looked until now.
 The harness is the obvious first commit: two of the four criteria need it, and
 it needs no key and no decision from anybody.
 
+## Read the decision records first
+
+`docs/adr/` holds the decisions this stage rests on, with the alternatives that
+were rejected and why. They are short. Reading 0001, 0002, 0003 and 0006 before
+starting will save re-deriving arguments that were already had:
+
+- [0001](../adr/0001-keep-the-l2-gate-metrics.md) why the gate metrics were not
+  improved, even though the criticism of them is correct
+- [0002](../adr/0002-grow-the-corpus.md) why the corpus grew instead of the
+  retrieval defaults shrinking
+- [0003](../adr/0003-vary-the-phrasing.md) why the generated facts are worded
+  several ways, and what flattening them back into a template would cost
+- [0006](../adr/0006-measurement-provenance.md) what a committed measurement has
+  to carry, decided before any measurement exists
+- [0008](../adr/0008-provider-for-the-contextual-header-ab.md) the open provider
+  decision, with the options already priced
+
 ## What changed this session, and why
 
 **The corpus stopped being the blocker.** It was 20 documents and 55 chunks
@@ -106,11 +123,16 @@ irreversible in practice.
    [../how-to/build-the-measurement-corpus.md](../how-to/build-the-measurement-corpus.md)
    lists the question shapes that discriminate.
 5. **Build the eval harness** in `src/ledgerkb/evals/`, then run recall@20 and
-   the hybrid-versus-arms comparison. Commit the numbers as a file. A figure
-   that lives only in terminal scrollback is not a met criterion.
+   the hybrid-versus-arms comparison. The output format is already decided in
+   [0006](../adr/0006-measurement-provenance.md): a Markdown and a JSON file in
+   `results/`, sharing a provenance header the runner writes rather than a human.
+   Build the header collection first, because it shapes the runner's interface.
+   A figure that lives only in terminal scrollback is not a met criterion.
 6. **Contextual headers**, or a written descope. See the open decision below.
 7. **Update `docs/stages.toml`** and run `scripts/render_docs.py`. Then update
-   this document to say what the numbers were.
+   this document to say what the numbers were, and write an ADR for any decision
+   taken along the way. The practice from 0009 onward is to write the record
+   with the decision rather than after it.
 
 ## The open decision
 

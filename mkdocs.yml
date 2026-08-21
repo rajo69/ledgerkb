@@ -74,6 +74,14 @@ nav:
       - Security model: explanation/security-model.md
   - Decision records:
       - Index: adr/index.md
+      - 0001 L2 gate metrics: adr/0001-keep-the-l2-gate-metrics.md
+      - 0002 Grow the corpus: adr/0002-grow-the-corpus.md
+      - 0003 Vary the phrasing: adr/0003-vary-the-phrasing.md
+      - 0004 Embedding space: adr/0004-record-the-embedding-space.md
+      - 0005 Outside contributions: adr/0005-outside-contributions.md
+      - 0006 Measurement provenance: adr/0006-measurement-provenance.md
+      - 0007 OOXML reproducibility: adr/0007-defer-ooxml-reproducibility.md
+      - 0008 Contextual-header provider: adr/0008-provider-for-the-contextual-header-ab.md
   - Design records:
       - Research log: design/00-research-log.md
       - Product spec: design/01-product-spec.md
