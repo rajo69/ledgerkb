@@ -143,10 +143,15 @@ irreversible in practice.
    The header collection is done, in `evals/provenance.py`: `collect()` returns a
    `Provenance` that renders both halves, and `admissible` is where 0006's rule
    about a dirty tree is applied. [0009](../adr/0009-what-makes-a-measurement-inadmissible.md)
-   settles the three questions 0006 left open about that rule. What remains is
-   the runner itself: the metrics, the arm comparison, and writing the pair into
-   `results/`. A figure that lives only in terminal scrollback is not a met
-   criterion.
+   settles the three questions 0006 left open about that rule. The metrics are
+   done too, in `evals/metrics.py`, pure and free of the store so each figure can
+   be checked against a worked example: `recall@20` for the gate, and
+   `recall@5`, `nDCG@10` and MRR alongside it because 0001 asked for them.
+   Unanswerable questions raise rather than score there, since the gate measures
+   recall on the answerable ones and any number for the rest would be invented.
+   What remains is the runner: wiring the golden set through `hybrid.search`
+   once per arm combination, and writing the pair into `results/`. A figure that
+   lives only in terminal scrollback is not a met criterion.
 6. **Contextual headers**, or a written descope. See the open decision below.
 7. **Update `docs/stages.toml`** and run `scripts/render_docs.py`. Then update
    this document to say what the numbers were, and write an ADR for any decision

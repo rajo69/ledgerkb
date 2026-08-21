@@ -7,6 +7,23 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: the retrieval metrics
+
+- `ledgerkb.evals.metrics` computes `recall@k`, `nDCG@k` and reciprocal rank
+  over a ranked list of chunk ids. Pure: no store, no config, no corpus, no
+  golden set, so every figure can be checked against a worked example by hand.
+- `recall@20` is the gate metric. `recall@5`, `nDCG@10` and MRR are recorded
+  alongside it on ADR 0001's instruction, so a later reader can apply a better
+  metric to the same run without re-running it.
+- Unanswerable questions raise rather than score. Returning 1.0 would credit the
+  retriever for finding everything it was asked for when it was asked for
+  nothing; returning 0.0 would blame it for a question with no answer. The gate
+  says recall is measured on the answerable questions.
+- Aggregation is per question, not pooled over chunks, so one question wanting
+  four chunks cannot outweigh four questions wanting one.
+- A chunk returned twice counts once, and deduplication happens before the top-k
+  cut, so a duplicate cannot raise the score or push a real hit past the cutoff.
+
 ### Added: a format for the golden set
 
 - `ledgerkb.evals.golden` defines what an eval question is and loads a TOML
