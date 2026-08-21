@@ -17,6 +17,33 @@ python tests/fixtures/build_corpus.py /tmp/c 11   # 195 documents
 Stage status is generated from `docs/stages.toml`. Do not state it anywhere
 else, and do not edit the generated regions by hand.
 
+If the suite fails only in `tests/integration/test_cli.py`, check whether your
+shell exports `FORCE_COLOR`. It used to colour the CLI output and break six
+substring assertions. `tests/conftest.py` now clears it before anything builds a
+rich console, and `lkb search --json` no longer prints through that console at
+all, but the shape of the failure is worth recognising.
+
+## If you are starting cold, read this first
+
+**The critical path runs through somebody outside the project.** PR #1 is an
+outside contribution with changes requested: a two-line fix, a test for it,
+footnotes named or warned about, and four stale counts. A review and a
+real-Word-file follow-up are posted, and a check-in offering to push the fix was
+posted on top of them. Nothing else in L2 can finish until it lands, because it
+changes the corpus by one anchor document and everything downstream is written
+against a frozen corpus.
+
+Do not work around that by writing the golden set early. The ordering is the
+criterion.
+
+What is safe to build while it is open is anything that does not run retrieval
+and does not depend on a chunk id. Three such pieces are already in, and the
+list is now close to exhausted.
+
+If the contributor stays quiet, taking the fix in house is a **new decision**
+that needs its own record, per
+[0005](../adr/0005-outside-contributions.md). It is not a thing to do quietly.
+
 ## Where L2 actually is
 
 Gate 3 of 7. The machinery has been merged since `76d010c`: an OpenAI-compatible
@@ -30,21 +57,23 @@ in L2, which is a change from how this stage has looked until now.
 
 | Criterion | Blocked on | Exists today |
 |---|---|---|
-| Golden set, 40 questions, 7+ unanswerable | somebody writing them | `golden/` is empty |
-| recall@20 >= 0.90 | the rest of the harness | `evals/provenance.py`, nothing that runs |
-| Hybrid beats dense-only and BM25-only | the same harness | nothing |
-| Contextual headers +5 points | `index/contextualise.py` **and an LLM** | neither |
-
-The harness is the obvious first commit: two of the four criteria need it, and
-it needs no key and no decision from anybody.
+| Golden set, 40 questions, 7+ unanswerable | the corpus freezing, then somebody writing them | the format, in `evals/golden.py`. `golden/` holds no questions |
+| recall@20 >= 0.90 | the golden set, then the runner | `evals/metrics.py` and `evals/provenance.py` |
+| Hybrid beats dense-only and BM25-only | the same | `hybrid.search` already takes an `arms` subset |
+| Contextual headers +5 points | the corpus freezing, then `index/contextualise.py` | the provider is decided, see 0008 |
 
 **Retrieval has still not been run against a golden set, and must not be until
-one is written.** `evals/provenance.py` collects the header 0006 specifies and
-computes nothing. It landed ahead of step 4 on purpose, because PR #1 is blocked
-on somebody outside the project and the header is the one piece of L2 that
-needed neither the corpus frozen nor a question written. Building it did not
-consume the ordering constraint that matters: the runner still has nothing to
-run.
+one is written.** Three of the harness's four pieces are built and none of them
+runs anything: `provenance.py` collects the header 0006 specifies, `golden.py`
+defines what a question is and holds none, and `metrics.py` computes recall,
+nDCG and reciprocal rank over a ranked list somebody else produced. They landed
+ahead of step 4 on purpose, because PR #1 is blocked on somebody outside the
+project and these were the pieces that needed neither the corpus frozen nor a
+question written.
+
+That did not spend the ordering constraint that matters. The runner is the one
+piece left, and it is the one that cannot be built blind, because its shape
+depends on questions existing.
 
 ## Read the decision records first
 
@@ -60,10 +89,37 @@ starting will save re-deriving arguments that were already had:
   several ways, and what flattening them back into a template would cost
 - [0006](../adr/0006-measurement-provenance.md) what a committed measurement has
   to carry, decided before any measurement exists
-- [0008](../adr/0008-provider-for-the-contextual-header-ab.md) the open provider
-  decision, with the options already priced
+- [0008](../adr/0008-provider-for-the-contextual-header-ab.md) the provider for
+  the contextual-header A/B, decided, with the options that were priced against it
 
-## What changed this session, and why
+## What the harness session added, and why
+
+Second session of 2026-08-21, on `l2-corpus-growth`. Nothing here runs
+retrieval, and nothing here is a met criterion.
+
+- `evals/provenance.py`, the header 0006 specifies, gathered from git, the store
+  and the environment with no argument a human can hand-write a value through.
+  [0009](../adr/0009-what-makes-a-measurement-inadmissible.md) settles the three
+  questions 0006 left open about the admissibility rule.
+- `evals/golden.py`, the question format. Relevance is a document plus a
+  verbatim quote, never a chunk id, because chunk ids are minted at ingest and a
+  file keyed on them would rot on the next rebuild. `resolve()` refuses a quote
+  no chunk contains rather than scoring it zero, because a zero from a wrong
+  question is indistinguishable from a zero from a retriever that missed.
+- `evals/metrics.py`, pure and free of the store so each figure is checkable by
+  hand. `recall@20` for the gate, with `recall@5`, `nDCG@10` and MRR alongside
+  because 0001 asked for them. Unanswerable questions raise rather than score.
+- `SqliteStore.counts_for_workspace`, so a measurement states the size of the
+  corpus it actually ran against rather than of every workspace in the store.
+- A real bug, unrelated to L2 and found while chasing a test failure:
+  `lkb search --json` printed through the styling console, so a shell exporting
+  `FORCE_COLOR` got escape codes inside the JSON and `--json | jq` failed.
+
+Two tests tie code to the roadmap the way nothing else does: `metrics.GATE_K` is
+read back out of `docs/stages.toml`, and `golden.py`'s counts out of the same
+criterion. Rewording a gate now fails the suite, which is the intended alarm.
+
+## What the corpus session changed, and why
 
 **The corpus stopped being the blocker.** It was 20 documents and 55 chunks
 against a default `dense_k` of 50, so each arm was asked for most of the corpus
@@ -152,34 +208,37 @@ irreversible in practice.
    What remains is the runner: wiring the golden set through `hybrid.search`
    once per arm combination, and writing the pair into `results/`. A figure that
    lives only in terminal scrollback is not a met criterion.
-6. **Contextual headers**, or a written descope. See the open decision below.
+6. **Contextual headers**, or a written descope. The provider is settled: see
+   the decision below, and note that it waits on step 3 rather than on the key.
 7. **Update `docs/stages.toml`** and run `scripts/render_docs.py`. Then update
    this document to say what the numbers were, and write an ADR for any decision
    taken along the way. The practice from 0009 onward is to write the record
    with the decision rather than after it.
 
-## The open decision
+## The provider decision, taken
 
 Criterion 4 needs an LLM, one call per chunk, about 2.4M tokens across 4,433
 requests. Nothing else in L2 needs one: embeddings run locally through
 fastembed with no key.
 
-There is no key in the environment and no local model server. The options, with
-the numbers as of 2026-08-21:
+**Cerebras free tier**, `gpt-oss-120b` at `https://api.cerebras.ai/v1`, through
+the existing OpenAI-compatible adapter.
+[0008](../adr/0008-provider-for-the-contextual-header-ab.md) has the reasoning
+and the options that were priced against it. The short version is that the
+useful outcome is a negative one, deleting the highest-volume model call in the
+system, and a negative result from a small local model could not be told apart
+from a bad model.
 
-- **Cerebras free tier.** 1M tokens/day, so about 2.5 days unattended.
-  OpenAI-compatible at `api.cerebras.ai/v1`, `gpt-oss-120b`, 8K context cap
-  which is ample for a chunk.
-- **Local Ollama.** Faster in elapsed time on this hardware, roughly 15 to 20
-  hours, but CPU-only on an i5-1235U with no discrete GPU, and a 4B model. A
-  negative result from a small model cannot be distinguished from a bad model,
-  which defeats the purpose of the criterion.
-- **Paid, about $0.33** on Gemini 2.5 Flash Lite, which removes the constraint
-  entirely.
-- **Descope it in writing.** Permitted by the roadmap. The argument is real: the
-  knob defaults to off, the baseline to beat is the heading arm rather than "no
-  context", and this corpus is structured enough that the heading arm may
-  already carry the whole gain.
+Two things follow, and the second one is easy to get wrong:
+
+- **Generation must be resumable.** 1M tokens a day is about two and a half days
+  of wall clock, and nobody watches a job that long. `context_header` is a column
+  on `chunk`, so the work remaining is the chunks without one and the operation
+  is idempotent for free. Write it that way from the start.
+- **The key does not unblock this.** Chunk ids are minted at ingest, so headers
+  generated against a corpus that is then rebuilt die with the ids they were
+  attached to. This criterion sits behind the corpus freeze in step 3 exactly as
+  the golden set does. Having a key changes nothing about the ordering.
 
 If the A/B runs, the baseline is the **heading arm**, not an unlabelled index.
 Beating "no context" would be a meaningless win.

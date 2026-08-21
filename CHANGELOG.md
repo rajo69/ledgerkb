@@ -7,6 +7,22 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Decided: Cerebras for the contextual-header measurement
+
+- L2's fourth criterion needs one model call per chunk, about 2.4M tokens, and
+  it is the only part of L2 that needs a model at all. ADR 0008 is now accepted:
+  the Cerebras free tier, `gpt-oss-120b`, through the existing
+  OpenAI-compatible adapter. No new dependency and no new code path.
+- The reasoning is that the useful outcome is a negative one, deleting the
+  highest-volume model call in the system, and a negative result from a small
+  local model could not be distinguished from a bad model.
+- `docs/how-to/use-a-hosted-provider.md` carries the configuration.
+- Generating the headers waits on the corpus freezing, not on the key. Chunk ids
+  are minted at ingest, so headers generated against a corpus that is then
+  rebuilt are lost with the ids they were attached to.
+- `golden/` and `results/` now carry a README each, so the directories exist in
+  a fresh clone and say what belongs in them.
+
 ### Added: the retrieval metrics
 
 - `ledgerkb.evals.metrics` computes `recall@k`, `nDCG@k` and reciprocal rank
