@@ -31,12 +31,20 @@ in L2, which is a change from how this stage has looked until now.
 | Criterion | Blocked on | Exists today |
 |---|---|---|
 | Golden set, 40 questions, 7+ unanswerable | somebody writing them | `golden/` is empty |
-| recall@20 >= 0.90 | a measurement harness | `src/ledgerkb/evals/` is an empty package |
+| recall@20 >= 0.90 | the rest of the harness | `evals/provenance.py`, nothing that runs |
 | Hybrid beats dense-only and BM25-only | the same harness | nothing |
 | Contextual headers +5 points | `index/contextualise.py` **and an LLM** | neither |
 
 The harness is the obvious first commit: two of the four criteria need it, and
 it needs no key and no decision from anybody.
+
+**Retrieval has still not been run against a golden set, and must not be until
+one is written.** `evals/provenance.py` collects the header 0006 specifies and
+computes nothing. It landed ahead of step 4 on purpose, because PR #1 is blocked
+on somebody outside the project and the header is the one piece of L2 that
+needed neither the corpus frozen nor a question written. Building it did not
+consume the ordering constraint that matters: the runner still has nothing to
+run.
 
 ## Read the decision records first
 
@@ -126,8 +134,13 @@ irreversible in practice.
    the hybrid-versus-arms comparison. The output format is already decided in
    [0006](../adr/0006-measurement-provenance.md): a Markdown and a JSON file in
    `results/`, sharing a provenance header the runner writes rather than a human.
-   Build the header collection first, because it shapes the runner's interface.
-   A figure that lives only in terminal scrollback is not a met criterion.
+   The header collection is done, in `evals/provenance.py`: `collect()` returns a
+   `Provenance` that renders both halves, and `admissible` is where 0006's rule
+   about a dirty tree is applied. [0009](../adr/0009-what-makes-a-measurement-inadmissible.md)
+   settles the three questions 0006 left open about that rule. What remains is
+   the runner itself: the metrics, the arm comparison, and writing the pair into
+   `results/`. A figure that lives only in terminal scrollback is not a met
+   criterion.
 6. **Contextual headers**, or a written descope. See the open decision below.
 7. **Update `docs/stages.toml`** and run `scripts/render_docs.py`. Then update
    this document to say what the numbers were, and write an ADR for any decision

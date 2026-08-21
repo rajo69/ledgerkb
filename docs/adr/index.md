@@ -14,6 +14,7 @@ was, and why.
 | [0006](0006-measurement-provenance.md) | Every committed measurement carries its provenance | accepted |
 | [0007](0007-defer-ooxml-reproducibility.md) | Defer the OOXML byte-reproducibility fix | accepted |
 | [0008](0008-provider-for-the-contextual-header-ab.md) | Provider for the contextual-header A/B | proposed |
+| [0009](0009-what-makes-a-measurement-inadmissible.md) | What makes a measurement inadmissible | accepted |
 
 0001 through 0007 were written on 2026-08-21, after the decisions rather than
 with them. That is worth knowing when reading them: they are accurate about what

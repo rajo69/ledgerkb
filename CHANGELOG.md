@@ -7,6 +7,25 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: measurements carry their provenance
+
+- `ledgerkb.evals.provenance` collects the header ADR 0006 specifies, and
+  renders the Markdown and JSON halves a committed result is made of. Every
+  value is gathered from the environment, the store or git. There is no argument
+  through which a human can hand-write one.
+- The header records fact over intent, following the same rule as
+  `embedding_space`: the embedding model and the corpus counts come from the
+  store, so a result describes the run rather than what was asked for.
+- `Provenance.admissible` applies ADR 0006's rule that a result from a dirty
+  tree is not gate evidence, and `inadmissible_because` says which reason
+  applied. ADR 0009 settles what "dirty" counts and what a run with no commit
+  counts as.
+- `SqliteStore.counts_for_workspace()`: document and chunk counts for one
+  workspace, so a store holding a second workspace cannot inflate the corpus
+  size a measurement reports.
+- Nothing here runs retrieval. The golden set does not exist yet, and L2's
+  ordering requires it to be written before retrieval is run even once.
+
 ### Added: the store records which model made its vectors
 
 - Migration `005_embedding_space.sql` adds `embedding_space`, one row per

@@ -887,5 +887,22 @@ class SqliteStore:
             out[t] = int(row["n"])
         return out
 
+    def counts_for_workspace(self, workspace_id: str) -> dict[str, int]:
+        """Row counts for one workspace, for a measurement header.
+
+        Separate from ``counts`` because a measurement has to state the size of
+        the corpus it ran against, and a store with a second workspace in it
+        would otherwise inflate that figure without anything looking wrong.
+        """
+        tables = ("document", "chunk")
+        out: dict[str, int] = {}
+        for t in tables:
+            row = self.db.execute(
+                f"SELECT COUNT(*) AS n FROM {t} WHERE workspace_id = ?",  # noqa: S608
+                (workspace_id,),
+            ).fetchone()
+            out[t] = int(row["n"])
+        return out
+
 
 __all__ = ["SqliteStore"]
