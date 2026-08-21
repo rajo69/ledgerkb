@@ -522,6 +522,12 @@ Migrations 003 and 004 moved two invariants into the schema.
 
 ### The corpus problem, read this before writing a golden set
 
+> **Superseded on 2026-08-21.** The corpus was grown to 195 documents and 4,433
+> chunks, so the problem described below no longer exists. The analysis is kept
+> because it is why the corpus has the shape it does, and recommendations 2, 3
+> and 5 were not adopted and are still open. See
+> [06-l2-completion-handoff.md](06-l2-completion-handoff.md) for what is left.
+
 The fixture corpus produces **55 chunks**. The defaults are `dense_k = 50` and
 `sparse_k = 50`, so each arm is asked for roughly 91% of the entire corpus and
 RRF fuses two lists that both contain nearly everything. `recall@20` asks the

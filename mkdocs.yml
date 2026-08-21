@@ -81,6 +81,7 @@ nav:
       - Implementation plan: design/03-implementation-plan.md
       - Build handoff: design/04-build-handoff.md
       - Documentation plan: design/05-documentation-plan.md
+      - L2 completion handoff: design/06-l2-completion-handoff.md
 
 not_in_nav: |
   stages.toml
