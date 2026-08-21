@@ -18,6 +18,7 @@ differ in the one figure the question asks about.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -28,7 +29,16 @@ from ledgerkb.ingest.chunk import chunk_document
 from ledgerkb.ingest.metadata import REQUIRED_FIELDS, extract_metadata
 from ledgerkb.ingest.parsers.registry import registry
 from tests.fixtures.build_corpus import MEASUREMENT_SCALE, build
-from tests.fixtures.corpus_world import PROGRAMMES, generated_documents
+from tests.fixtures.corpus_world import (
+    ALLOCATION_PHRASINGS,
+    PROGRAMMES,
+    generated_documents,
+)
+
+
+def _longest_literal(template: str) -> str:
+    """The longest run of fixed words in a phrasing, which identifies it."""
+    return max(re.split(r"\{[a-z]+\}", template), key=len).strip()
 
 
 @pytest.fixture(scope="module")
@@ -117,6 +127,36 @@ class TestDecoys:
             if isinstance(d.payload, str) and prog.name in d.payload
         ]
         assert len(holding) >= 10, f"only {len(holding)} documents mention {prog.name}"
+
+    def test_the_same_fact_is_not_always_stated_the_same_way(self) -> None:
+        """Templated decoys measure the fixtures rather than the retriever.
+
+        Four sentences differing by one number sit almost on top of each other
+        under an embedding model, so the dense arm cannot separate them, while
+        BM25 has exact tokens for the year and the amount. A corpus shaped that
+        way answers "BM25 was enough" before the retriever gets a say, and the
+        gate asks precisely whether hybrid beats BM25-only.
+        """
+        body = "\n".join(
+            d.payload for d in generated_documents(MEASUREMENT_SCALE)
+            if isinstance(d.payload, str)
+        )
+        used = [t for t in ALLOCATION_PHRASINGS if _longest_literal(t) in body]
+        assert len(used) >= 5, (
+            f"only {len(used)} of {len(ALLOCATION_PHRASINGS)} phrasings reach "
+            "the corpus, so the decoys are closer to copies than to duplicates"
+        )
+
+    def test_every_phrasing_keeps_the_amount_and_the_year(self) -> None:
+        """The wording varies; the facts do not.
+
+        BM25 is entitled to the handle it is good at. Varying the phrasing to
+        help the dense arm must not quietly remove the exact tokens that make
+        the sparse arm a fair comparison.
+        """
+        for template in ALLOCATION_PHRASINGS:
+            assert "{amount}" in template, template
+            assert "{fy}" in template, template
 
     def test_generation_is_a_pure_function_of_the_scale(self) -> None:
         """No clock, no seed, no filesystem order. Same input, same corpus."""

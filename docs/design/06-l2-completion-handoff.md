@@ -56,6 +56,14 @@ budget figures across four quarters, so a question about an allocation has one
 correct chunk and three decoys sharing nearly all of its vocabulary. Without
 that, 200 unrelated documents retrieve as easily as 20.
 
+Nor was near-duplication enough on its own. The first version stated every
+budget in one sentence template, which handicaps the dense arm (templated text
+collapses under an embedding model) and flatters BM25 (exact tokens for the year
+and the amount). The gate asks whether hybrid beats BM25-only, so that shape
+would have answered the question before the retriever got a say. Each fact is
+now stated several ways, chosen by document index, with the amount and the
+financial year kept as literal tokens in every phrasing.
+
 **The store learned which model made its vectors.** Migration 005 adds
 `embedding_space`, and `guard_embedding_space` on the index path refuses to add
 vectors from a second model. The case that made it worth doing is two models of

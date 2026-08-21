@@ -178,6 +178,77 @@ def quarter_of(when: date) -> int:
     return max(0, min(3, index - 2))
 
 
+# --- phrasing ----------------------------------------------------------------
+#
+# The facts are the decoys; the wording must not be. An earlier version of this
+# module stated every budget in one byte-identical sentence, varying only the
+# programme, the date and the amount. That looked like a corpus of near
+# duplicates, which is what a retrieval measurement wants, but it biased the
+# measurement it was built to support.
+#
+# Templated text collapses under an embedding model: four sentences differing by
+# one number sit almost on top of each other, so the dense arm cannot separate
+# them. BM25 meanwhile has exact tokens for the year and the amount, which is
+# what it is best at. The gate asks whether hybrid beats dense-only and
+# BM25-only, and a corpus shaped like that answers "BM25 was enough" before the
+# retriever gets a say. That would be a fact about the fixtures, not about
+# retrieval.
+#
+# So the same fact is stated several ways, chosen by document index rather than
+# at random. Every phrasing keeps the amount and the financial year as literal
+# tokens, so BM25 keeps the handle it is entitled to, and the dense arm now has
+# real semantic variation to work against.
+
+ALLOCATION_PHRASINGS: tuple[str, ...] = (
+    "The capital allocation for {fy} was reported as {amount}.",
+    "Members noted a revised allocation of {amount} for {fy}.",
+    "Funding of {amount} was confirmed against the {fy} programme.",
+    "The {fy} allocation stands at {amount} following the latest review.",
+    "An allocation of {amount} has been agreed for {fy}.",
+    "Spending power for {fy} is {amount}, unchanged since the last report.",
+    "The programme carries {amount} of capital in {fy}.",
+)
+
+DECISION_PHRASINGS: tuple[str, ...] = (
+    "The Committee RESOLVED to approve the capital allocation of {amount} for "
+    "the {programme} for {fy}, and to delegate authority for contract award to "
+    "the {role}.",
+    "RESOLVED: that {amount} be approved for the {programme} in {fy}, with "
+    "contract award delegated to the {role}.",
+    "The Committee agreed the {fy} allocation of {amount} for the {programme}, "
+    "and that the {role} should award the contract.",
+    "It was RESOLVED that the {programme} proceed on the basis of {amount} for "
+    "{fy}, authority for award resting with the {role}.",
+    "Approval was given for {amount} against the {programme} for {fy}. The "
+    "{role} will award the contract.",
+)
+
+UPDATE_PHRASINGS: tuple[str, ...] = (
+    "{officer} ({role}) presented an update on the {programme}, reference "
+    "{code}.",
+    "The {role} took Members through the {programme}, reference {code}.",
+    "An update on the {programme} ({code}) was given by {officer}.",
+    "{officer} reported on progress against the {programme}, reference {code}.",
+)
+
+DELIVERY_PHRASINGS: tuple[str, ...] = (
+    "The programme is being delivered by {contractor} under {option}, with "
+    "completion forecast for {completion}.",
+    "{contractor} is on site under {option}. Completion is expected in "
+    "{completion}.",
+    "Delivery continues under {option} with {contractor}, targeting "
+    "{completion}.",
+    "Works are with {contractor} on the {option} route, for completion by "
+    "{completion}.",
+)
+
+
+def phrase(bank: tuple[str, ...], index: int, **fields: object) -> str:
+    """One phrasing from a bank, chosen by index so the corpus stays a pure
+    function of its inputs. There is no seed here and no clock."""
+    return bank[index % len(bank)].format(**fields)
+
+
 # --- document payloads -------------------------------------------------------
 
 
@@ -241,23 +312,28 @@ def _minutes_md(committee: str, when: date, index: int) -> str:
         prog = PROGRAMMES[(index + slot) % len(PROGRAMMES)]
         item = slot + 3
         amount = prog.budgets[quarter]
+        # The same programme discussed by two committees in the same quarter
+        # states the same figure in different words. That is the difference
+        # between a corpus of near duplicates and a corpus of copies.
+        variant = index + slot
         out += [
             f"## Item {item}: {prog.name}",
             "",
-            f"{lead} ({lead_role}) presented an update on the {prog.name}, "
-            f"reference {prog.code}. The capital allocation for {_fy(when)} was "
-            f"reported as {amount}. The programme is being delivered by "
-            f"{prog.contractor} under {prog.option}, with completion "
-            f"forecast for {prog.completion}.",
+            phrase(UPDATE_PHRASINGS, variant, officer=lead, role=lead_role,
+                   programme=prog.name, code=prog.code)
+            + " "
+            + phrase(ALLOCATION_PHRASINGS, variant, fy=_fy(when), amount=amount)
+            + " "
+            + phrase(DELIVERY_PHRASINGS, variant, contractor=prog.contractor,
+                     option=prog.option, completion=prog.completion),
             "",
             f"The Committee noted that {prog.risks[0].lower()}, and that "
             f"{prog.risks[1].lower()}.",
             "",
             f"### Item {item} Decision",
             "",
-            f"The Committee RESOLVED to approve the capital allocation of "
-            f"{amount} for the {prog.name} for {_fy(when)}, and to delegate "
-            f"authority for contract award to the {lead_role}.",
+            phrase(DECISION_PHRASINGS, variant, amount=amount,
+                   programme=prog.name, fy=_fy(when), role=lead_role),
             "",
             f"### Item {item} Actions",
             "",
@@ -297,8 +373,8 @@ def _report_docx(prog: Programme, when: date, index: int) -> list[tuple[str, str
         ("p", f"The {prog.name} covers the {prog.ward} ward and is being "
               f"delivered by {prog.contractor} under {prog.option}."),
         ("h2", "Financial implications"),
-        ("p", f"The approved capital allocation for {_fy(when)} is {amount}. "
-              f"Spend to date is within profile."),
+        ("p", phrase(ALLOCATION_PHRASINGS, index + 2, fy=_fy(when), amount=amount)
+              + " Spend to date is within profile."),
         ("h2", "Delivery position"),
         ("p", f"Completion remains forecast for {prog.completion}."),
         ("h2", "Risk"),
@@ -319,8 +395,9 @@ def _update_html(prog: Programme, when: date) -> str:
         for title, body in (
             ("Summary", f"The {prog.name} is reported as amber for "
                         f"{_fy(when)}, with a capital allocation of {amount}."),
-            ("Budget", f"The approved allocation for {_fy(when)} is {amount}, "
-                       f"managed under reference {prog.code}."),
+            ("Budget", phrase(ALLOCATION_PHRASINGS, quarter + 1,
+                              fy=_fy(when), amount=amount)
+                       + f" It is managed under reference {prog.code}."),
             ("Delivery", f"{prog.contractor} continues on site under "
                          f"{prog.option}. Completion is forecast for "
                          f"{prog.completion}."),
@@ -424,9 +501,10 @@ def _email_eml(prog: Programme, when: date, index: int) -> str:
         f"Confirming the drawdown profile for the {prog.name}, reference "
         f"{prog.code}.\n"
         "\n"
-        f"The approved capital allocation for {_fy(when)} is "
-        f"{prog.budgets[quarter]}. Spend to date is within profile and the "
-        f"forecast completion date is unchanged at {prog.completion}.\n"
+        + phrase(ALLOCATION_PHRASINGS, index + 4, fy=_fy(when),
+                 amount=prog.budgets[quarter])
+        + f" Spend to date is within profile and the forecast completion "
+        f"date is unchanged at {prog.completion}.\n"
         "\n"
         f"One risk to flag: {prog.risks[0].lower()}.\n"
         "\n"
@@ -472,7 +550,8 @@ def _statement_pdf(prog: Programme, when: date) -> list[str]:
     return [
         f"{prog.name} Annual Statement",
         f"Published {_long_date(when)}. Reference {prog.code}.",
-        f"The capital allocation for {_fy(when)} is {prog.budgets[quarter]}.",
+        phrase(ALLOCATION_PHRASINGS, quarter + 3, fy=_fy(when),
+               amount=prog.budgets[quarter]),
         f"Delivery is by {prog.contractor} under {prog.option}.",
         f"Completion is forecast for {prog.completion}.",
         f"Principal risk: {prog.risks[0]}",

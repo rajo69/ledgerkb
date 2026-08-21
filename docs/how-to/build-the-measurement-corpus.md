@@ -53,6 +53,19 @@ figure. Ask what a programme's allocation was for a given year and there is
 exactly one correct chunk and three decoys that share almost all of their
 vocabulary with it.
 
+The facts are the decoys; the wording is not. An earlier version stated every
+budget in one byte-identical sentence, varying only the programme, the date and
+the amount. That is a corpus of copies rather than near duplicates, and it
+biases the measurement it exists to support: templated text collapses under an
+embedding model, so the dense arm cannot separate four sentences differing by
+one number, while BM25 has exact tokens for the year and the amount. A corpus
+shaped that way answers "BM25 was enough" before the retriever gets a say.
+
+So each fact is stated several ways, chosen by document index. Every phrasing
+keeps the amount and the financial year as literal tokens, so BM25 keeps the
+handle it is entitled to, and the dense arm has real semantic variation to work
+against. Both properties have tests.
+
 The world is the reviewable source. Nothing in it is random and nothing is
 seeded: every document is a function of its index, so a diff of that file is a
 diff of the corpus, and two builds on two machines produce the same text.

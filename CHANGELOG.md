@@ -44,6 +44,13 @@ stability commitment at v1.0.0.
   four quarters, so a question about an allocation has one correct chunk and
   three decoys that share nearly all of its vocabulary. Size alone would not
   have made the measurement discriminate.
+- The facts are the decoys; the wording is not. Stating every budget in one
+  sentence template would have handicapped the dense arm, because templated
+  text collapses under an embedding model, while giving BM25 exact tokens for
+  the year and the amount. The gate asks whether hybrid beats BM25-only, so
+  that shape would have answered the question before the retriever got a say.
+  Each fact is now stated several ways, chosen by document index, and every
+  phrasing keeps the amount and the financial year as literal tokens.
 - `tests/integration/test_measurement_corpus.py` asserts the size condition
   against `RetrievalConfig` rather than against a fixed number, so raising
   `dense_k` without growing the corpus fails the build. It also runs the L1
