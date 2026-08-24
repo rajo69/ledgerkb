@@ -15,6 +15,7 @@ from pathlib import Path
 from ledgerkb.core.errors import ParseError
 from ledgerkb.core.ports import ParsedDocument, ParseHint, Parser
 from ledgerkb.ingest.parsers.html import HtmlParser
+from ledgerkb.ingest.parsers.odt import OdtParser
 from ledgerkb.ingest.parsers.office import DocxParser, PptxParser, XlsxParser
 from ledgerkb.ingest.parsers.pdf import PdfParser
 from ledgerkb.ingest.parsers.plain import CsvParser, EmailParser, JsonParser, TextParser
@@ -23,6 +24,7 @@ from ledgerkb.ingest.parsers.rtf import RtfParser
 DEFAULT_PARSERS: tuple[Parser, ...] = (
     PdfParser(),
     DocxParser(),
+    OdtParser(),
     XlsxParser(),
     PptxParser(),
     HtmlParser(),
@@ -40,7 +42,6 @@ KNOWN_UNSUPPORTED = {
     ".xls": "legacy Excel (.xls)",
     ".ppt": "legacy PowerPoint (.ppt)",
     ".pages": "Apple Pages",
-    ".odt": "OpenDocument Text",
 }
 
 

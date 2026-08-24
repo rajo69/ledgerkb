@@ -7,6 +7,20 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: OpenDocument Text (ODT) at tier 0
+
+- `ingest/parsers/odt.py`: OpenDocument Text (`.odt` and `.ott`) joins the tier-0
+  formats, using Python stdlib `zipfile` and `xml.etree.ElementTree` with zero
+  external dependencies.
+- Headings and outline levels (`<text:h text:outline-level="N">`), paragraphs,
+  Markdown-formatted table rows and cells, nested bullet lists, tabs, line breaks,
+  and repeated spaces are parsed with exact character offset tracking to uphold
+  the slice-back invariant.
+- Protected against decompression bombs via entry size (`MAX_ENTRY_BYTES = 64MiB`)
+  and compression ratio (`MAX_RATIO = 100.0`) guards on archive XML entries.
+- Metadata (`title`, `authors`, `published_at`) is extracted from `meta.xml`.
+- `.odt` leaves `KNOWN_UNSUPPORTED` in `ingest/parsers/registry.py`.
+
 ### Added: RTF at tier 0
 
 - `ingest/parsers/rtf.py`: RTF joins the tier-0 formats, with no new

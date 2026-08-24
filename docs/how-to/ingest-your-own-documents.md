@@ -16,6 +16,7 @@ refresh works per source and documents are unique on `(source, external_id)`.
 |---|---|---|
 | PDF | `pypdfium2` | Born-digital text layer. Scanned pages need tier 1, which is L7 |
 | DOCX | `python-docx` | Headings become the heading path |
+| ODT | native | Structured XML (`content.xml`); headings and outline levels become the heading path |
 | XLSX | `openpyxl` | One chunk per sheet, cells flattened row-wise |
 | PPTX | `python-pptx` | One chunk per slide, title as heading |
 | HTML | `selectolax` | Scripts, styles, comments and `display:none` removed |
