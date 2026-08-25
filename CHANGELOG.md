@@ -7,6 +7,10 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- `ingest/parsers/rtf.py`: bounds-check negative `\uN` unicode code points in RTF parser and emit `\ufffd` with a parse warning if out of bounds.
+
 ### Added: RTF at tier 0
 
 - `ingest/parsers/rtf.py`: RTF joins the tier-0 formats, with no new

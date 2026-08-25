@@ -458,3 +458,11 @@ def test_a_footnote_is_reported_rather_than_silently_dropped() -> None:
     assert "Section 106" not in doc.text
     assert doc.text == "The allocation was approved. End."
     assert doc.warnings == ["skipped footnote at offset 0"]
+
+
+def test_out_of_bounds_unicode_parameter_emits_replacement_and_warning() -> None:
+    """Out-of-bounds negative unicode parameters emit replacement character and warning."""
+    doc = parse(r"{\rtf1\ansi\pard Text \u-100000? end\par}")
+    assert doc.text == "Text \ufffd end"
+    assert any("bad unicode code point" in w for w in doc.warnings)
+
