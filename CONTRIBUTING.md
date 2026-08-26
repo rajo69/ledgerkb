@@ -129,7 +129,7 @@ One maintainer, so the honest promise is a small one and it is kept:
 
 Current, and specific:
 
-1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
+1. **A parser for a format not yet covered.** ODT, EPUB, or a better PDF
    path for scanned documents. The `Parser` protocol is two methods, and
    `ingest/parsers/registry.py` makes a new format a single registration. Read
    `parsers/plain.py` for the smallest complete example.
