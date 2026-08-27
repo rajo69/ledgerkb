@@ -1,3 +1,4 @@
-# Every path, one owner. Review is not enforced by branch protection yet, so
-# this file is a routing hint rather than a gate. See GOVERNANCE.md.
+# Every path, one owner. `main` is protected and its checks are required, but
+# review is not, because one maintainer cannot approve their own work. So this
+# file routes the review request rather than gating the merge. See GOVERNANCE.md.
 * @rajo69
