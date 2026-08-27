@@ -53,8 +53,10 @@ from scratch. That is the whole reason the design records survive in
 
 An issue or a pull request, reviewed by the maintainer against
 [CONTRIBUTING.md](CONTRIBUTING.md). Nothing more elaborate is warranted at this
-size. Branch protection on `main` and required review are planned and not enabled
-yet, which is recorded rather than glossed over.
+size. `main` is protected: force pushes and deletion are blocked, and the CI,
+docs and offline checks must pass before a pull request can merge. Required
+review is not enabled, because a single maintainer cannot approve their own work
+and a rule nobody can satisfy is worse than no rule.
 
 ## If the maintainer disappears
 
