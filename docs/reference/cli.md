@@ -118,6 +118,18 @@ each arm placed it:
 An arm that ran and found nothing is absent from that line. An arm that was not
 run is absent from the header count too, so the two cases stay distinguishable.
 
+## `lkb eval retrieval [GOLDEN_SET]`
+
+Run retrieval evaluation against a golden question set and measure gate metrics (`recall@20`, `recall@5`, `nDCG@10`, `MRR`).
+
+| Option | Effect |
+|---|---|
+| `--compare-arms` | Run each retrieval arm individually alongside hybrid to compare performance |
+| `--arms LIST` | Comma-separated subset of retrieval arms for the main evaluation (default: `dense,sparse,headings`) |
+| `--save / --no-save` | Save reproducible Markdown and JSON result artifacts to the results directory (default: `--no-save`) |
+| `--out-dir PATH` | Target directory for saved results (default: `results/`) |
+| `--json` | Output machine-readable JSON to stdout |
+
 ## Exit codes
 
 `0` on success. `1` on a named `ledgerkb` error, with the message on stderr and no
@@ -126,6 +138,6 @@ traceback. A traceback means a bug; please report it.
 ## Commands that do not exist yet
 
 `lkb ask`, `lkb compile`, `lkb assertions`, `lkb refresh`, `lkb changes`,
-`lkb history`, `lkb graph`, `lkb entities`, `lkb export`, `lkb eval`, `lkb runs`
+`lkb history`, `lkb graph`, `lkb entities`, `lkb export`, `lkb runs`
 and `lkb cost` are designed and gated. See [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md) for
 which stage each arrives in.
