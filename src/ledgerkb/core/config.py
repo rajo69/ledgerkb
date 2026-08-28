@@ -406,7 +406,7 @@ def check_transition(old: Config, new: Config, *, allow_gated: bool = False) -> 
     rebuilds: list[str] = []
     for key, tiered, o, n in _walk(old, new):
         if tiered.tier is Tier.LOCKED:
-            raise LockedSettingError(key, o, n, remedy="lkb reindex --confirm")
+            raise LockedSettingError(key, o, n, remedy="lkb index --rebuild")
         if tiered.tier is Tier.GATED:
             if not allow_gated:
                 raise GatedSettingError(key, tiered.forces)

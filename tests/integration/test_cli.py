@@ -241,6 +241,31 @@ class TestIndex:
         run("init", ".")
         assert "vectors" not in run("doctor").output
 
+    def test_doctor_reports_a_locked_change_instead_of_dying_on_it(
+        self, workdir: Path
+    ) -> None:
+        """`lkb init` stamps the store, so editing a locked knob before the
+        first index used to make `lkb doctor` exit 1 with nothing embedded.
+
+        There is no vector for the lock to protect at that point, and doctor is
+        a report: it should say so and carry on to the rest of the check. The
+        refusal that matters is on the index path, where the vector count is
+        part of the condition.
+        """
+        run("init", ".")
+        cfg = workdir / "ledgerkb.toml"
+        cfg.write_text(
+            cfg.read_text(encoding="utf-8").replace(
+                'model = "mixedbread-ai/mxbai-embed-large-v1"',
+                'model = "nomic-embed-text"',
+            ),
+            encoding="utf-8",
+        )
+        out = run("doctor").output
+        assert "locked setting changed" in out
+        assert "lkb index --rebuild" in out
+        assert "the deterministic path is fully operational" in out
+
 
 class TestHostileDocumentsCannotDriveTheConsole:
     """Console output is Rich markup, and document text is attacker-controlled.

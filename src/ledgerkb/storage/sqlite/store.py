@@ -450,7 +450,7 @@ class SqliteStore:
             raise InvariantError(
                 f"Stored vectors are {mat.shape[1]}-dimensional but the query is "
                 f"{q.shape[0]}-dimensional. The embedding model changed under an "
-                "existing index; run: lkb reindex --confirm"
+                "existing index; run: lkb index --rebuild"
             )
         norms = np.linalg.norm(mat, axis=1)
         norms[norms == 0.0] = np.inf          # zero vectors score 0, never NaN

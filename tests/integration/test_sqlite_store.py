@@ -336,7 +336,7 @@ class TestVersionScoping:
         c = chunk_factory("Budget decisions for 2026.", 0)
         c.embedding = embedder.embed([c.embed_text])[0]
         store.add_chunks([c])
-        with pytest.raises(InvariantError, match="reindex --confirm"):
+        with pytest.raises(InvariantError, match="index --rebuild"):
             store.search_dense([0.1, 0.2, 0.3], k=5, workspace_id=workspace.id)
 
 

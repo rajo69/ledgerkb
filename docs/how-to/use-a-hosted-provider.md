@@ -99,10 +99,21 @@ api_key_env = "OLLAMA_API_KEY"     # unset is fine; local endpoints skip the che
 
 [embeddings]
 provider   = "openai_compatible"
-base_url   = "http://localhost:11434/v1"
 model      = "nomic-embed-text"
 dimensions = 768
 ```
+
+**`[embeddings]` has no `base_url` or `api_key_env`, and adding them is refused
+rather than ignored.** `EmbeddingsConfig` forbids unknown keys, so a config
+carrying them fails to load. When `embeddings.provider` is `openai_compatible`,
+`build_embedder` reads the endpoint and the key from `[chat]`, so the two share
+one endpoint by construction.
+
+That is a real limitation, not just a spelling. Chat on a hosted aggregator with
+embeddings on a local Ollama is not expressible today. Both have to be the same
+endpoint, which is why the example above puts `qwen3:8b` and `nomic-embed-text`
+on the same server. If you need them split, the way through is the `Embedder`
+port in code rather than configuration.
 
 A local endpoint is recognised by its hostname (`localhost`, `127.0.0.1`, `::1`,
 `0.0.0.0`, `host.docker.internal`) and does not require a key. The match is on the

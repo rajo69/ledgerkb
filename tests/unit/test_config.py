@@ -111,7 +111,7 @@ class TestTiers:
         new.embeddings.dimensions = 768
         with pytest.raises(LockedSettingError) as exc:
             check_transition(old, new)
-        assert "lkb reindex --confirm" in str(exc.value)
+        assert "lkb index --rebuild" in str(exc.value)
 
     def test_locked_store_backend_raises(self) -> None:
         from ledgerkb.core.config import StoreConfig

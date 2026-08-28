@@ -296,7 +296,7 @@ class OpenAICompatEmbedder:
                         f"{self.name} returned {len(vector)}-dimensional vectors but the "
                         f"store is configured for {self.dimensions}. The dimension is "
                         "locked after the first index build; fix the config, or run "
-                        "lkb reindex --confirm to rebuild deliberately."
+                        "lkb index --rebuild to rebuild deliberately."
                     )
                 out.append(vector)
         return out
