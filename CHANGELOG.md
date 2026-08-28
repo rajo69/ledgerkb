@@ -7,6 +7,17 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- `ingest/parsers/rtf.py`: a `\uN` escape whose negative parameter fell outside
+  the 16-bit signed range (e.g. `\u-100000`) produced a negative code point
+  after the format's unsigned correction, reached `chr()` with that value, and
+  raised `ValueError`. The parser catches only `_NotRtfError`, so this was an
+  unhandled exception on a valid (if unusual) RTF escape. Out-of-range code
+  points now emit U+FFFD and a warning. A positive parameter above U+10FFFF
+  (e.g. `\u2000000`) was previously dropped silently; it now also emits U+FFFD
+  with a warning, because a reported problem is preferred to a silent one.
+
 ### Added: RTF at tier 0
 
 - `ingest/parsers/rtf.py`: RTF joins the tier-0 formats, with no new

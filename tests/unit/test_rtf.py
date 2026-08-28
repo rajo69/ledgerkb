@@ -292,6 +292,26 @@ def test_a_stylesheet_entry_with_no_style_number_is_ignored() -> None:
     doc = parse(r"{\rtf1\ansi{\stylesheet{\ql Normal;}}\pard Body.\par}")
     assert doc.text == "Body."
     assert doc.headings == []
+
+
+def test_a_negative_unicode_escape_outside_16bit_range_emits_replacement() -> None:
+    r"""``\u-100000`` gives code = -100000 + 0x10000 = -34464, which is negative.
+
+    The old code reached ``chr(-34464)`` and raised ``ValueError``. The parser
+    catches only ``_NotRtfError``, so this was an unhandled exception.
+    """
+    doc = parse(r"{\rtf1\ansi\uc0\pard a\u-100000 b\par}")
+    assert doc.text == "a\ufffdb"
+    assert any("out of range" in w for w in doc.warnings)
+
+
+def test_a_positive_unicode_escape_above_max_codepoint_emits_replacement() -> None:
+    r"""``\u2000000`` is above U+10FFFF. It was silently dropped; now it warns."""
+    doc = parse(r"{\rtf1\ansi\uc0\pard a\u2000000 b\par}")
+    assert doc.text == "a\ufffdb"
+    assert any("out of range" in w for w in doc.warnings)
+
+
 # --- regressions -------------------------------------------------------------
 #
 # Every test below is a real defect that a review caught after the first draft
@@ -362,7 +382,7 @@ def test_an_unpaired_high_surrogate_does_not_fabricate_a_character() -> None:
     """A stale half must not combine with a low surrogate arriving much later."""
     doc = parse(r"{\rtf1\ansi\uc0\pard A\u55356 lots of text B\u57138 C\par}")
     assert "\U0001f332" not in doc.text
-    assert doc.text == "Alots of text BC"
+    assert doc.text == "Alots of text B\ufffdC"
 
 
 def test_a_malformed_numeric_parameter_does_not_abort_the_document() -> None:

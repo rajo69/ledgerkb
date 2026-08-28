@@ -353,15 +353,22 @@ def _strip_control_words(data: bytes) -> tuple[str, list[Heading], list[str]]:
         if word == "u" and param is not None:
             flush_bytes()
             code = param + 0x10000 if param < 0 else param
-            if 0xD800 <= code <= 0xDBFF:
+            if code < 0 or code > 0x10FFFF:
+                emit("\ufffd")
+                warnings.append(
+                    f"unicode escape \\u{param} out of range at offset {cursor}"
+                )
+            elif 0xD800 <= code <= 0xDBFF:
                 high_surrogate = code
             elif 0xDC00 <= code <= 0xDFFF and high_surrogate is not None:
                 combined = 0x10000 + ((high_surrogate - 0xD800) << 10) + (code - 0xDC00)
                 target().append(chr(combined))
                 high_surrogate = None
-            elif code <= 0x10FFFF and not 0xD800 <= code <= 0xDFFF:
-                target().append(chr(code))
-                high_surrogate = None
+            elif 0xD800 <= code <= 0xDFFF:
+                # Unpaired low surrogate without a preceding high surrogate.
+                emit("\ufffd")
+            else:
+                emit(chr(code))
             i = _skip_replacements(src, i, uc)
             continue
 
