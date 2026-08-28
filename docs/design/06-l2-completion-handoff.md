@@ -1,9 +1,9 @@
 # L2 completion handoff
 
-Written 2026-08-21 and updated the same day, for a session starting cold. Read
-it before touching retrieval. [04-build-handoff.md](04-build-handoff.md) is
-still the wider reference; its "corpus problem" section is superseded by this
-one.
+Written 2026-08-21, rewritten 2026-08-28 once the blocker it was built around
+cleared. For a session starting cold. Read it before touching retrieval.
+[04-build-handoff.md](04-build-handoff.md) is still the wider reference; its
+"corpus problem" section is superseded by this one.
 
 ## Verify you are where this document thinks you are
 
@@ -25,24 +25,25 @@ all, but the shape of the failure is worth recognising.
 
 ## If you are starting cold, read this first
 
-**The critical path runs through somebody outside the project.** PR #1 is an
-outside contribution with changes requested: a two-line fix, a test for it,
-footnotes named or warned about, and four stale counts. A review and a
-real-Word-file follow-up are posted, and a check-in offering to push the fix was
-posted on top of them. Nothing else in L2 can finish until it lands, because it
-changes the corpus by one anchor document and everything downstream is written
-against a frozen corpus.
+**One thing is left in L2, and only you can do it: write the golden set.** Forty
+questions, at least seven of them unanswerable, written from the documents and
+before retrieval is run against them even once. It needs no Python. Everything
+else in this stage is either done or waiting behind it.
 
-Do not work around that by writing the golden set early. The ordering is the
-criterion.
+Earlier versions of this document said the critical path ran through an outside
+contributor, because PR #1 changed the corpus by one anchor document and nothing
+downstream could be written until it landed. **It landed on 2026-08-21, with
+PR #3 behind it.** That paragraph is gone rather than corrected in place, and
+this note replaces it so that a reader who remembers the old shape knows it
+changed rather than wondering whether they are reading a stale file.
 
-What is safe to build while it is open is anything that does not run retrieval
-and does not depend on a chunk id. Three such pieces are already in, and the
-list is now close to exhausted.
+The corpus was frozen on 2026-08-27 in
+[0010](../adr/0010-freeze-the-measurement-corpus.md), which is what step 4 was
+waiting on. Nothing enforces the freeze, so while it holds, treat a bump to any
+parser dependency as a corpus change.
 
-If the contributor stays quiet, taking the fix in house is a **new decision**
-that needs its own record, per
-[0005](../adr/0005-outside-contributions.md). It is not a thing to do quietly.
+Do not write the golden set after running retrieval. The ordering is the
+criterion, not a style preference.
 
 ## Where L2 actually is
 
@@ -57,19 +58,18 @@ in L2, which is a change from how this stage has looked until now.
 
 | Criterion | Blocked on | Exists today |
 |---|---|---|
-| Golden set, 40 questions, 7+ unanswerable | the corpus freezing, then somebody writing them | the format, in `evals/golden.py`. `golden/` holds no questions |
+| Golden set, 40 questions, 7+ unanswerable | nothing. The corpus is frozen; somebody has to write them | the format, in `evals/golden.py`. `golden/` holds no questions |
 | recall@20 >= 0.90 | the golden set, then the runner | `evals/metrics.py` and `evals/provenance.py` |
 | Hybrid beats dense-only and BM25-only | the same | `hybrid.search` already takes an `arms` subset |
-| Contextual headers +5 points | the corpus freezing, then `index/contextualise.py` | the provider is decided, see 0008 |
+| Contextual headers +5 points | `index/contextualise.py`, and a Cerebras key | the provider is decided, see 0008. The freeze it waited on is done |
 
 **Retrieval has still not been run against a golden set, and must not be until
 one is written.** Three of the harness's four pieces are built and none of them
 runs anything: `provenance.py` collects the header 0006 specifies, `golden.py`
 defines what a question is and holds none, and `metrics.py` computes recall,
 nDCG and reciprocal rank over a ranked list somebody else produced. They landed
-ahead of step 4 on purpose, because PR #1 is blocked on somebody outside the
-project and these were the pieces that needed neither the corpus frozen nor a
-question written.
+ahead of the questions on purpose: while PR #1 was open they were the only
+pieces that needed neither a frozen corpus nor a written question.
 
 That did not spend the ordering constraint that matters. The runner is the one
 piece left, and it is the one that cannot be built blind, because its shape
@@ -169,18 +169,16 @@ which is the case the CLI's early return used to walk past.
 
 ## Do these in this order
 
-The order matters more than usual here, because two of the steps are
-irreversible in practice.
+Steps 1 to 3 are done. They are kept here because the numbering is referred to
+elsewhere and because the order is the argument.
 
-1. **Land PR #1 (RTF parser).** It changes the corpus by one anchor document.
-   Landing it after the golden set is written means questions written against a
-   corpus that no longer exists.
-2. **Land PR #3 (corpus growth).** Rebase it onto #1 first. They conflict on
-   `build_corpus.py` and on the contribution-ask bullet in `CONTRIBUTING.md` and
-   `README.md`. Both conflicts are small.
-3. **Freeze the corpus.** After this point, changing `corpus_world.py` or the
-   anchors invalidates work downstream of it.
-4. **Write the golden set.** 40 questions, at least 7 unanswerable, written from
+1. ~~Land PR #1 (RTF parser).~~ Merged 2026-08-21.
+2. ~~Land PR #3 (corpus growth).~~ Merged 2026-08-21.
+3. ~~Freeze the corpus.~~ Frozen 2026-08-27,
+   [0010](../adr/0010-freeze-the-measurement-corpus.md). Changing
+   `corpus_world.py`, the anchors, or the extracted text of any document already
+   in the corpus now invalidates work downstream of it.
+4. **Write the golden set. This is where you are.** 40 questions, at least 7 unanswerable, written from
    the documents and **before retrieval is run even once**. That ordering is the
    criterion, not a style preference: questions written after seeing what the
    retriever returned measure the retriever against itself.
@@ -209,7 +207,8 @@ irreversible in practice.
    once per arm combination, and writing the pair into `results/`. A figure that
    lives only in terminal scrollback is not a met criterion.
 6. **Contextual headers**, or a written descope. The provider is settled: see
-   the decision below, and note that it waits on step 3 rather than on the key.
+   the decision below. Step 3 is done, so a Cerebras key is now the only thing
+   this waits on.
 7. **Update `docs/stages.toml`** and run `scripts/render_docs.py`. Then update
    this document to say what the numbers were, and write an ADR for any decision
    taken along the way. The practice from 0009 onward is to write the record
@@ -253,8 +252,15 @@ stopped meaning much. It applies harder to a retrieval measurement.
 
 Treat whatever comes out as a floor on a friendly corpus, not as a measured
 property of retrieval. Q5's second corpus, from any public document set unlike
-council minutes, is what would fix it, and bringing it forward from v1.0 is
-worth arguing for before L3 depends on these numbers.
+council minutes, is what would fix it.
+
+That argument has since been won, though not for L2's numbers.
+[0011](../adr/0011-build-the-change-report-before-the-graph.md) made a second
+corpus of real public documents a gate criterion on L6, on the ground that a
+change report demonstrated only on documents this project generated is not
+evidence about change reports. The same objection applies to the retrieval
+figures, and L2's gate does not require it, so state the limitation with the
+numbers rather than leaving a reader to find it here.
 
 ## Two things known and not fixed
 
@@ -266,8 +272,9 @@ worth arguing for before L3 depends on these numbers.
   the corpus "regenerates deterministically" and that claim is currently false
   at the byte level. It will matter at L6, where content-hash diffing decides
   what changed.
-- **`scripts/try_real_rtf.py` is scaffolding.** It reads the parser out of the
-  PR ref to run a real Word file through it. Delete it once RTF has landed.
-  It has already done its job: a Word-written `.rtf` with a tracked change on a
-  budget figure showed the parser dropping the pound sign out of the visible
-  text, which is reported on #1.
+- **RTF has had one real-world test and needs more.** `scripts/try_real_rtf.py`
+  ran a Word-written `.rtf` with a tracked change on a budget figure through the
+  parser and caught it dropping the pound sign from the visible text, which was
+  reported on #1 and fixed there. The script was scaffolding that read the parser
+  out of a PR ref, so it was deleted on 2026-08-28 once RTF was on `main`. The
+  gap it leaves is that no committed test uses a file Word actually wrote.
