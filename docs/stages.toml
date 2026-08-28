@@ -48,7 +48,7 @@ gate = [
   { text = "mypy --strict passes on core", met = true },
   { text = "lkb init and lkb doctor succeed with zero API keys set", met = true },
   { text = "Every core model round-trips through SQLite unchanged", met = true },
-  { text = "PyPI name confirmed available (it is claimed on first publish at L8)", met = true },
+  { text = "PyPI name confirmed available (it is claimed on the first publish, at L3)", met = true },
 ]
 
 [[stage]]
@@ -155,35 +155,11 @@ gate = [
 ]
 
 [[stage]]
-id = "L5"
-track = "library"
-title = "Entity resolution and graph"
-status = "not-started"
-ships = "v0.3.0"
-effort = "~1.5 days"
-risk = "high"
-goal = "The network, without wrong merges."
-summary = """
-Ten node types and a resolution cascade running exact, alias, trigram, embedding
-grey-band, LLM adjudication with cited evidence, and finally a review queue.
-Merges are soft and logged with evidence, so every one of them is reversible.
-Graph queries run as recursive CTEs over relational tables. Exports to JSON,
-GraphML, Mermaid and Cypher.
-"""
-gate = [
-  { text = "Over-merge rate at or below 0.02 on a labelled pair set, because over-merging is the failure that matters", met = false },
-  { text = "Every merge is reversible and a reversal test passes", met = false },
-  { text = "All five example queries execute and return sensible results on the fixture corpus", met = false },
-  { text = "Graph exports validate: GraphML against its schema, Mermaid renders, Cypher parses", met = false },
-  { text = "Zero edges without a source document reference", met = false },
-]
-
-[[stage]]
 id = "L6"
 track = "library"
 title = "Refresh and change report"
 status = "not-started"
-ships = "v0.4.0"
+ships = "v0.3.0"
 effort = "~1.5 days"
 risk = "high"
 goal = "Belief revision with preserved history. This is the differentiator."
@@ -193,6 +169,13 @@ disappeared. Reconciliation produces the seven update categories. Invalidation i
 bitemporal: set invalid_at and record what invalidated it, never delete.
 Contradictions become two active disputed assertions and are never merged. The
 change report is rendered from stored change events rather than recomputed.
+
+This stage runs before L5, which is why the numbering is not the order. It is the
+one thing no competing tool does, so it is built while the ledger is fresh rather
+than after two stages of features other tools already have. The cost is that
+reconciliation has no entity resolution to lean on, so it matches assertions
+through an identity port: string identity first, with L5 swapped in behind it
+later.
 """
 gate = [
   { text = "Unchanged documents cost zero LLM calls, asserted by a call-counting test", met = false },
@@ -201,6 +184,35 @@ gate = [
   { text = "Contradictions surface as two assertions, and a blended single answer is a test failure", met = false },
   { text = "Change-report precision at or above 0.90 against human review of the scripted document", met = false },
   { text = "A full replay from scratch yields the same final ledger state with LLM calls stubbed", met = false },
+  { text = "The change report runs end to end on a second corpus of real public documents, not the generated one, and the result is published with its limitations", met = false },
+]
+
+[[stage]]
+id = "L5"
+track = "library"
+title = "Entity resolution and graph"
+status = "not-started"
+ships = "v0.4.0"
+effort = "~1.5 days"
+risk = "high"
+goal = "The network, without wrong merges."
+summary = """
+Ten node types and a resolution cascade running exact, alias, trigram, embedding
+grey-band, LLM adjudication with cited evidence, and finally a review queue.
+Merges are soft and logged with evidence, so every one of them is reversible.
+Graph queries run as recursive CTEs over relational tables. Exports to JSON,
+GraphML, Mermaid and Cypher.
+
+Lands after L6 rather than before it. Resolution replaces the string identity
+that L6's reconciliation started with, so the first thing this stage owes is that
+the change report gets better without its behaviour changing shape.
+"""
+gate = [
+  { text = "Over-merge rate at or below 0.02 on a labelled pair set, because over-merging is the failure that matters", met = false },
+  { text = "Every merge is reversible and a reversal test passes", met = false },
+  { text = "All five example queries execute and return sensible results on the fixture corpus", met = false },
+  { text = "Graph exports validate: GraphML against its schema, Mermaid renders, Cypher parses", met = false },
+  { text = "Zero edges without a source document reference", met = false },
 ]
 
 [[stage]]
@@ -240,8 +252,8 @@ goal = "Production posture."
 summary = """
 The eval runner and its deterministic metrics, red-team regression in CI,
 OpenTelemetry spans against a pinned GenAI semantic-convention version, cost and
-token accounting, and budget guards that abort a runaway run. This is the stage
-that claims the PyPI name and commits to core's stability.
+token accounting, and budget guards that abort a runaway run. The name was
+claimed at L3; this is the stage that commits to core's stability behind it.
 """
 gate = [
   { text = "lkb eval run reports every deterministic metric with no LLM judge and no API key", met = false },
