@@ -97,6 +97,9 @@ select = ["E","F","I","N","UP","B","SIM","RUF","ANN","S"]
 "src/ledgerkb/providers/*.py" = ["ANN401"]
 "src/ledgerkb/storage/base.py" = ["ANN401"]
 "src/ledgerkb/storage/*/store.py" = ["ANN401"]
+# Tier-0 ODT parser uses stdlib xml.etree with bounded entry size and ratio guards to keep
+# zero external dependencies, protected against entity expansion by Python 3's expat.
+"src/ledgerkb/ingest/parsers/odt.py" = ["S314"]
 
 [tool.mypy]
 strict = true
