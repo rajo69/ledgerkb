@@ -4,6 +4,36 @@ Fifteen stages: nine library stages ending at v1.0.0 on PyPI, then six product
 stages. The detail below is generated from [`docs/stages.toml`](docs/stages.toml),
 which is the only place stage status is recorded.
 
+## The numbers are identities, not sequence
+
+**The library stages run L0, L1, L2, L3, L4, L6, L5, L7, L8.** L6 comes before
+L5, and the tables below are in build order rather than numeric order.
+
+The ids were assigned before the order was reconsidered, and they are left alone
+because ten decision records, the design documents and several merged pull
+requests refer to stages by number. Renumbering would make every one of those
+references quietly wrong, which costs more than an out-of-order table.
+
+## Three phases
+
+The phases are how to read the stage list, not a second gating mechanism. Each
+one is meant to leave something usable behind if work stops there.
+
+| Phase | Stages | Leaves behind |
+|---|---|---|
+| 1. An honest answer | L2, L3 | Cited answers with real abstention, installable from PyPI as v0.1.0 |
+| 2. The differentiator | L4, L6 | Belief revision and the change report, proven on a real corpus, v0.3.0 |
+| 3. Breadth, pulled by demand | L5, L7, L8 | The graph, the exports, production posture, v1.0.0 |
+
+Phase 1 finishes what the original brief asked for: retrieval, a cited answer,
+and saying so when the documents do not contain one. Phase 2 builds the thing
+nothing else does. Phase 3 is the work that other tools in this category already
+do well, and it is deliberately last, because building parity features before
+the differentiator would mean finding out late whether the hard idea works.
+
+The product stages, P1 to P6, sit behind all of it and should be treated as a
+separate project that has not been committed to.
+
 ## The gating rule
 
 **No stage begins until the previous stage's gate is green.** A gate is a list of
@@ -27,6 +57,11 @@ section 9: a two-day path that ships L0 through L3 and then jumps to L6, skippin
 extraction, resolution and the exports. It exists so that a demo deadline
 produces an honest subset rather than four half-built features.
 
+Note what the reordering did to that exception. It used to be the only route to
+the change report without building everything first; now the main sequence takes
+almost the same path, and the exception survives only as the version that also
+skips L4.
+
 ## Stages
 
 <!-- generated: roadmap-table. Edit docs/stages.toml, then run scripts/render_docs.py -->
@@ -37,8 +72,8 @@ produces an honest subset rather than four half-built features.
 | **L2** | Index and retrieve | in progress | 3/7 | - |
 | L3 | Grounded answering | not started | 0/5 | v0.1.0 |
 | L4 | Assertion ledger and extraction | not started | 0/6 | - |
-| L5 | Entity resolution and graph | not started | 0/5 | v0.3.0 |
-| L6 | Refresh and change report | not started | 0/6 | v0.4.0 |
+| L6 | Refresh and change report | not started | 0/7 | v0.3.0 |
+| L5 | Entity resolution and graph | not started | 0/5 | v0.4.0 |
 | L7 | Projections and exports | not started | 0/6 | v0.5.0 |
 | L8 | Evals, guardrails, observability | not started | 0/8 | v1.0.0 |
 | P1 | Service layer | not started | 0/1 | - |
@@ -70,7 +105,7 @@ Gate:
 - [x] mypy --strict passes on core
 - [x] lkb init and lkb doctor succeed with zero API keys set
 - [x] Every core model round-trips through SQLite unchanged
-- [x] PyPI name confirmed available (it is claimed on first publish at L8)
+- [x] PyPI name confirmed available (it is claimed on the first publish, at L3)
 
 ### L1. Ingest, parse, chunk
 
@@ -167,31 +202,9 @@ Gate:
 - [ ] A test asserts the outgoing extraction request body carries no tools key
 - [ ] Cost per 100 documents recorded and within 2x of the architecture estimate
 
-### L5. Entity resolution and graph
-
-*not started · ships v0.3.0 · effort ~1.5 days · risk high*
-
-**Goal.** The network, without wrong merges.
-
-Ten node types and a resolution cascade running exact, alias, trigram, embedding grey-band,
-LLM adjudication with cited evidence, and finally a review queue. Merges are soft and logged
-with evidence, so every one of them is reversible. Graph queries run as recursive CTEs over
-relational tables. Exports to JSON, GraphML, Mermaid and Cypher.
-
-Gate:
-
-- [ ] Over-merge rate at or below 0.02 on a labelled pair set, because over-merging is
-      the failure that matters
-- [ ] Every merge is reversible and a reversal test passes
-- [ ] All five example queries execute and return sensible results on the fixture
-      corpus
-- [ ] Graph exports validate: GraphML against its schema, Mermaid renders, Cypher
-      parses
-- [ ] Zero edges without a source document reference
-
 ### L6. Refresh and change report
 
-*not started · ships v0.4.0 · effort ~1.5 days · risk high*
+*not started · ships v0.3.0 · effort ~1.5 days · risk high*
 
 **Goal.** Belief revision with preserved history. This is the differentiator.
 
@@ -199,7 +212,11 @@ Content-hash diffing classifies every document as unchanged, modified, new or di
 Reconciliation produces the seven update categories. Invalidation is bitemporal: set
 invalid_at and record what invalidated it, never delete. Contradictions become two active
 disputed assertions and are never merged. The change report is rendered from stored change
-events rather than recomputed.
+events rather than recomputed. This stage runs before L5, which is why the numbering is not
+the order. It is the one thing no competing tool does, so it is built while the ledger is
+fresh rather than after two stages of features other tools already have. The cost is that
+reconciliation has no entity resolution to lean on, so it matches assertions through an
+identity port: string identity first, with L5 swapped in behind it later.
 
 Gate:
 
@@ -212,6 +229,33 @@ Gate:
       document
 - [ ] A full replay from scratch yields the same final ledger state with LLM calls
       stubbed
+- [ ] The change report runs end to end on a second corpus of real public documents,
+      not the generated one, and the result is published with its limitations
+
+### L5. Entity resolution and graph
+
+*not started · ships v0.4.0 · effort ~1.5 days · risk high*
+
+**Goal.** The network, without wrong merges.
+
+Ten node types and a resolution cascade running exact, alias, trigram, embedding grey-band,
+LLM adjudication with cited evidence, and finally a review queue. Merges are soft and logged
+with evidence, so every one of them is reversible. Graph queries run as recursive CTEs over
+relational tables. Exports to JSON, GraphML, Mermaid and Cypher. Lands after L6 rather than
+before it. Resolution replaces the string identity that L6's reconciliation started with, so
+the first thing this stage owes is that the change report gets better without its behaviour
+changing shape.
+
+Gate:
+
+- [ ] Over-merge rate at or below 0.02 on a labelled pair set, because over-merging is
+      the failure that matters
+- [ ] Every merge is reversible and a reversal test passes
+- [ ] All five example queries execute and return sensible results on the fixture
+      corpus
+- [ ] Graph exports validate: GraphML against its schema, Mermaid renders, Cypher
+      parses
+- [ ] Zero edges without a source document reference
 
 ### L7. Projections and exports
 
@@ -243,8 +287,8 @@ Gate:
 
 The eval runner and its deterministic metrics, red-team regression in CI, OpenTelemetry
 spans against a pinned GenAI semantic-convention version, cost and token accounting, and
-budget guards that abort a runaway run. This is the stage that claims the PyPI name and
-commits to core's stability.
+budget guards that abort a runaway run. The name was claimed at L3; this is the stage that
+commits to core's stability behind it.
 
 Gate:
 
