@@ -25,7 +25,7 @@ from ledgerkb.core.config import (
     load_config,
     tier_table,
 )
-from ledgerkb.core.errors import ConfigError, LedgerKBError
+from ledgerkb.core.errors import ConfigError, LedgerKBError, LockedSettingError
 from ledgerkb.core.models import Source, Workspace
 from ledgerkb.index.embed import embed_workspace, guard_embedding_space
 from ledgerkb.index.hybrid import explain as explain_hits
@@ -228,13 +228,22 @@ def _check_store(cfg: Config, root: Path) -> None:
             try:
                 previous = Config.model_validate(stamped)
                 rebuilds = check_transition(previous, cfg, allow_gated=True)
+            except LockedSettingError as exc:
+                # doctor reports, it does not refuse. The refusal that matters
+                # lives on the index path, in guard_embedding_space, where the
+                # vector count is part of the condition. Exiting here made a
+                # locked knob unchangeable between `lkb init` and the first
+                # index, when there is nothing stored for the lock to protect,
+                # and it cut the report off before the parts that would have
+                # shown whether anything was actually at risk.
+                console.print(f"\n[yellow]locked setting changed[/] {safe(str(exc))}")
+                rebuilds = []
             except ConfigError as exc:
                 _fail(exc)
-            else:
-                if rebuilds:
-                    console.print("\n[yellow]config changed since the store was built[/]")
-                    for line in rebuilds:
-                        console.print(f"  * {line}")
+            if rebuilds:
+                console.print("\n[yellow]config changed since the store was built[/]")
+                for line in rebuilds:
+                    console.print(f"  * {line}")
 
         _report_embedding_space(store, cfg)
 

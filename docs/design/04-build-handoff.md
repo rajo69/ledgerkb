@@ -427,7 +427,7 @@ Approximately **20 free · 4 gated · 3 locked · 8 fixed**. Implement the tier 
 | Profile `entity_types` / `predicates` | Re-extraction |
 | `auto_merge` | Re-run resolution |
 
-**Tier 3: locked after first use.** Requires an explicit destructive command (`lkb reindex --confirm`):
+**Tier 3: locked after first use.** Requires an explicit destructive command (`lkb index --rebuild`):
 
 | Knob | Why |
 |---|---|
