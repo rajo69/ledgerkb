@@ -57,6 +57,7 @@ nav:
       - Ingest your own documents: how-to/ingest-your-own-documents.md
       - Run without an API key: how-to/run-without-an-api-key.md
       - Use a hosted provider: how-to/use-a-hosted-provider.md
+      - Run with Ollama: how-to/run-with-ollama.md
       - Tune retrieval: how-to/tune-retrieval.md
       - Add a parser: how-to/add-a-parser.md
       - Build the measurement corpus: how-to/build-the-measurement-corpus.md
