@@ -608,3 +608,166 @@ def search(
             console.print()
     finally:
         store.close()
+
+
+# --- Eval commands -----------------------------------------------------------
+
+eval_app = typer.Typer(
+    name="eval",
+    help="Run evaluation benchmarks against golden sets and record gate metrics.",
+    no_args_is_help=True,
+)
+app.add_typer(eval_app, name="eval")
+
+
+@eval_app.command(name="retrieval")
+def eval_retrieval(
+    golden_set: Annotated[
+        Path,
+        typer.Argument(help="Path to golden set TOML file."),
+    ] = Path("golden/l2-retrieval.toml"),
+    compare_arms: Annotated[
+        bool,
+        typer.Option(
+            "--compare-arms",
+            help="Run each retrieval arm individually alongside hybrid.",
+        ),
+    ] = False,
+    arms: Annotated[
+        str,
+        typer.Option(
+            "--arms",
+            help="Comma-separated retrieval arms to run for the main evaluation.",
+        ),
+    ] = "dense,sparse,headings",
+    save: Annotated[
+        bool,
+        typer.Option(
+            "--save/--no-save",
+            help="Save Markdown and JSON result pair to results/.",
+        ),
+    ] = False,
+    out_dir: Annotated[
+        Path,
+        typer.Option(
+            "--out-dir",
+            help="Directory to save evaluation results to.",
+        ),
+    ] = Path("results"),
+    json_out: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Machine-readable JSON output to stdout.",
+        ),
+    ] = False,
+) -> None:
+    """Run retrieval evaluation against a golden set and measure gate metrics."""
+    import json as _json
+
+    from ledgerkb.evals.metrics import GATE_K
+    from ledgerkb.evals.runner import run_retrieval_eval
+
+    if not golden_set.exists():
+        err.print(f"[bold red]error[/] golden set file not found: {golden_set}")
+        raise typer.Exit(code=1)
+
+    cfg, store = _open()
+    try:
+        ws = _default_workspace(store, cfg)
+        wanted = tuple(a.strip() for a in arms.split(",") if a.strip())
+        need_dense = "dense" in wanted or compare_arms
+        embedder = _embedder(cfg, required=need_dense) if need_dense else None
+
+        try:
+            result = run_retrieval_eval(
+                store=store,
+                cfg=cfg,
+                golden_set_path=golden_set,
+                workspace_id=ws.id,
+                arms=wanted,
+                compare_arms=compare_arms,
+                embedder=embedder,
+            )
+        except LedgerKBError as exc:
+            _fail(exc)
+
+        if json_out:
+            print(_json.dumps(result.as_dict(), indent=2))
+            return
+
+        # Console summary
+        console.print(f"[bold]Retrieval Evaluation[/] against {golden_set}")
+        prov = result.provenance
+        commit_str = prov.ledgerkb_commit[:8] if prov.ledgerkb_commit else "no-git"
+        dirty_str = " [yellow](dirty)[/]" if prov.dirty else ""
+        console.print(
+            f"provenance  commit {commit_str}{dirty_str}, scale {prov.corpus_scale} "
+            f"({prov.corpus_documents} docs, {prov.corpus_chunks} chunks)"
+        )
+        if not prov.admissible:
+            console.print(
+                f"[yellow]warning:[/] {prov.inadmissible_because} "
+                "(inadmissible as gate evidence)"
+            )
+
+        # Summary Table
+        console.print("\n[bold]Metrics[/]")
+        table = Table(box=None, pad_edge=False)
+        table.add_column("metric")
+        table.add_column("score", justify="right")
+        table.add_column("target")
+
+        recall_gate = result.main_scores.recall.get(GATE_K, 0.0)
+        gate_colour = "green" if recall_gate >= 0.90 else "red"
+        table.add_row(
+            f"recall@{GATE_K}",
+            f"[{gate_colour}]{recall_gate:.4f}[/]",
+            ">= 0.9000 (gate)",
+        )
+        table.add_row("recall@5", f"{result.main_scores.recall.get(5, 0.0):.4f}", "-")
+        table.add_row("nDCG@10", f"{result.main_scores.ndcg:.4f}", "-")
+        table.add_row("MRR", f"{result.main_scores.mrr:.4f}", "-")
+        table.add_row(
+            "questions scored",
+            str(result.main_scores.questions_scored),
+            "-",
+        )
+        table.add_row(
+            "unanswerable",
+            str(result.main_scores.questions_unanswerable),
+            ">= 7",
+        )
+        console.print(table)
+
+        if result.arm_scores:
+            console.print("\n[bold]Arm Comparison[/]")
+            arm_table = Table(box=None, pad_edge=False)
+            arm_table.add_column("arm")
+            arm_table.add_column("recall@20", justify="right")
+            arm_table.add_column("recall@5", justify="right")
+            arm_table.add_column("nDCG@10", justify="right")
+            arm_table.add_column("MRR", justify="right")
+            for arm_name, scores in result.arm_scores.items():
+                arm_table.add_row(
+                    arm_name,
+                    f"{scores.recall.get(GATE_K, 0.0):.4f}",
+                    f"{scores.recall.get(5, 0.0):.4f}",
+                    f"{scores.ndcg:.4f}",
+                    f"{scores.mrr:.4f}",
+                )
+            console.print(arm_table)
+
+        if result.gate_problems:
+            console.print("\n[yellow]Gate problems:[/]")
+            for p in result.gate_problems:
+                console.print(f"  * {p}")
+
+        verdict = "[green]GREEN[/]" if result.meets_gate else "[red]RED[/]"
+        console.print(f"\nGate Verdict: [bold]{verdict}[/]")
+
+        if save:
+            json_p, md_p = result.save(out_dir)
+            console.print(f"\nsaved results to [bold]{json_p}[/] and [bold]{md_p}[/]")
+    finally:
+        store.close()

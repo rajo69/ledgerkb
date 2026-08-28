@@ -7,6 +7,22 @@ stability commitment at v1.0.0.
 
 ## [Unreleased]
 
+### Added: retrieval evaluation runner (`lkb eval retrieval`)
+
+- `evals/runner.py`: A dedicated evaluation runner executing golden question sets
+  against indexed workspaces, computing `recall@5`, `recall@20` (the L2 gate
+  metric), `nDCG@10`, and `MRR`.
+- Verifies that all requested retrieval arms executed via `SearchResult.arms`
+  and refuses with `EvaluationError` if a requested arm was not run.
+- `EvalRunResult.meets_gate` requires clean git tree provenance (`provenance.admissible`)
+  in accordance with ADR 0006 and ADR 0009.
+- Arm comparison mode (`--compare-arms`) evaluates individual retrieval arms
+  (`dense`, `sparse`, `headings`) alongside `hybrid` to measure whether hybrid
+  outperforms single arms.
+- Emits dual Markdown and JSON reports carrying ADR 0006/0009 provenance headers
+  when `--save` is passed.
+- `cli/main.py`: Added the `lkb eval retrieval` command group.
+
 ### Added: RTF at tier 0
 
 - `ingest/parsers/rtf.py`: RTF joins the tier-0 formats, with no new
