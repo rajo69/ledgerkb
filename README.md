@@ -256,7 +256,7 @@ above hold.
 
 Most useful right now, in order:
 
-1. **A parser for a format not yet covered.** ODT, RTF, EPUB, or a better PDF
+1. **A parser for a format not yet covered.** ODT, EPUB, or a better PDF
    path. The `Parser` protocol is five lines and the registry makes it one
    registration.
 2. **Questions for the L2 golden set.** The measurement corpus is 196 documents
