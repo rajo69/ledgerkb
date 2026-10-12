@@ -5,7 +5,7 @@ the character. It ingests eleven formats into SQLite, chunks on document
 structure so every chunk's offsets slice back exactly to the source text
 (property-tested with Hypothesis), flags instruction-shaped text at ingest, and
 runs three-arm hybrid search (dense vectors, BM25, heading path) fused by
-reciprocal rank fusion, with a per-arm explanation of every result. Embeddings
+reciprocal rank fusion; `--explain` shows each arm's rank and the fused score. Embeddings
 run locally: no API key, no server.
 
 Where it is going: most tools answer questions about your documents. ledgerkb is
@@ -88,7 +88,7 @@ opinion.
 
 **Invariants live in the database, not in convention.** The ledger's tables are
 append-only by trigger before anything writes to them: deleting an assertion or
-its evidence raises. A document version is immutable once written. The full-text
+its evidence raises. A document version's content hash, text hash and ingest time cannot be updated: a trigger rejects it, so new content is a new row. The full-text
 index follows a generated column by trigger, so the sparse index always matches
 the stored chunk text, header included, even if a caller forgets to reindex.
 
