@@ -8,6 +8,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: docs-${{ github.ref }}
@@ -40,7 +41,8 @@ jobs:
 
   publish:
     name: publish to GitHub Pages
-    if: github.ref == 'refs/heads/main'
+    # Manual only: Pages is off, and the docs pages need a truth pass before publishing again.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
     permissions:
