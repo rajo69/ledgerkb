@@ -6,8 +6,8 @@ verified end to end against Ollama 0.33.1 on the fixture corpus.
 
 [Use a hosted provider](use-a-hosted-provider.md) already has an Ollama config
 snippet. This page is the fuller walkthrough: what to pull, the one config
-detail that snippet leaves out, and a `doctor` false positive you will hit if
-you follow the documented init-then-edit order.
+detail that is easy to miss, and the `doctor` note you will see if you follow
+the documented init-then-edit order.
 
 ## Install and pull models
 
@@ -45,11 +45,12 @@ model = "qwen3:8b"
 [embeddings]
 provider   = "openai_compatible"
 model      = "nomic-embed-text"
-dimensions = 768                 # locked after the store is stamped, see below
+dimensions = 768                 # locked once vectors exist, see below
 ```
 
-The detail the snippet in [Use a hosted provider](use-a-hosted-provider.md)
-does not spell out: `EmbeddingsConfig` has no `base_url` or `api_key_env`
+The detail that is easy to miss, and that
+[Use a hosted provider](use-a-hosted-provider.md) also states:
+`EmbeddingsConfig` has no `base_url` or `api_key_env`
 field of its own (see
 [Configuration](../reference/configuration.md)). Setting
 `embeddings.provider = "openai_compatible"` sends embedding requests to
@@ -80,34 +81,29 @@ Nothing here differs from the local-embedder path in
 come from. `lkb search` does not know or care that they came from a server on
 the same machine rather than a process in the same one.
 
-## The `lkb doctor` gotcha
+## `lkb doctor` after init-then-edit
 
 If you follow the order the top-level docs suggest, `lkb init` then edit
-`ledgerkb.toml`, and run `lkb doctor` before your first `lkb index`, it fails:
+`ledgerkb.toml`, and run `lkb doctor` before your first `lkb index`, it prints
+a yellow note:
 
 ```
-error 'embeddings.model' is locked after first use
+locked setting changed 'embeddings.model' is locked after first use
 (stored='mixedbread-ai/mxbai-embed-large-v1', requested='nomic-embed-text').
-To change it deliberately, run: lkb reindex --confirm
+To change it deliberately, run: lkb index --rebuild
 ```
 
-Two things are wrong with this, both confirmed against the code, not guessed:
+It is a note, not a failure: `doctor` carries on and finishes the rest of its
+check. `lkb init` stamps the store with the default template it has just
+written, and `doctor` compares your edited file against that stamp. Only
+`lkb init` writes the stamp, so the note stays after indexing too.
 
-- `lkb init` stamps the store with whatever `ledgerkb.toml` says **at init
-  time**, which is always the just-written default template. Editing the file
-  immediately afterward to name a different embedding model trips `doctor`'s
-  drift check even though not one chunk has been embedded, contradicting the
-  file's own `# LOCKED after the first index build` comment.
-- The remedy the error names, `lkb reindex --confirm`, is not a command.
-  `lkb --help` does not list it, and running it returns "No such command
-  'reindex'."
-
-`lkb ingest`, `lkb index` and `lkb search` do not run this check and are
-unaffected, which is how the walkthrough above completed with a model
-`doctor` insists is locked to something else. Until this is fixed, treat a
-`LockedSettingError` from `doctor` alone, with no prior successful `lkb
-index`, as a false positive: ignore it and continue with `ingest`/`index`/
-`search` directly.
+What tells you whether anything is at risk is the `vectors` line `doctor`
+prints once something has been indexed. With no vectors stored there is
+nothing for the lock to protect, and `lkb index` embeds with the configured
+model. If the `vectors` line says `not what is configured`, `lkb index` refuses
+to mix the two models until you run `lkb index --rebuild`, which drops the
+existing vectors and re-embeds.
 
 ## Why the chat block above is untested
 

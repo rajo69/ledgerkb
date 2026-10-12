@@ -290,8 +290,9 @@ Most useful right now, in order:
 2. **Questions for the L2 golden set.** The measurement corpus is 196 documents
    and 4,437 chunks. What it still needs is 40 questions, at least 7 of them
    unanswerable, written from the documents before retrieval is run.
-3. **A how-to guide for a provider you actually use.** Ollama, vLLM, LM Studio,
-   TEI. If you got it working, that is the guide.
+3. **A how-to guide for a provider you actually use.** vLLM, LM Studio, TEI.
+   If you got it working, that is the guide;
+   [Run with Ollama](docs/how-to/run-with-ollama.md) is an example.
 
 [Good first issues](https://github.com/rajo69/ledgerkb/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
 are kept few and reviewed promptly, because the failure that matters is inviting
