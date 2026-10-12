@@ -1,7 +1,17 @@
 # ledgerkb
 
-Most tools answer questions about your documents. This one keeps a position on
-them, tells you when that position changes, and shows its working.
+A Python library for searching mixed documents with provenance you can check to
+the character. It ingests eleven formats into SQLite, chunks on document
+structure so every chunk's offsets slice back exactly to the source text
+(property-tested with Hypothesis), flags instruction-shaped text at ingest, and
+runs three-arm hybrid search (dense vectors, BM25, heading path) fused by
+reciprocal rank fusion, with a per-arm explanation of every result. Embeddings
+run locally: no API key, no server.
+
+Where it is going: most tools answer questions about your documents. ledgerkb is
+being built to keep a position on them, tell you when that position changes, and
+show its working. Grounded answering, the assertion ledger and the change report
+are the roadmap, not the present; [Status](#status) says exactly where it stands.
 
 [![ci](https://github.com/rajo69/ledgerkb/actions/workflows/ci.yml/badge.svg)](https://github.com/rajo69/ledgerkb/actions/workflows/ci.yml)
 [![offline](https://github.com/rajo69/ledgerkb/actions/workflows/offline.yml/badge.svg)](https://github.com/rajo69/ledgerkb/actions/workflows/offline.yml)
@@ -61,8 +71,10 @@ dense 50, headings 8, sparse 34 -> 3 shown
 ```
 
 No API key was set for either command. The third line under each result is the
-chunk id and where every retrieval arm placed it: `dense#37 headings#1` is the
-heading arm rescuing a passage the vectors nearly lost.
+chunk id and where every retrieval arm placed it: `dense#37 headings#1 sparse#1`
+is a passage the vectors nearly lost and both keyword arms ranked first. (This
+transcript was captured on 19 Aug 2026; the fixture corpus has since gained an
+RTF document, and the offline CI ingest now reports 21 documents and 59 chunks.)
 
 ## Why it is different
 
@@ -74,29 +86,33 @@ makes a citation a precise character span rather than a gesture at a page, and
 what will let quote verification be mechanical instead of another model's
 opinion.
 
-**Invariants live in the database, not in convention.** Deleting from the ledger
-raises. A document version is immutable once written. The full-text index is a
-generated column maintained by trigger, so the dense and sparse indexes cannot
-disagree even if a caller forgets to reindex.
+**Invariants live in the database, not in convention.** The ledger's tables are
+append-only by trigger before anything writes to them: deleting an assertion or
+its evidence raises. A document version is immutable once written. The full-text
+index follows a generated column by trigger, so the sparse index always matches
+the stored chunk text, header included, even if a caller forgets to reindex.
 
-**Tier-4 settings do not exist.** Quote verification, zero tools in extraction
-calls, the append-only ledger, unmerged contradictions, required evidence,
-path-traversal guards and budget aborts have no configuration key at any level.
+**Tier-4 settings do not exist.** The append-only tables, required evidence,
+path-traversal guards on archives and budget aborts have no configuration key at
+any level, and quote verification, zero tools in extraction calls and unmerged
+contradictions will ship the same way when their stages land.
 The rule is that if a setting could make the system lie, it is not a setting. The
 extension point is the Protocol ports instead: bring your own `Store`, `Parser`,
 `Chunker`, `Reranker` or `ChatModel` and you have full power through code you own.
 
-**It runs with no API key and no network.** Ingest, chunking, embedding,
-retrieval and the whole test suite. A separate CI workflow runs the suite plus a
-full ingest inside a network namespace, and fails loudly if the network turns out
-to be reachable, so a job that proves nothing cannot report green.
+**It runs with no API key, and offline after a one-time model download.**
+Ingest, chunking, embedding and retrieval all run in-process, with a local ONNX
+embedder by default. A separate CI workflow runs the whole test suite plus a full
+ingest inside a network namespace, and fails loudly if the network turns out to
+be reachable, so a job that proves nothing cannot report green.
 
 **Contradictions will never be merged.** When two sources disagree, both
 assertions stay active and marked disputed, and the store never picks a winner.
 That is the opposite of what most temporal knowledge systems do. The schema and
 the rule are settled; the reconciliation that produces disputed pairs is L6 and
-is not built. The transcript above is the honest version of this today: two
-documents in that corpus give different budget figures, and search returns both.
+is not built. Retrieval already follows the rule: two documents in the fixture
+corpus give different budget figures (£2.4m and £2.9m), both stay indexed, and
+search ranks each on its own merits rather than choosing one.
 
 ## Status
 
@@ -107,11 +123,13 @@ documents in that corpus give different budget figures, and search returns both.
 - **Product** (P1 to P6): not started.
 
 Documents go in and ranked passages come out. Ingest reads files, directories and ZIP
-archives; tier-0 parsers cover eleven formats; the sanitiser strips invisible text and
-quarantines instruction-shaped spans; the chunker slices on document structure and every
-chunk slices back to byte-identical source text. Search runs three arms (dense, BM25 and
-heading path), fuses them by rank, and explains where each arm placed every candidate. All
-of it runs with no API key and no network.
+archives; tier-0 parsers cover eleven formats; the sanitiser strips invisible text and flags
+instruction-shaped spans, recording each with its offsets in a quarantine table; the chunker
+slices on document structure, and every chunk's character offsets slice back to identical
+source text. Search runs three arms (dense, BM25 and heading path), fuses them by reciprocal
+rank fusion, and explains where each arm placed every candidate. None of it needs an API
+key, and after a one-time download of the local embedding model none of it needs the
+network.
 
 Grounded answering, the assertion ledger, the knowledge graph, the change report and the
 exports are designed and gated but not built.
@@ -137,26 +155,27 @@ lkb doctor          # environment check. Succeeds with zero API keys set
 lkb doctor --tiers  # every knob that exists, its tier, and what changing it costs
 ```
 
-Then point it at some documents. Anything in PDF, DOCX, XLSX, PPTX, HTML, EML,
-CSV, JSON, MD or TXT, as a file, a directory or a ZIP archive:
+Then point it at some documents. Anything in PDF, DOCX, XLSX, PPTX, HTML, RTF,
+EML, CSV, JSON, MD or TXT, as a file, a directory or a ZIP archive:
 
 ```bash
 lkb ingest ./your-documents
 lkb docs                     # what was ingested, with its metadata
 lkb chunks <doc_id> --verify # re-slice every chunk from the stored text
 
-lkb index                    # embeds in-process, no API key, no network
+lkb index                    # embeds in-process, no API key (model downloads once)
 lkb search "your question" --explain
 ```
 
-If you have no documents to hand, the fixture corpus generator makes twenty:
+If you have no documents to hand, the fixture corpus generator makes twenty-one:
 
 ```bash
 python tests/fixtures/build_corpus.py /tmp/demo && lkb ingest /tmp/demo/corpus
 ```
 
-To use a hosted provider instead, set `[chat]` and `[embeddings]` in
-`ledgerkb.toml` to any OpenAI-compatible endpoint. Configuration names an
+To use a hosted embedder instead, set `[embeddings]` in `ledgerkb.toml` to any
+OpenAI-compatible endpoint (`[chat]` takes one too, for the answering stage,
+L3). Configuration names an
 environment variable rather than holding a key, so the file stays safe to commit.
 
 As a library, the pieces are importable on their own. Rank fusion, for instance,
@@ -191,15 +210,21 @@ documents ──► read ──► dedupe by content hash ──► parse ──
               search ◄── fuse by rank ◄── dense + BM25 + heading arms ◄── embed
 ```
 
-One append-only ledger of evidence-bearing assertions sits under all of it, and
-the retrieval index, the knowledge graph, the wiki export, the briefing and the
-change report are projections of that one ledger rather than separate
-subsystems. Two of those projections exist; the ledger itself is L4.
+The design puts one append-only ledger of evidence-bearing assertions under all
+of it, with the retrieval index, the knowledge graph, the wiki export, the
+briefing and the change report as projections of that one ledger rather than
+separate subsystems. The retrieval index is built, and it is what the
+transcript above shows; the ledger (L4) and the other projections are on the
+roadmap.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) has the code map, the invariants and where to
 start reading.
 
 ## Who it is for
+
+Three readers. Search with `--explain` serves the first today; the second and
+third are what the ledger, the change report and the exports (L4 to L7) are
+designed for.
 
 **Somebody joining a body of work mid-flight.** Two years of minutes, four
 half-finished workstreams, and nobody with time to explain. You need to know what
@@ -215,28 +240,31 @@ that, because it has no memory of what it used to believe.
 
 **Somebody who wants the structured data out.** Entities, relationships,
 decisions with dates and evidence, in JSON, GraphML, Cypher or a flat table, to
-push into a graph tool, a spreadsheet or a database of your own.
+push into a graph tool, a spreadsheet or a database of your own (the exports
+stage, L7).
 
 ## How it compares
 
-Fair comparison against the categories this will be confused with. Rows marked
-with a stage are `ledgerkb`'s design position for work that is not built yet.
+Fair comparison against the categories this will be confused with. Cells marked
+"Planned" with a stage are `ledgerkb`'s design position for work that is not
+built yet; the rest describe what runs today.
 
 | | ledgerkb | Retrieval frameworks (LlamaIndex, Haystack) | Graph construction (Microsoft GraphRAG, LightRAG) | Agent memory (Graphiti, Mem0) |
 |---|---|---|---|---|
-| Conflicting sources | Both kept active and marked disputed. The store never picks a winner (L6) | Not modelled. Both passages are retrieved and the model reconciles them | Reconciled during entity and community summarisation | Graphiti invalidates the older fact and keeps it queryable; Mem0 updates the memory in place |
-| Citation checking | A quote absent from its cited chunk cannot reach the caller (L3) | Source nodes are returned; verifying the quote is the application's job | Provenance back to source text units, with no verification step | Provenance back to episodes, with no verification step |
-| Declining to answer | A first-class outcome, with the coverage gaps named (L3) | Buildable, not built in | Not a design goal | Not a design goal |
-| Running with no credentials | Yes, including embedding, and a CI job proves it | Depends on configuration. Fully local paths exist | No. Extraction is LLM-driven throughout | No |
-| Shape | A library, SQLite by default, no server | A framework | A pipeline and framework | A service, or a library against a graph database |
+| Conflicting sources | Planned (L6): both kept active and marked disputed; the store never picks a winner. Today retrieval returns each source on its own rank | Not modelled. Both passages are retrieved and the model reconciles them | Reconciled during entity and community summarisation | Graphiti invalidates the older fact and keeps it queryable; Mem0 updates the memory in place |
+| Citation checking | Planned (L3): a quote absent from its cited chunk cannot reach the caller. Today every hit names its chunk, and every chunk's character span slices back exactly to the source | Source nodes are returned; verifying the quote is the application's job | Provenance back to source text units, with no verification step | Provenance back to episodes, with no verification step |
+| Declining to answer | Planned (L3): a first-class outcome, with the coverage gaps named | Buildable, not built in | Not a design goal | Not a design goal |
+| Running with no credentials | Yes, including embedding (a local ONNX model, downloaded once). A CI job runs the test suite and a full ingest with the network cut | Depends on configuration. Fully local paths exist | No. Extraction is LLM-driven throughout | No |
+| Shape | A library on SQLite, no server; the `Store` port takes a backend of your own | A framework | A pipeline and framework | A service, or a library against a graph database |
 
 All four are good at what they are for, and none of them is trying to do this.
 Retrieval frameworks are the right tool when the question is the unit of work.
 Graph construction frameworks build a richer graph than this will, at a cost
 Microsoft's own reporting puts at tens of dollars per long document. Agent memory
 systems are built for an agent's working memory over a conversation, not for a
-document corpus somebody is accountable for. Pick this one only if the thing you
-care about is what changed.
+document corpus somebody is accountable for. Pick this one today for retrieval
+you can audit to the character; it is being built for the case where the thing
+you care about is what changed.
 
 ## Roadmap
 

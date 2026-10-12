@@ -17,11 +17,13 @@ current = "L2"
 works_today = """
 Documents go in and ranked passages come out. Ingest reads files, directories
 and ZIP archives; tier-0 parsers cover eleven formats; the sanitiser strips
-invisible text and quarantines instruction-shaped spans; the chunker slices on
-document structure and every chunk slices back to byte-identical source text.
-Search runs three arms (dense, BM25 and heading path), fuses them by rank, and
-explains where each arm placed every candidate. All of it runs with no API key
-and no network.
+invisible text and flags instruction-shaped spans, recording each with its
+offsets in a quarantine table; the chunker slices on document structure, and
+every chunk's character offsets slice back to identical source text. Search runs
+three arms (dense, BM25 and heading path), fuses them by reciprocal rank fusion,
+and explains where each arm placed every candidate. None of it needs an API key,
+and after a one-time download of the local embedding model none of it needs the
+network.
 
 Grounded answering, the assertion ledger, the knowledge graph, the change report
 and the exports are designed and gated but not built.
