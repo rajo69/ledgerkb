@@ -46,7 +46,7 @@ L7 and L8 are breadth, built when something pulls them.
 
 L6 gains a seventh gate criterion: the change report must run end to end on a
 second corpus of real public documents, with the result published alongside its
-limitations.
+provenance and scope.
 
 The PyPI contradiction is resolved in favour of L3. The name is claimed on the
 first publish, at L3. L8 commits to core's stability behind a name already

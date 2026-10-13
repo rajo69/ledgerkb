@@ -58,7 +58,7 @@ class ParserRegistry:
         if suffix in KNOWN_UNSUPPORTED:
             raise ParseError(
                 path,
-                f"{KNOWN_UNSUPPORTED[suffix]} is not supported at tier 0. "
+                f"{KNOWN_UNSUPPORTED[suffix]} is outside the tier 0 formats. "
                 "Convert it, or install the 'docling' extra.",
             )
         raise ParseError(path, f"no parser handles {suffix or mime!r}")

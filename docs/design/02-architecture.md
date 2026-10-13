@@ -21,7 +21,7 @@ The PRD proposed a "parallel tri-engine" writing three semantic formats concurre
 
 ```
                     ┌──────────────────────────────────┐
-   sources  ─────►  │      DOCUMENT VERSIONS           │  immutable, hashed
+   sources  ─────►  │      DOCUMENT VERSIONS           │  hashed, versioned
                     └────────────────┬─────────────────┘
                                      ▼
                     ┌──────────────────────────────────┐
@@ -122,7 +122,7 @@ create table document (
   unique (source_id, external_id)
 );
 
--- immutable. a new content hash is a new row, never an update.
+-- hashes are write-once. a new content hash is a new row, never an update.
 create table document_version (
   id             uuid primary key default gen_random_uuid(),
   document_id    uuid not null references document(id) on delete cascade,
@@ -141,7 +141,7 @@ create table document_version (
 );
 ```
 
-`document_version` being immutable and hash-keyed is what makes refresh cheap **and** makes "what did this document say in March?" answerable. It is the foundation of the change report.
+`document_version` keeping its hashes write-once and being hash-keyed is what makes refresh cheap **and** makes "what did this document say in March?" answerable. It is the foundation of the change report.
 
 ### 3.2 Chunks
 

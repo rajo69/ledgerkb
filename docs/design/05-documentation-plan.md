@@ -64,14 +64,14 @@ a documentation rewrite is claiming more than the code delivers.
 | Hybrid retrieval: dense, sparse and heading arms, fused by rank | Works |
 | Retrieval scoped to current document versions | Works |
 | Per-candidate rank explanation | Works |
-| Grounded answering with verified quotes | Not built. L3 |
-| Honest abstention with named gaps | Not built. L3 |
-| Assertion ledger and extraction | Not built. L4 |
-| Entity resolution and graph | Not built. L5 |
-| Change report | Not built. L6 |
-| Exports: wiki bundle, briefing, governance guide | Not built. L7 |
-| Evaluation harness and observability | Not built. L8 |
-| Web product | Not built. P1 to P6 |
+| Grounded answering with verified quotes | Planned: L3 |
+| Honest abstention with named gaps | Planned: L3 |
+| Assertion ledger and extraction | Planned: L4 |
+| Entity resolution and graph | Planned: L5 |
+| Change report | Planned: L6 |
+| Exports: wiki bundle, briefing, governance guide | Planned: L7 |
+| Evaluation harness and observability | Planned: L8 |
+| Web product | Planned: P1 to P6 |
 
 Everything in the second block is design work with a written gate, not vapour, but it is not
 code and the documentation must never imply otherwise.
@@ -86,7 +86,7 @@ These are the claims worth leading with, because they are true today and they ar
    characters and remaps every offset. This is what makes a citation a precise character span
    rather than a gesture at a page.
 2. **Invariants live in the database, not in convention.** Deleting from the ledger raises. A
-   version is immutable once written. The full-text index is a generated column maintained by
+   version's hashes and ingest time cannot be updated, so new content is a new row. The full-text index is a generated column maintained by
    trigger, so the dense and sparse indexes cannot disagree even if a caller forgets to
    reindex.
 3. **Tier-4 settings do not exist.** Quote verification, zero tools in extraction calls, the
@@ -113,19 +113,18 @@ package name. The README H1 becomes `ledgerkb` and stops naming the challenge ev
 **D2. Description: use both, on different surfaces.** They do different jobs.
 
 Short form, for `pyproject.toml`, the PyPI summary and the GitHub repository description. This
-is already the value in `pyproject.toml`, so nothing needs to change there:
+is the value in `pyproject.toml`:
 
-> Turn scattered documents into a knowledge base that maintains a position over time.
+> A Python library for searching mixed documents with provenance you can check to the character.
 
-Long form, as the opening line of the README, directly under the H1:
+Long form, as the opening paragraph of the README, directly under the H1: the short form, then
+the eleven formats, the offsets that slice back exactly to the source text (property-tested with
+Hypothesis), the three search arms fused by reciprocal rank fusion, `--explain`, and local
+embeddings with no API key.
 
-> Most tools answer questions about your documents. This one keeps a position on them, tells you
-> when that position changes, and shows its working.
-
-The long form works because it names the category before naming the difference, which is what
-gives a reader something to compare against in the first five seconds. If it reads as too long
-in place, the clause to cut is "and shows its working", because the citation guarantee is
-covered immediately below in the differentiators. Cut nothing else.
+The short form works because it names the category before naming the difference, which is what
+gives a reader something to compare against in the first five seconds. The long form then names
+what a reader can check for themselves.
 
 **D3. Documentation site: yes.** MkDocs with the Material theme, deployed to GitHub Pages by a
 workflow. Build it in this pass, as phase 3.
@@ -639,7 +638,7 @@ The documentation phase is done when all of these pass.
 - [ ] Every relative link in every Markdown file resolves
 - [ ] `ARCHITECTURE.md` names every module under `src/ledgerkb/` and says which are empty
 - [ ] The README states the current stage and it matches `stages.toml`
-- [ ] No document claims a capability from the "not built" half of section 2.1
+- [ ] No document presents a capability from the planned half of section 2.1 as built
 - [ ] The GitHub community standards checklist is complete
 - [ ] A person who has never seen the repository can install it and run the quickstart from the
       README alone. Test this on somebody, not by inspection.

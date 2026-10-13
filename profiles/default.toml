@@ -1,7 +1,7 @@
 # The default profile ships generic.
 #
 # Profiles carry domain knowledge so the code stays corpus-agnostic. A corpus is
-# never accommodated by a code branch — it gets a profile.
+# never accommodated by a code branch: it gets a profile.
 
 entity_types = ["Person","Organisation","Project","Meeting","Decision",
                 "Action","Risk","Document","Location","Policy"]

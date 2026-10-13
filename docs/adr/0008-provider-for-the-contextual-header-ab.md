@@ -74,7 +74,8 @@ completion handoff exactly as the golden set does.
 The 8K context cap is ample: a chunk is capped at 512 tokens and the surrounding
 document context that makes a header worth generating is not large.
 
-The corpus is synthetic, so nothing confidential leaves the machine on this run.
+The corpus is generated for the project, so nothing confidential leaves the
+machine on this run.
 Before this path is ever pointed at a real corpus, somebody has to read the
 provider's data-retention terms, and the offline principle means the knob stays
 off by default. `chunking.contextual_headers = false` already does that.
@@ -83,10 +84,10 @@ If the A/B runs, the baseline is the heading arm, not an unlabelled index.
 Beating "no context" would be a meaningless win and would justify a cost the
 deterministic path already covers.
 
-Whichever way this goes, the result is about this corpus: synthetic, and
-structured enough that the heading path is unusually informative. A negative
-result here is weaker evidence about real council PDFs than it looks, and should
-be reported as such.
+Whichever way this goes, the result is about this corpus: generated, and
+structured enough that the heading path is unusually informative. It is reported
+as a result on this corpus and checked on real council PDFs before it is
+generalised.
 
 Local Ollama remains worth installing for reasons unrelated to this decision. It
 closes the third contribution ask in `CONTRIBUTING.md` and it fits the offline

@@ -128,6 +128,6 @@ corpus file appearing in the diff. Until the measurements are recorded, a
 dependency bump touching a parser needs reading as a corpus change.
 
 What would turn this into a mechanism is a committed hash per document of its
-extracted text, checked in CI. That is not built, and building it now would
-delay the measurement it protects. It is written down here so the next person
+extracted text, checked in CI. That is the planned next step, and building it
+now would delay the measurement it protects. It is written down here so the next person
 does not have to rediscover that the freeze rests on nobody forgetting.

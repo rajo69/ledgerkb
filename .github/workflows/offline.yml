@@ -6,7 +6,7 @@ name: offline
 #
 # Isolation is a network namespace (`unshare --net`), not a firewall rule.
 # Dropping OUTPUT globally would also cut the runner's own link to GitHub, so
-# the job could never report its result — it just hangs until it is killed.
+# the job could never report its result: it just hangs until it is killed.
 # A namespace isolates the test process and leaves the runner alone.
 
 on:

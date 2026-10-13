@@ -46,10 +46,9 @@ reviewable at that volume.
 
 ## Consequences
 
-The corpus is synthetic, and one process now wrote the documents, the generator
-and possibly the questions. That is a stronger version of the caveat Q4 already
-recorded for metadata coverage, and it has to travel with every number L2
-produces. Bringing forward Q5's second corpus is what would fix it.
+The corpus is generated, and one process wrote the documents, the generator and
+possibly the questions. Every number L2 produces carries that provenance; Q5's
+second corpus of real public documents is the planned cross-check.
 
 The suite is about 5 seconds slower, because the measurement corpus is built
 once per module for its tests.

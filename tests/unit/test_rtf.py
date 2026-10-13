@@ -58,9 +58,9 @@ def test_every_heading_offset_slices_back_to_its_own_text() -> None:
 def test_offsets_survive_chunking() -> None:
     """Parser output through the real chunker: every chunk slices back.
 
-    ``tests/property/test_offsets.py`` proves this over synthetic documents. It
-    never sees parser output, so a parser that mis-records an offset passes it.
-    This closes that gap for RTF.
+    ``tests/property/test_offsets.py`` proves this over Hypothesis-generated
+    documents. This test runs the same invariant over RTF parser output, so a
+    parser that mis-records an offset fails here.
     """
     doc = parse(MINUTES)
     for c in chunk_document(doc, "ws", "v", ChunkingConfig(max_tokens=64, overlap=8)):

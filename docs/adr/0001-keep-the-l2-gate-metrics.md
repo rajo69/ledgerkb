@@ -40,9 +40,8 @@ it, it should be adopted there, prospectively, before any number exists.
 
 ## Consequences
 
-The L2 result will be weaker evidence than it could have been. A 5 point hybrid
-delta on 40 questions is two questions, and it will have to be reported with
-that caveat rather than as a clean win.
+A 5 point hybrid delta on 40 questions is two questions, so the results file
+reports each delta with its question count.
 
 Whoever writes the results file should record `recall@5`, `nDCG@10` and MRR
 alongside the gate metric even though the gate does not ask for them. Computing

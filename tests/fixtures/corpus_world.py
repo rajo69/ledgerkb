@@ -1,8 +1,9 @@
 """The invented world the large fixture corpus is generated from.
 
-The 21 anchor documents in ``build_corpus.py`` were written one at a time. That
-does not scale to the size L2 needs, and hand-writing 200 documents would
-produce 200 documents that are all subtly different in ways nobody chose.
+The 21 anchor documents in ``build_corpus.py`` were written one at a time. A
+corpus the size L2 needs is generated instead: writing 200 documents one at a
+time would produce 200 documents that are all subtly different in ways nobody
+chose.
 
 So this module holds a small world (wards, programmes, committees, officers,
 meeting dates) and a set of document shapes that are filled from it. The world

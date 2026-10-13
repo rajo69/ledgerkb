@@ -114,7 +114,7 @@ jobs:
         # arguments audits the throwaway environment uvx just built for it,
         # which is not the thing we ship.
         # Reports, but does not block an unrelated PR on an advisory published
-        # that morning — Renovate raises the fix as its own PR.
+        # that morning; Renovate raises the fix as its own PR.
         continue-on-error: true
         run: |
           uv export --format requirements-txt --all-extras --no-emit-project > /tmp/reqs.txt

@@ -86,7 +86,7 @@ class TestTheInvariantHoldsAtScale:
         """The L1 invariant, over 4000-odd chunks rather than 55.
 
         The property test in ``tests/property/test_offsets.py`` runs over
-        synthetic documents and never sees parser output. The anchor corpus
+        Hypothesis-generated documents and never sees parser output. The anchor corpus
         runs over 20 documents. This is the same invariant over the corpus the
         retrieval numbers will actually be computed from.
         """

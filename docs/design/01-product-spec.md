@@ -383,7 +383,7 @@ Named so scope stays honest.
 |---|---|
 | Live / continuous ingest | Explicitly cut. Manual refresh is sufficient and honest. |
 | Multi-tenant orgs, roles, SSO | Workspace-scoped auth only. |
-| Document editing / annotation | Sources are immutable. That is the model. |
+| Document editing / annotation | Sources are read-only. That is the model. |
 | A chat product with memory of the user | Knowledge is about the corpus, not the conversation. |
 | Web search as a default answer path | Breaks traceability (research §2.6). Off by default, always labelled. |
 | Fine-tuning anything | No evidence any of this needs it. |
@@ -403,7 +403,7 @@ Named so scope stays honest.
 ### 11.2 Measurable
 | Metric | Target |
 |---|---|
-| Citation validity (quote present in cited chunk) | **100%**, enforced, not measured |
+| Citation validity (quote present in cited chunk) | **100%**, enforced by construction |
 | Correct-abstention rate on unanswerable golden set | ≥ 90% |
 | Retrieval failure rate (top-20, golden set) | ≤ 5% |
 | Ragas faithfulness | ≥ 0.85 |

@@ -1,5 +1,5 @@
 # Normalise to LF in the repository. The test matrix runs on Windows too, and
-# offset arithmetic is load-bearing here — mixed line endings would change
+# offset arithmetic is load-bearing here: mixed line endings would change
 # char_start/char_end for the same source file across platforms.
 * text=auto eol=lf
 

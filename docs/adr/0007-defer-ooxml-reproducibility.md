@@ -21,8 +21,7 @@ documents to a store built from the previous one.
 
 ## Decision
 
-Leave it. Record it here, in the L2 handoff, and as a known limitation, and fix
-it when L6 needs it.
+Leave it. Record it here and in the L2 handoff, and fix it when L6 needs it.
 
 ## Alternatives
 

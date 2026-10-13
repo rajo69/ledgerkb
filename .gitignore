@@ -1,4 +1,4 @@
-# Source material — third-party PDFs, kept local. Everything derived from them
+# Source material: third-party PDFs, kept local. Everything derived from them
 # lives in docs/, so a fresh session loses nothing.
 *.pdf
 
@@ -28,7 +28,7 @@ coverage.xml
 *.db-shm
 exports/
 
-# Secrets — never committed. Configuration references an env var name, never a key.
+# Secrets: never committed. Configuration references an env var name, never a key.
 .env
 .env.*
 !.env.example

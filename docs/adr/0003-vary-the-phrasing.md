@@ -34,10 +34,9 @@ Every phrasing keeps the amount and the financial year as literal tokens.
 
 ## Alternatives
 
-**Leave it templated and note the bias in the results.** Cheapest, and the
-caveat would have been honest. Rejected because the affected criterion is one of
-the four the stage exists to measure, and a caveat that invalidates a headline
-number is not a caveat, it is a missing result.
+**Leave it templated and note the bias in the results.** Cheapest. Rejected
+because the affected criterion is one of the four the stage exists to measure,
+and a headline number that templated phrasing invalidates is a missing result.
 
 **Vary the wording with a language model.** More natural text, and it would have
 introduced a model into the fixture path, a network dependency into corpus

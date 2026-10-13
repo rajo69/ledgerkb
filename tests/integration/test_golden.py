@@ -125,7 +125,7 @@ class TestAnswerableIsStatedNotInferred:
     def test_an_answerable_question_needs_a_relevant_span(self, tmp_path: Path) -> None:
         body = """
 [[question]]
-id = "unfinished"
+id = "no-spans"
 question = "What was the allocation?"
 answerable = true
 """

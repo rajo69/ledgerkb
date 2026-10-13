@@ -242,9 +242,9 @@ Two things follow, and the second one is easy to get wrong:
 If the A/B runs, the baseline is the **heading arm**, not an unlabelled index.
 Beating "no context" would be a meaningless win.
 
-## The limitation to carry into the results
+## Provenance to carry into the results
 
-The corpus is synthetic, and the same process wrote the documents, the
+The corpus is generated, and the same process wrote the documents, the
 generator, and (if nobody else writes them) the questions. Q4 in
 04-build-handoff.md already recorded this for metadata coverage, where the
 extractor and the fixtures were adjusted together and the coverage figure
@@ -259,7 +259,7 @@ That argument has since been won, though not for L2's numbers.
 corpus of real public documents a gate criterion on L6, on the ground that a
 change report demonstrated only on documents this project generated is not
 evidence about change reports. The same objection applies to the retrieval
-figures, and L2's gate does not require it, so state the limitation with the
+figures, and L2's gate does not require it, so state the provenance with the
 numbers rather than leaving a reader to find it here.
 
 ## Two things known and not fixed
