@@ -1,21 +1,21 @@
-"""In-process embedding, so L2 needs no API key and no network.
+"""In-process embedding, so L2 needs no API key, and no network once the model is downloaded.
 
 This is what keeps ``offline.yml`` meaningful past L1. If retrieval could only
 be built with a hosted embedder, the offline job would stop proving anything
 the moment the first vector was needed, and "runs with zero credentials" would
 quietly become "runs, until you want it to work".
 
-``fastembed`` runs ONNX on CPU — no torch, no GPU, no server. The model is
+``fastembed`` runs ONNX on CPU: no torch, no GPU, no server. The model is
 downloaded once and cached; after that it is entirely local.
 
 **On the model.** The build handoff recommended ``BAAI/bge-m3`` via fastembed.
-It is not available there — not as a dense model, not sparse, not
-late-interaction — so that recommendation could not be implemented as written.
+It is not available there (not as a dense model, not sparse, not
+late-interaction), so that recommendation could not be implemented as written.
 The default is ``mixedbread-ai/mxbai-embed-large-v1``: 1024 dimensions (the
 number both design documents already agreed on, so the locked field is
 unchanged), Apache-2.0, and the smallest of the permissively-licensed
 1024-dimension models fastembed actually serves. ``jinaai/jina-embeddings-v3``
-is deliberately excluded from :data:`KNOWN_DIMENSIONS` — it is 1024 dimensions
+is deliberately excluded from :data:`KNOWN_DIMENSIONS`: it is 1024 dimensions
 and otherwise a fine choice, but CC-BY-NC-4.0 is a non-commercial licence and
 this project does not ship one.
 """

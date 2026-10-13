@@ -69,7 +69,7 @@ class TestIncoherentCombinations:
     def test_future_config_version_is_refused(self, project: Path) -> None:
         path = project / "ledgerkb.toml"
         path.write_text("config_version = 99\n", encoding="utf-8")
-        with pytest.raises(ConfigError, match="not supported"):
+        with pytest.raises(ConfigError, match="does not match this build"):
             load_config(path)
 
 

@@ -19,8 +19,8 @@ Meeting minutes routinely contain sentences like:
 
 > The committee resolved to ignore the previous recommendation.
 
-A trigger-word filter flags that. Standard guardrail products drop to roughly 60
-percent accuracy on benign data for exactly this reason: the words that appear in
+A trigger-word filter flags that. Standard guardrail products lose accuracy on benign
+data for exactly this reason: the words that appear in
 attacks also appear innocently, and in records work they appear constantly. A
 blunt filter on this corpus does more damage than the attack it is meant to
 prevent, because it silently drops real content from real documents.

@@ -1,4 +1,4 @@
-"""Configuration — the whole tuning surface, in one place.
+"""Configuration: the whole tuning surface, in one place.
 
 The governing rule: **tunable = quality/cost tradeoffs; not tunable =
 correctness invariants.** If a setting could make the system lie, it is not a
@@ -7,10 +7,10 @@ setting.
 Tunability is an *attribute of each field*, so validation enforces it rather
 than documentation asking nicely:
 
-* :attr:`Tier.FREE` — hot, no rebuild.
-* :attr:`Tier.GATED` — changing it invalidates derived data; the caller is told
+* :attr:`Tier.FREE`: hot, no rebuild.
+* :attr:`Tier.GATED`: changing it invalidates derived data; the caller is told
   exactly what must be rebuilt and refuses to leave the store inconsistent.
-* :attr:`Tier.LOCKED` — locked after first use; needs an explicit destructive
+* :attr:`Tier.LOCKED`: locked after first use; needs an explicit destructive
   command.
 * Tier 4 invariants have **no field at all**, at any level. That is the point.
   A PR adding one is rejected regardless of how convenient it is.
@@ -89,7 +89,7 @@ class ChatConfig(Section):
     concurrency: Annotated[int, FREE] = Field(default=4, ge=1, le=64)
     timeout_s: Annotated[float, FREE] = Field(default=120.0, gt=0)
     cheap: Annotated[ChatTier, FREE] = ChatTier(model="deepseek/deepseek-v3.2")
-    """Headers, extraction and grading run here — the bulk of the token spend."""
+    """Headers, extraction and grading run here: the bulk of the token spend."""
 
 
 class EmbeddingsConfig(Section):
@@ -110,7 +110,7 @@ RECHUNK = Tiered(Tier.GATED, "a full re-chunk and re-index")
 """Anything that moves a chunk boundary.
 
 Boundaries are not a quality/cost tradeoff. Chunk ids change when they move,
-and ``assertion_evidence.chunk_id`` is a foreign key — so a boundary change
+and ``assertion_evidence.chunk_id`` is a foreign key, so a boundary change
 leaves stored evidence pointing at a chunk generation that retrieval no longer
 returns. That is a correctness invariant, which by the rule at the top of this
 module means it cannot be free.
@@ -138,7 +138,7 @@ class ChunkingConfig(Section):
         if self.overlap >= self.max_tokens:
             raise ValueError(
                 f"chunking.overlap ({self.overlap}) must be smaller than "
-                f"chunking.max_tokens ({self.max_tokens}) — otherwise chunking cannot advance"
+                f"chunking.max_tokens ({self.max_tokens}); otherwise chunking cannot advance"
             )
         return self
 
@@ -158,7 +158,7 @@ class RetrievalConfig(Section):
         if self.rerank_to > self.fuse_to:
             raise ValueError(
                 f"retrieval.rerank_to ({self.rerank_to}) exceeds retrieval.fuse_to "
-                f"({self.fuse_to}) — reranking cannot invent candidates"
+                f"({self.fuse_to}); reranking cannot invent candidates"
             )
         if self.fuse_to > self.dense_k + self.sparse_k:
             raise ValueError(
@@ -186,7 +186,7 @@ class ResolutionConfig(Section):
         if not low <= self.trigram <= high:
             raise ValueError(
                 f"resolution.trigram ({self.trigram}) must sit inside grey_band "
-                f"[{low}, {high}] — a threshold outside the review band means either "
+                f"[{low}, {high}]; a threshold outside the review band means either "
                 "everything or nothing is reviewed"
             )
         return self
@@ -255,11 +255,9 @@ class Profile(Section):
     @model_validator(mode="after")
     def _schema_is_non_empty(self) -> Profile:
         if not self.entity_types:
-            raise ValueError(
-                "profile.entity_types cannot be empty — the schema is closed by design"
-            )
+            raise ValueError("profile.entity_types cannot be empty: the schema is closed by design")
         if not self.predicates:
-            raise ValueError("profile.predicates cannot be empty — the schema is closed by design")
+            raise ValueError("profile.predicates cannot be empty: the schema is closed by design")
         return self
 
 
@@ -287,17 +285,13 @@ class Config(Section):
     def _version_is_known(self) -> Config:
         if self.config_version != CONFIG_VERSION:
             raise ValueError(
-                f"config_version {self.config_version} is not supported by this build "
+                f"config_version {self.config_version} does not match this build "
                 f"(expected {CONFIG_VERSION})"
             )
         return self
 
     def build_receipt(self) -> dict[str, Any]:
-        """The fully-resolved config, for stamping into every export.
-
-        Any artifact can then be audited for how it was produced — including
-        whether a custom port was substituted.
-        """
+        """The fully-resolved config, for stamping into every export."""
         return self.model_dump(mode="json")
 
 
@@ -356,8 +350,8 @@ def load_profile(name: str, profiles_dir: Path) -> Profile:
 
 
 def load_config(path: Path | None = None, profiles_dir: Path | None = None) -> Config:
-    """Load, merge and validate. Incoherent combinations fail here — loudly, at
-    startup — never by misbehaving later."""
+    """Load, merge and validate. Incoherent combinations fail here, loudly, at
+    startup, never by misbehaving later."""
     path = path or find_config()
     raw: dict[str, Any] = _read_toml(path) if path and path.is_file() else {}
     root = path.parent if path else Path.cwd()

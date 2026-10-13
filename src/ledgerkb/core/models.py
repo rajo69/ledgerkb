@@ -95,7 +95,10 @@ class Document(Base):
 
 
 class DocumentVersion(Base):
-    """Immutable. A new content hash is a new row, never an update."""
+    """A new content hash is a new row, never an update.
+
+    A trigger refuses any update to ``content_hash``, ``text_hash`` or ``ingested_at``.
+    """
 
     id: Id = Field(default_factory=new_id)
     document_id: Id
@@ -116,7 +119,7 @@ class DocumentVersion(Base):
     text: str | None = None
     """The canonical sanitised text. Every chunk offset indexes into this."""
     parse_warnings: list[str] = Field(default_factory=list)
-    """Named degradations — an unreadable page, a low density probe. Never silent."""
+    """Named degradations: an unreadable page, a low density probe. Never silent."""
     metadata_misses: list[str] = Field(default_factory=list)
     """Required fields that could not be found. Reported, never silently null."""
 
@@ -135,7 +138,7 @@ class Chunk(Base):
     char_start: int = Field(ge=0)
     char_end: int = Field(ge=0)
     text: str
-    """The verbatim source span. NEVER rewritten — quote verification depends on it."""
+    """The verbatim source span. NEVER rewritten: quote verification depends on it."""
     context_header: str | None = None
     """A 50-100 token situating summary, concatenated only for indexing."""
     token_count: int | None = Field(default=None, ge=0)
@@ -174,7 +177,7 @@ class Entity(Base):
     first_seen: date | None = None
     last_seen: date | None = None
     merged_into: Id | None = None
-    """Soft merge. Reversible — over-merging is the failure that matters."""
+    """Soft merge. Reversible: over-merging is the failure that matters."""
     status: str = "active"
 
 
@@ -198,7 +201,7 @@ class Evidence(Base):
 
     chunk_id: Id
     quote: str = Field(min_length=1)
-    """Verbatim. Must occur in the referenced chunk's text — checked mechanically."""
+    """Verbatim. Must occur in the referenced chunk's text, checked mechanically."""
     char_start: int | None = Field(default=None, ge=0)
     char_end: int | None = Field(default=None, ge=0)
 
@@ -224,7 +227,7 @@ class Assertion(Base):
     modality: Modality
     confidence: Confidence = 1.0
 
-    # evidence — an assertion cannot exist without it
+    # evidence: an assertion cannot exist without it
     evidence: list[Evidence] = Field(min_length=1)
 
     # bitemporal: valid_* is world time, asserted_at/invalid_at is system time
@@ -342,7 +345,7 @@ class Answer(Base):
     @model_validator(mode="after")
     def _abstention_names_its_gaps(self) -> Answer:
         if self.abstained and not self.gaps:
-            raise ValueError("an abstention must name its gaps — silence is not an answer")
+            raise ValueError("an abstention must name its gaps: silence is not an answer")
         return self
 
 

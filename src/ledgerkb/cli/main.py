@@ -1,4 +1,4 @@
-"""``lkb`` — the command line.
+"""``lkb``: the command line.
 
 L0 ships three commands: ``init``, ``version`` and ``doctor``. All three work
 with **zero API keys**, which is the L0 gate and also the property that keeps
@@ -37,7 +37,10 @@ from ledgerkb.storage.sqlite.store import SqliteStore
 
 app = typer.Typer(
     name="lkb",
-    help="Turn scattered documents into a knowledge base that maintains a position over time.",
+    help=(
+        "A Python library for searching mixed documents with provenance you can check "
+        "to the character."
+    ),
     no_args_is_help=True,
     add_completion=False,
 )
@@ -284,7 +287,7 @@ def _report_embedding_space(store: SqliteStore, cfg: Config) -> None:
 
 
 def _check_credentials(cfg: Config) -> None:
-    """Missing keys are reported, never fatal — everything deterministic still runs."""
+    """Missing keys are reported, never fatal: everything deterministic still runs."""
     import os
 
     key = os.environ.get(cfg.chat.api_key_env)
@@ -312,9 +315,9 @@ def _print_tiers() -> None:
         table.add_row(key, f"[{colour[tier]}]{tier.value}[/]", forces or "-")
     console.print(table)
     console.print(
-        "\n[dim]Tier-4 invariants — quote verification, zero tools in extraction, the "
+        "\n[dim]Tier-4 invariants (quote verification, zero tools in extraction, the "
         "append-only ledger, unmerged contradictions, required evidence, the closed "
-        "predicate schema, path-traversal guards, budget aborts have no key at any "
+        "predicate schema, path-traversal guards, budget aborts) have no key at any "
         "level, by design.[/]"
     )
 
@@ -574,7 +577,7 @@ def search(
     ] = "dense,sparse,headings",
     json_out: Annotated[bool, typer.Option("--json", help="Machine-readable output.")] = False,
 ) -> None:
-    """Hybrid retrieval. Retrieval only — grounded answering with verified quotes is L3."""
+    """Hybrid retrieval. Grounded answering with verified quotes is L3."""
     import json as _json
 
     cfg, store = _open()

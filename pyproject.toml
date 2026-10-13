@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ledgerkb"
 version = "0.0.1"
-description = "Turn scattered documents into a knowledge base that maintains a position over time."
+description = "A Python library for searching mixed documents with provenance you can check to the character."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -61,7 +61,7 @@ all      = ["ledgerkb[local,extract,postgres,docling,obs,pdf,vec]"]
 [project.scripts]
 lkb = "ledgerkb.cli.main:app"
 
-[dependency-groups]                      # PEP 735 — dev only, never shipped
+[dependency-groups]                      # PEP 735: dev only, never shipped
 # Lint and type tools are pinned exactly: they are the ones that redden CI with
 # no code change, because `select` names rule *families* and any new rule in one
 # fails a clean tree. Renovate bumps them in their own PR, where the new-lint

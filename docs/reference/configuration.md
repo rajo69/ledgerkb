@@ -106,7 +106,7 @@ later:
 - `store.backend = "postgres"` with no `store.dsn`.
 - An empty `entity_types` or `predicates`, because the schema is closed by
   design.
-- A `config_version` this build does not support.
+- A `config_version` that does not match this build.
 
 ## Where the config ends up
 
