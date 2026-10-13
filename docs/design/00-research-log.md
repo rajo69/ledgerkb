@@ -25,7 +25,7 @@ An OKF bundle is a **directory of markdown files with YAML frontmatter**. `type`
 |---|---|
 | `sources: [{id, resource, title, author, last_modified}]` | Citations, Challenge 1's "show where the answer came from" |
 | `generated: {by, at}` | Which agent/model produced this page, and when |
-| `verified: [{by, at}]` | Trust tier. `human:` prefix ⇒ human-reviewed; agent-only ⇒ machine-confirmed; absent ⇒ unverified |
+| `verified: [{by, at}]` | Trust tier. `human:` prefix ⇒ human-reviewed; agent-only ⇒ machine-confirmed; absent ⇒ no verification recorded |
 | `status: draft \| stable \| deprecated` | Lifecycle, supports "decisions that were superseded" |
 | `stale_after: YYYY-MM-DD` | **The entire Governance_Guide deliverable falls out of this field** |
 | `log.md` (reserved) | Chronological update history. **This is the belief-revision change report** |
@@ -72,7 +72,7 @@ Refresh tokens: Google only issues one on **first** consent. Set `accessType: "o
 |---|---|---|
 | License | **Apache-2.0** | AGPL-3.0 (self-host core), hosted service closed |
 | Model | Self-hosted library | Managed API first |
-| Cost | Infrastructure only (~2GB RAM for Chromium) | $19–$399/mo tiers |
+| Cost | Infrastructure only (~2GB RAM for Chromium) | $19 to $399/mo tiers |
 
 AGPL-3.0 on an ingestion component that sits inside our server is exactly the kind of licence friction to avoid when the stated goal is "as much open source as possible" *and* the output may be redistributed. Crawl4AI's Apache-2.0 has no such reach.
 
@@ -108,7 +108,7 @@ Rejected alternatives: **Marker**, GPL-3.0 code plus a RAIL-M weights licence wi
 
 ### 2.1 Contextual Retrieval is the highest-ROI technique available (`ADOPT`)
 
-Anthropic's method: before embedding, prepend a short (**50–100 token**) LLM-generated context sentence to each chunk describing where it came from and what it is about. Do it for the **embedding index and the BM25/FTS index**. Measured: contextual embeddings + contextual BM25 + reranking cut top-20 retrieval failure from **5.7% → 1.9% (-67%)**.
+Anthropic's method: before embedding, prepend a short (**50 to 100 token**) LLM-generated context sentence to each chunk describing where it came from and what it is about. Do it for the **embedding index and the BM25/FTS index**. Measured: contextual embeddings + contextual BM25 + reranking cut top-20 retrieval failure from **5.7% → 1.9% (-67%)**.
 
 This is precisely what the PRD called "situated contextual summaries". The idea was sound, the attribution was missing. Using only one of the two indexes leaves accuracy on the table.
 
@@ -118,7 +118,7 @@ Cost control: generate the context header with a cheap model, and cache the pare
 
 ### 2.2 Chunker: Chonkie (`ADOPT`)
 
-MIT, ~15MB install vs 80–170MB for framework-bundled chunkers, up to 33× faster token chunking, and ships `RecursiveChunker`, `SentenceChunker`, `SemanticChunker`, `SDPMChunker`, `LateChunker`, `NeuralChunker`.
+MIT, ~15MB install vs 80 to 170MB for framework-bundled chunkers, up to 33× faster token chunking, and ships `RecursiveChunker`, `SentenceChunker`, `SemanticChunker`, `SDPMChunker`, `LateChunker`, `NeuralChunker`.
 
 **Important nuance:** the brief asks for "meaningful sections rather than arbitrary fixed-size chunks". For council documents the *strongest* signal is structural, not embedding-based: agenda item numbers, decision headings, minute numbering. So: **structure-first splitting** (Docling/Tier-0 gives us a heading tree), with Chonkie's semantic chunker only as the within-section splitter when a section overruns the token budget. Semantic-similarity breakpoints are the fallback, not the primary strategy.
 
@@ -138,7 +138,7 @@ True BM25 in Postgres exists: **ParadeDB `pg_search`**, TigerData **`pg_textsear
 
 At our corpus size, `tsvector` + `ts_rank_cd` fused with dense results via **Reciprocal Rank Fusion** is well within acceptable quality, and RRF is what does the heavy lifting anyway. We isolate ranking behind a `KeywordIndex` port so swapping in `pg_search` later is contained.
 
-**Honest caveat to record:** `ts_rank` is *not* BM25: no document-length normalisation, no saturating term frequency. If eval shows keyword recall is the bottleneck, that is the trigger to build the custom image.
+**Recorded for the evaluation:** `ts_rank` is *not* BM25: no document-length normalisation, no saturating term frequency. If eval shows keyword recall is the bottleneck, that is the trigger to build the custom image.
 
 > Sources: [ParadeDB - Hybrid Search in PostgreSQL: The Missing Manual](https://www.paradedb.com/blog/hybrid-search-in-postgresql-the-missing-manual) · [pg_textsearch / true BM25](https://www.tigerdata.com/blog/introducing-pg_textsearch-true-bm25-ranking-hybrid-retrieval-postgres) · [Hybrid search: BM25 + pgvector with RRF](https://dev.to/gabrielanhaia/hybrid-search-in-100-lines-bm25-pgvector-with-rrf-merge-58cn)
 
@@ -182,7 +182,7 @@ Web search stays available but **off by default**, and any external result is re
 
 Kùzu Inc. was **acquired by Apple in October 2025**; the GitHub repo is archived and the website is down. Existing releases still run; there is no development. Community forks (LadybugDB, Kineviz's `bighorn`) are early-stage with no funding or roadmap.
 
-Any 2024–2025-era tutorial recommending Kùzu as *the* embedded graph DB, and there are many, is now stale advice. Worth flagging loudly because Graphiti's docs still list Kùzu as a backend.
+Any tutorial from 2024 or 2025 recommending Kùzu as *the* embedded graph DB, and there are many, is now stale advice. Worth flagging loudly because Graphiti's docs still list Kùzu as a backend.
 
 > Sources: [The Register - KuzuDB abandoned](https://www.theregister.com/2025/10/14/kuzudb_abandoned/) · [Kuzu's legacy and the embedded graph landscape](https://gdotv.com/blog/kuzu-legacy-embedded-graph-database-landscape/)
 
@@ -197,7 +197,7 @@ Options considered:
 | Kùzu | Dead (§3.1) |
 | **Plain `node` / `edge` tables + recursive CTEs** | **Chosen** |
 
-The queries the brief actually asks for are **1–2 hops**: "which people are responsible for actions relating to project X", "which risks affect more than one project", "which decisions superseded earlier decisions". None of them need a traversal engine. A real migration case study moved *off* Neo4j to AGE precisely because the graph queries were straightforward and the advanced features went unused. We are further down that curve still.
+The queries the brief actually asks for are **1 to 2 hops**: "which people are responsible for actions relating to project X", "which risks affect more than one project", "which decisions superseded earlier decisions". None of them need a traversal engine. A real migration case study moved *off* Neo4j to AGE precisely because the graph queries were straightforward and the advanced features went unused. We are further down that curve still.
 
 Relational tables also mean the graph shares transactions with the documents and assertions that justify it, so an export can never show an edge whose evidence has been rolled back. We render to Mermaid / JSON / GraphML / Cypher on export, so "we have a knowledge graph" remains fully true.
 
@@ -205,8 +205,8 @@ Relational tables also mean the graph shares transactions with the documents and
 
 ### 3.3 GraphRAG frameworks: borrow the model, skip the dependency - `REJECT` (framework) / `ADOPT` (bitemporal pattern)
 
-- **Microsoft GraphRAG**, LLM calls at every stage; reported ~$40–60 in API cost for a 10,000-word document, ~$33K to index a large corpus. Disqualifying.
-- **LightRAG** (MIT), 70–90% of GraphRAG quality at ~1/100th cost, ~$0.50 to index 500 pages. Genuinely good. **But**: storage backend and embedding config are locked before first upload with no supported migration path, and the server component has had a JWT algorithm-confusion vulnerability and a hardcoded JWT signing secret allowing auth bypass. Do not run its server.
+- **Microsoft GraphRAG**, LLM calls at every stage; reported ~$40 to $60 in API cost for a 10,000-word document, ~$33K to index a large corpus. Disqualifying.
+- **LightRAG** (MIT), 70 to 90% of GraphRAG quality at ~1/100th cost, ~$0.50 to index 500 pages. Genuinely good. **But**: storage backend and embedding config are locked before first upload with no supported migration path, and the server component has had a JWT algorithm-confusion vulnerability and a hardcoded JWT signing secret allowing auth bypass. Do not run its server.
 - **Graphiti** (Apache-2.0), built for *temporal agent memory*, not document Q&A, and its backends are Neo4j/FalkorDB/(dead Kùzu).
 
 **What we take instead is Graphiti's bitemporal invalidation model**, which is the single most important idea for the Shared Final Challenge:
@@ -221,7 +221,7 @@ That single pattern lets the system answer "what did we believe on 12 June, and 
 
 Entity resolution is documented as *the stage knowledge-graph pipelines do worst*: the same entity scatters into duplicate surface forms. The brief anticipates this from both sides: "merge entities that refer to the same real-world person/org/project" **and** "avoid merging similarly named entities without sufficient evidence".
 
-Standard tooling: **Splink** (probabilistic Fellegi–Sunter; ABS is using it for 2026 Census QA), **Zingg**, **dedupe**. Recommended scale guidance: <1M records → dedupe-class tools; 1–100M → Splink/Zingg. We are at thousands.
+Standard tooling: **Splink** (probabilistic Fellegi-Sunter; ABS is using it for 2026 Census QA), **Zingg**, **dedupe**. Recommended scale guidance: <1M records → dedupe-class tools; 1 to 100M → Splink/Zingg. We are at thousands.
 
 **Our cascade: Rules → Vectors → LLM**, which is the documented cost/latency/accuracy balance:
 1. **Block** on normalised name / type / acronym expansion (cheap, high precision).
@@ -269,7 +269,7 @@ Since `pgmq` is already in the image, adding Redis would mean paying for and ope
 
 ### 4.3 Railway cost reality (`NOTE`)
 
-Hobby is **$5/month, which is a minimum spend, not a cap**: CPU, memory, volumes and egress bill on top. RAM is **~$0.00000386/GB-second ≈ $10/GB-month**, billed per second for what the app *holds*.
+The entry plan is **$5/month, which is a minimum spend, not a cap**: CPU, memory, volumes and egress bill on top. RAM is **~$0.00000386/GB-second ≈ $10/GB-month**, billed per second for what the app *holds*.
 
 Two direct design consequences:
 1. A permanently-resident 4GB Docling service is ~$40/month of RAM alone. Scale-to-zero or on-demand start for the parser service.
@@ -390,7 +390,7 @@ Sheffield City Council publishes an open data portal (ArcGIS Hub) covering FOI d
 | Store | Postgres 18 + pgvector + pgmq + pg_cron + pg_trgm | OSS | One datastore does five jobs |
 | Keyword | tsvector + RRF (pg_search later) | OSS | Not in Railway image yet |
 | Embeddings | BGE-M3 / Qwen3 via port | MIT / Apache | Gateway by default, TEI for full OSS |
-| Graph | Relational tables + recursive CTE | n/a | 1–2 hop queries; Kùzu dead, AGE unavailable |
+| Graph | Relational tables + recursive CTE | n/a | 1 to 2 hop queries; Kùzu dead, AGE unavailable |
 | Temporal | Bitemporal invalidation (`invalid_at`) | pattern | Powers the change report |
 | Entity res. | Rules → vectors → LLM, fully logged | pattern | Conservative by default, reversible |
 | Extraction | Instructor | MIT | Safest default |

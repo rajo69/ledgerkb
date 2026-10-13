@@ -74,10 +74,10 @@ Run `lkb ingest` on the same path again and everything comes back `unchanged`.
 Dedupe is by SHA-256 of the raw bytes and happens before parsing, so an unchanged
 document costs one hash.
 
-A document whose bytes changed gets a **new immutable version**. The old version
-is kept, marked superseded, and stops being returned by search. Its chunks stay in
-the store, so a historical query can reach them at L6, but a citation can never
-point at text that is no longer in the current document.
+A document whose bytes changed gets a **new version** rather than an edit to the
+old one. The old version is kept, marked superseded, and stops being returned by
+search. Its chunks stay in the store, so a historical query can reach them at L6,
+but a citation can never point at text that is no longer in the current document.
 
 ## Failures do not stop the run
 
@@ -91,8 +91,8 @@ recorded, not swallowed.
 ## What ingest does not do
 
 No network. No API key. No language model. Ingest is stages 1 to 6 of eleven, and
-it is entirely deterministic. Embedding is a separate command, and everything
-after that does not exist yet.
+it is entirely deterministic. Embedding is a separate command, and the stages
+after it are in [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md).
 
 ## Sanitisation, and what it will tell you
 

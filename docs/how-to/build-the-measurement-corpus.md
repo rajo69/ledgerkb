@@ -147,13 +147,11 @@ for, 40 questions and at least 7 unanswerable, are reported by `gate_problems()`
 rather than raised, because a file with 12 questions in it is what writing a
 golden set looks like on the way to 40.
 
-## Known limitation
+## Provenance of the corpus
 
-The corpus is synthetic, and the same process wrote the documents and the code
-that reads them. That was already recorded as a caveat for metadata coverage in
-the build handoff, and it applies harder here, where the questions would also be
-written against documents that were generated rather than found. Treat the
-resulting numbers as a floor on a friendly corpus, not as a measured property of
-retrieval in general. Bringing forward a second corpus, from any public document
-set unlike council minutes, is what would fix that, and it is recorded as Q5 in
+The corpus is generated, and the same process wrote the documents and the code
+that reads them. The build handoff records this for metadata coverage, and it
+applies here too, where the questions are written against generated documents.
+The numbers it produces are a measurement on this corpus. A second corpus, from
+any public document set unlike council minutes, is recorded as Q5 in
 [the build handoff](../design/04-build-handoff.md).

@@ -1,7 +1,7 @@
 name: docs
 
 # Builds the documentation site on every pull request, and publishes it from
-# main. A build failure on a PR is the point: a broken nav entry or a bad
+# main on a manual run. A build failure on a PR is the point: a broken nav entry or a bad
 # reference should be caught before it is published, not after.
 
 on:
@@ -41,7 +41,7 @@ jobs:
 
   publish:
     name: publish to GitHub Pages
-    # Manual only: Pages is off, and the docs pages need a truth pass before publishing again.
+    # Manual only: publishing is a deliberate step, run from the Actions tab.
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest

@@ -5,9 +5,8 @@ which covers most hosted providers, every aggregator worth using, and every loca
 server that imitates them. Switching provider is a config change rather than a
 code change.
 
-Nothing built today calls a chat model. This page is about embeddings, which is
-the only provider call that currently happens, and about setting up the chat side
-ready for L3.
+This page is about embeddings, the provider call `lkb` makes today, and about
+setting up the chat side ready for L3.
 
 ## The shape of it
 
@@ -57,8 +56,7 @@ Anything OpenAI-compatible works with no extra code:
 
 This is the endpoint the contextual-header measurement will use when it is
 written, decided in
-[ADR 0008](../adr/0008-provider-for-the-contextual-header-ab.md). Nothing calls
-it yet, for the reason at the top of this page.
+[ADR 0008](../adr/0008-provider-for-the-contextual-header-ab.md).
 
 ```toml
 [chat]
@@ -109,8 +107,8 @@ carrying them fails to load. When `embeddings.provider` is `openai_compatible`,
 `build_embedder` reads the endpoint and the key from `[chat]`, so the two share
 one endpoint by construction.
 
-That is a real limitation, not just a spelling. Chat on a hosted aggregator with
-embeddings on a local Ollama is not expressible today. Both have to be the same
+That is a design rule, not only a spelling: chat and embeddings share one
+endpoint. Both have to be the same
 endpoint, which is why the example above puts `qwen3:8b` and `nomic-embed-text`
 on the same server. If you need them split, the way through is the `Embedder`
 port in code rather than configuration.

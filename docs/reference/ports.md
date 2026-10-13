@@ -112,7 +112,8 @@ change events, run records, and schema version. `SqliteStore` adds
 A `Store` implementation carries obligations the signatures cannot express:
 
 - `invalidate` sets `invalid_at` once and never revises it. There is no delete.
-- A `DocumentVersion` is immutable once written.
+- A `DocumentVersion`'s `content_hash`, `text_hash` and `ingested_at` are never
+  updated once written. New content is a new row.
 - `assertions_as_of` answers from system time, not from the latest state.
 - `search_dense` and `search_sparse` return only chunks belonging to current
   document versions unless asked otherwise.

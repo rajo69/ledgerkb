@@ -14,7 +14,7 @@ need a file to end up in a folder.
 The instinctive defence is a filter: scan text for instruction-like phrases and
 block them.
 
-It does not work on this kind of corpus, for a reason that is easy to demonstrate.
+On this kind of corpus it is the wrong tool, for a reason that is easy to demonstrate.
 Meeting minutes routinely contain sentences like:
 
 > The committee resolved to ignore the previous recommendation.
@@ -31,7 +31,7 @@ So there is no keyword blocklist here, and adding one is a rejected change.
 
 Four controls, in rough order of how much they matter.
 
-**Extraction calls carry zero tools.** This is the real control and everything else
+**Extraction calls carry zero tools (L4).** This is the real control and everything else
 is defence in depth. The calls that process untrusted document text at high volume
 have no tool access and no privileges, so an injected instruction has nothing to
 call. It can say "delete the database" all it likes. There is no function bound to
@@ -40,10 +40,10 @@ the request.
 That is why it has no configuration key. A flag would turn an architectural
 property into a preference, and preferences get changed.
 
-**Quote verification.** An injected instruction can make a model claim anything.
+**Quote verification (L3).** An injected instruction can make a model claim anything.
 It cannot make the claimed quote appear in a chunk that was stored before the
-attack ran. Since a claim whose quote fails verification never reaches the caller,
-injection cannot manufacture a surviving citation. See
+attack ran. Since a claim whose quote fails verification will never reach the
+caller, injection will not be able to manufacture a surviving citation. See
 [Citations and offsets](citations-and-offsets.md).
 
 **Sanitisation, and quarantine rather than deletion.** Two different things happen
@@ -56,18 +56,19 @@ they will read.
 
 Instruction-shaped text is *kept and quarantined*. It stays in the document text,
 because removing it would silently rewrite the record, and it is recorded in the
-`quarantine` table with its offsets and the reason it was flagged. It is excluded
-from prompts and surfaced as a finding. The operator gets to see what was in their
+`quarantine` table with its offsets and the reason it was flagged. It is surfaced
+as a finding, and a view of the text with it blanked out, offsets unchanged, is
+ready for when prompts are built. The operator gets to see what was in their
 documents, which is more useful than a clean-looking corpus.
 
 Detection requires an instruction verb *and* a token addressing a model, together,
 in a short window. That is what keeps the committee sentence above out of the
 findings.
 
-**A closed schema.** Extraction returns one of ten predicates. There is no
+**A closed schema (L4).** Extraction returns one of ten predicates. There is no
 free-text field an injection can steer into meaning something else, because the
-vocabulary is a `Literal` and an unknown value is rejected rather than accepted
-with low confidence.
+vocabulary is closed by the profile and an unknown value is rejected rather than
+accepted with low confidence.
 
 ## Guards that are not about models at all
 
@@ -94,9 +95,8 @@ commit, and safe to include verbatim in an export's build receipt.
 Built: sanitisation and quarantine, the archive and path guards, the budget
 ceiling, console escaping.
 
-Not built: quote verification is L3, and the closed schema and the no-tools rule
-are L4, because extraction itself does not exist yet. Until then those are design
-positions with a test waiting to be written, not code.
+Staged: quote verification is L3, and the closed schema and the no-tools rule
+are L4, together with extraction itself.
 
 [SECURITY.md](https://github.com/rajo69/ledgerkb/blob/main/SECURITY.md) has the reporting process and the scope. Please
 report privately.

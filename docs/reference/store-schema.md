@@ -3,7 +3,7 @@
 SQLite is the default and the only implemented backend. A library that requires a
 server is not a library, and at this scale SQLite is not a compromise: FTS5 gives
 true BM25, and a brute-force cosine scan over 50,000 vectors at 1024 dimensions
-is a 200MB matrix multiply that finishes in single-digit milliseconds.
+is a single 200MB matrix multiply.
 
 Migrations are plain numbered SQL under `src/ledgerkb/storage/migrations/`, with a
 `schema_version` table. No migration framework: the schema is small and additive,
@@ -29,7 +29,7 @@ runs anything outstanding and returns the version it reached.
 | `workspace` | The top-level grouping |
 | `source` | Where documents come from |
 | `document` | Stable document identity, unique on `(source_id, external_id)` |
-| `document_version` | Immutable versions, unique on `(document_id, content_hash)` |
+| `document_version` | Versions, unique on `(document_id, content_hash)`. Hashes and ingest time cannot be updated |
 | `chunk` | Addressable spans, with `embedding` as a float32 blob |
 | `chunk_fts` | FTS5 over the chunk body. External-content table over `chunk` |
 | `chunk_headings` | FTS5 over `heading_path`. External-content table over `chunk` |

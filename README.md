@@ -9,9 +9,8 @@ reciprocal rank fusion; `--explain` shows each arm's rank and the fused score. E
 run locally: no API key, no server.
 
 Where it is going: most tools answer questions about your documents. ledgerkb is
-being built to keep a position on them, tell you when that position changes, and
-show its working. Grounded answering, the assertion ledger and the change report
-are the roadmap, not the present; [Status](#status) says exactly where it stands.
+designed to keep a position on them, tell you when that position changes, and
+show its working. [Status](#status) gives the stage and its gate.
 
 [![ci](https://github.com/rajo69/ledgerkb/actions/workflows/ci.yml/badge.svg)](https://github.com/rajo69/ledgerkb/actions/workflows/ci.yml)
 [![offline](https://github.com/rajo69/ledgerkb/actions/workflows/offline.yml/badge.svg)](https://github.com/rajo69/ledgerkb/actions/workflows/offline.yml)
@@ -109,8 +108,8 @@ be reachable, so a job that proves nothing cannot report green.
 **Contradictions will never be merged.** When two sources disagree, both
 assertions stay active and marked disputed, and the store never picks a winner.
 That is the opposite of what most temporal knowledge systems do. The schema and
-the rule are settled; the reconciliation that produces disputed pairs is L6 and
-is not built. Retrieval already follows the rule: two documents in the fixture
+the rule are settled, and the reconciliation stage (L6) will produce the disputed
+pairs. Retrieval already follows the rule: two documents in the fixture
 corpus give different budget figures (£2.4m and £2.9m), both stay indexed, and
 search ranks each on its own merits rather than choosing one.
 
@@ -132,7 +131,7 @@ key, and after a one-time download of the local embedding model none of it needs
 network.
 
 Grounded answering, the assertion ledger, the knowledge graph, the change report and the
-exports are designed and gated but not built.
+exports are designed and gated, each in its own stage from L3 to L7.
 
 Which L2 criteria are outstanding, and what every other stage commits to, is in
 [ROADMAP.md](ROADMAP.md).
@@ -246,14 +245,14 @@ stage, L7).
 ## How it compares
 
 Fair comparison against the categories this will be confused with. Cells marked
-"Planned" with a stage are `ledgerkb`'s design position for work that is not
-built yet; the rest describe what runs today.
+"Planned" with a stage are `ledgerkb`'s design position for that stage; the
+rest describe what runs today.
 
 | | ledgerkb | Retrieval frameworks (LlamaIndex, Haystack) | Graph construction (Microsoft GraphRAG, LightRAG) | Agent memory (Graphiti, Mem0) |
 |---|---|---|---|---|
 | Conflicting sources | Planned (L6): both kept active and marked disputed; the store never picks a winner. Today retrieval returns each source on its own rank | Not modelled. Both passages are retrieved and the model reconciles them | Reconciled during entity and community summarisation | Graphiti invalidates the older fact and keeps it queryable; Mem0 updates the memory in place |
 | Citation checking | Planned (L3): a quote absent from its cited chunk cannot reach the caller. Today every hit names its chunk, and every chunk's character span slices back exactly to the source | Source nodes are returned; verifying the quote is the application's job | Provenance back to source text units, with no verification step | Provenance back to episodes, with no verification step |
-| Declining to answer | Planned (L3): a first-class outcome, with the coverage gaps named | Buildable, not built in | Not a design goal | Not a design goal |
+| Declining to answer | Planned (L3): a first-class outcome, with the coverage gaps named | Left to the application | Not a design goal | Not a design goal |
 | Running with no credentials | Yes, including embedding (a local ONNX model, downloaded once). A CI job runs the test suite and a full ingest with the network cut | Depends on configuration. Fully local paths exist | No. Extraction is LLM-driven throughout | No |
 | Shape | A library on SQLite, no server; the `Store` port takes a backend of your own | A framework | A pipeline and framework | A service, or a library against a graph database |
 
@@ -263,7 +262,7 @@ Graph construction frameworks build a richer graph than this will, at a cost
 Microsoft's own reporting puts at tens of dollars per long document. Agent memory
 systems are built for an agent's working memory over a conversation, not for a
 document corpus somebody is accountable for. Pick this one today for retrieval
-you can audit to the character; it is being built for the case where the thing
+you can audit to the character; it is designed for the case where the thing
 you care about is what changed.
 
 ## Roadmap

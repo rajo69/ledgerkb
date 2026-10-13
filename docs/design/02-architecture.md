@@ -78,10 +78,10 @@ The PRD proposed a "parallel tri-engine" writing three semantic formats concurre
 
 | Service | Memory | Scaling | Notes |
 |---|---|---|---|
-| `api` | 512MB–1GB | Always on | Thin; delegates to queue |
-| `worker` | 1–2GB | 1–2 replicas | Concurrency from `WORKER_CONCURRENCY` |
+| `api` | 512MB to 1GB | Always on | Thin; delegates to queue |
+| `worker` | 1 to 2GB | 1 to 2 replicas | Concurrency from `WORKER_CONCURRENCY` |
 | `parser` | 4GB cap | **Scale to zero / restart after N jobs** | Docling leaks; see research §1.4 |
-| `postgres` | 1–2GB | Always on, volume-backed | `EXTENSIONS=pgvector,pgmq,pg_cron,pg_trgm,pgcrypto` |
+| `postgres` | 1 to 2GB | Always on, volume-backed | `EXTENSIONS=pgvector,pgmq,pg_cron,pg_trgm,pgcrypto` |
 
 The `parser` service is separated for exactly one reason: Docling's ~4GB footprint with no memory release would otherwise take down the API. Isolated, concurrency 1, restart-after-N, it is merely expensive-when-used rather than destabilising.
 
@@ -421,7 +421,7 @@ This runs with **zero tool access**, the architectural control against indirect 
 1. exact normalised name + type match            → merge, method='exact'
 2. known alias / acronym expansion               → merge, method='alias'
 3. pg_trgm similarity > 0.85 AND type match      → merge, method='trigram'
-4. embedding cosine 0.80–0.92 (the grey band)    → LLM adjudication
+4. embedding cosine 0.80 to 0.92 (the grey band) → LLM adjudication
 5. LLM must cite spans supporting sameness       → merge if yes, else flag
 6. anything unresolved                           → duplicate review queue (UI)
 ```
@@ -649,26 +649,26 @@ Assumption: 500 documents, ~15k chunks, one initial build plus weekly refreshes.
 
 | Stage | Calls | Est. |
 |---|---|---|
-| Context headers | 15k cheap calls, cached prefixes | $2–5 |
-| Embeddings | 15k × ~400 tok | $0.50–2 |
-| Extraction | ~4k chunk groups, cheap model | $4–10 |
+| Context headers | 15k cheap calls, cached prefixes | $2 to $5 |
+| Embeddings | 15k × ~400 tok | $0.50 to $2 |
+| Extraction | ~4k chunk groups, cheap model | $4 to $10 |
 | Entity adjudication | ~200 grey-band pairs | $0.50 |
-| **Total** | | **~$8–18** |
+| **Total** | | **~$8 to $18** |
 
 **Monthly running**
 
 | Item | Est. |
 |---|---|
-| Railway: postgres + api + worker | $15–30 |
-| Railway: parser (scale-to-zero) | $3–10 |
-| Vercel: hobby/pro + Blob | $0–20 |
-| LLM: refreshes + queries | $5–20 |
+| Railway: postgres + api + worker | $15 to $30 |
+| Railway: parser (scale-to-zero) | $3 to $10 |
+| Vercel: free or Pro plan + Blob | $0 to $20 |
+| LLM: refreshes + queries | $5 to $20 |
 | Langfuse Cloud | $0 (free tier) |
-| **Total** | **~$25–80/mo** |
+| **Total** | **~$25 to $80/mo** |
 
 The dominant lever is the context-header stage. If cost becomes a problem, generate headers only for chunks above a length threshold and inherit the section header otherwise, expected to cut that line by ~60% at small recall cost. **Measure before optimising.**
 
-Compare: Microsoft GraphRAG is reported at $40–60 in API cost for a *single* 10,000-word document. Choosing our own extraction over that framework is roughly a 100× cost decision (research §3.3).
+Compare: Microsoft GraphRAG is reported at $40 to $60 in API cost for a *single* 10,000-word document. Choosing our own extraction over that framework is roughly a 100× cost decision (research §3.3).
 
 ---
 
@@ -694,7 +694,7 @@ Upload + link connectors. Tier-0 parsing. Structure-first chunking. Context head
 Entity + assertion extraction. Resolution cascade. Explore view. `Entities_Relationships.json`. `Briefing.pdf` via Typst.
 
 ### Phase 3: Refresh & change report *(~1 day)* ← **the winning demo**
-`document_version` diffing. Reconciliation. Bitemporal invalidation. Change report UI. Do not let this slip; steps 1–4 of the demo are table stakes and this is the differentiator.
+`document_version` diffing. Reconciliation. Bitemporal invalidation. Change report UI. Do not let this slip; steps 1 to 4 of the demo are table stakes and this is the differentiator.
 
 ### Phase 4: Knowledge layer & governance *(~1 day)*
 OKF v0.2 serialiser. `knowledge_page` materialisation. `stale_after` computation. `Governance_Guide.md`. Full export picker with "all of the above".
@@ -713,7 +713,7 @@ Google Drive connector (Picker). Docling tier-1. Reranking. CRAG routing. Ragas/
 | 1 | Assertion ledger + projections | PRD's parallel tri-engine | Three write paths drift; one ledger cannot |
 | 2 | ~~Postgres for everything~~ **Superseded: SQLite by default, Postgres for scale behind the same `Store` protocol.** A library that requires a server is not a library. See [`03-implementation-plan.md` section 1.2](./03-implementation-plan.md) | A broker, stream processor, dedicated vector DB, graph DB and cache | One datastore does five jobs; ~$25/mo vs hundreds |
 | 3 | Manual refresh + content hashing | Continuous ingest | Unchanged docs cost zero; live ingest explicitly out of scope |
-| 4 | Relational graph tables | Neo4j / AGE / Kùzu | 1–2 hop queries; **Kùzu is archived**; AGE not in image |
+| 4 | Relational graph tables | Neo4j / AGE / Kùzu | 1 to 2 hop queries; **Kùzu is archived**; AGE not in image |
 | 5 | Bitemporal invalidation | Overwrite on update | The entire change-report feature depends on it |
 | 6 | `drive.file` + Picker | `drive.readonly` | Avoids restricted-scope verification + CASA assessment |
 | 7 | CRAG **without** default web search | Canonical CRAG | Traceability to corpus is the graded criterion |

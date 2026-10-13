@@ -1,7 +1,7 @@
 # Contributing
 
-Thanks for looking. The project is early, and it moves through fifteen gated
-stages. What is built, what is not, and what the open stage still needs are in
+Thanks for looking. The project moves through fifteen gated stages. What is
+built, what each later stage commits to, and what the open stage still needs are in
 [ROADMAP.md](ROADMAP.md). Where the code lives and what must not break are in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 

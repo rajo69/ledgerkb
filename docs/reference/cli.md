@@ -1,6 +1,7 @@
 # CLI
 
-Eight commands. All of them run with no API key and no network.
+Eight commands. All of them run with no API key, and offline after a one-time
+model download.
 
 `lkb --help` and `lkb <command> --help` print the same information from the code.
 This page is the version you can search.
@@ -78,7 +79,8 @@ Show a document's chunks. `DOC_ID` may be a unique prefix.
 ## `lkb index`
 
 Embed the chunks. The default embedder runs in-process through fastembed, so this
-needs no API key and no network. Only chunks without an embedding are processed.
+needs no API key, and no network once the first run has downloaded the model.
+Only chunks without an embedding are processed.
 
 | Option | Effect |
 |---|---|
@@ -95,8 +97,7 @@ that is the case that would otherwise report success and change nothing. Use
 
 ## `lkb search QUERY`
 
-Hybrid retrieval. Retrieval only: grounded answering with verified quotes is L3
-and is not built.
+Hybrid retrieval. Grounded answering with verified quotes is L3.
 
 | Option | Effect |
 |---|---|

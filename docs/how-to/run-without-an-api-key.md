@@ -3,7 +3,7 @@
 This is the default. You do not have to configure anything to get it, and this
 page exists mostly to say what the boundary is.
 
-## What works with no key and no network
+## What works with no key, and offline
 
 Everything that exists today.
 

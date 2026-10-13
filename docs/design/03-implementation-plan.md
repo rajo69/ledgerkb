@@ -172,10 +172,10 @@ Two things worth stating plainly:
 
 **Build**
 - Structured `Answer` model: `claims[]` each with `chunk_id`, verbatim `quote`, `modality` (`fact`|`inference`), `confidence`.
-- **Deterministic quote verification**: normalised exact match, then fuzzy ≥ 0.95. Unverified claims demoted or dropped. *Runs before the answer is returned, every time.*
+- **Deterministic quote verification**: normalised exact match, then fuzzy ≥ 0.95. Claims that fail verification are demoted or dropped. *Runs before the answer is returned, every time.*
 - CRAG routing: `correct` → generate · `ambiguous` → expand + retry once · `incorrect` → rewrite, retry once, then **abstain with named coverage gaps**. No default web search.
 - `lkb ask "<q>" [--json] [--cite]`, `lkb serve --repl`.
-- **README** covering the five things the brief requires: retrieval approach, chunking strategy, why this search method, limitations, how to add documents.
+- **README** covering the five things the brief requires: retrieval approach, chunking strategy, why this search method, scope, how to add documents.
 
 **Exit gate 🟢**
 - [ ] **Citation validity = 1.00.** Not a target: a hard assertion. Any claim whose quote is absent from its cited chunk cannot reach the caller.
@@ -220,7 +220,7 @@ Two things worth stating plainly:
 - Ten node types (Person, Organisation, Project, Meeting, Document, Decision, Action, Risk, Location, Policy).
 - Cascade: exact → alias → trigram → embedding grey-band → LLM adjudication with cited evidence → **review queue**.
 - Soft merges (`merged_into`) + `entity_merge_log` with evidence. **Reversible.**
-- Graph queries via recursive CTE (1–2 hop).
+- Graph queries via recursive CTE (1 to 2 hop).
 - Exports: JSON, GraphML, Mermaid, Cypher.
 - **Shipped artifacts the brief explicitly asks for:** a written graph-schema description and **five example queries**, both in `docs/graph/`.
 - `lkb graph export --format json|graphml|mermaid|cypher`, `lkb entities --duplicates`.
@@ -285,7 +285,7 @@ Two things worth stating plainly:
 ---
 
 ### L8. Evals, guardrails, observability → 📦 **v1.0.0**
-**Goal:** production posture. Detail in §3–§5.
+**Goal:** production posture. Detail in §3 to §5.
 
 **Exit gate 🟢**
 - [ ] `lkb eval run` reports all deterministic metrics **with no LLM judge and no API key**
@@ -309,7 +309,7 @@ Two things worth stating plainly:
 
 | Metric | How | Gate |
 |---|---|---|
-| **Citation validity** | Quote present in cited chunk | **1.00, enforced not measured** |
+| **Citation validity** | Quote present in cited chunk | **1.00, enforced by construction** |
 | **Correct abstention** | Unanswerable subset | ≥ 0.90 |
 | Retrieval recall@k / MRR / nDCG | Labelled chunk ids | recall@20 ≥ 0.90 |
 | Evidence completeness | Assertions with ≥1 evidence row | 1.00 |
@@ -458,7 +458,7 @@ Supported with **zero extra code**: it is OpenAI-compatible, so it uses the base
 
 Implementation notes: send optional `HTTP-Referer` and `X-Title` headers for attribution; some routed models lack strict `json_schema`, so the capability probe (§6) matters more here than with a single-vendor endpoint.
 
-**Caveat to log:** OpenRouter's free tier at 50 requests/day is nowhere near enough for an ingest run: a 100-document corpus makes thousands of calls. Free tier is for trying `lkb ask`, not for compiling a workspace.
+**Logged for planning:** OpenRouter's free tier at 50 requests/day is nowhere near enough for an ingest run: a 100-document corpus makes thousands of calls. Free tier is for trying `lkb ask`, not for compiling a workspace.
 
 ---
 
@@ -490,8 +490,8 @@ Rerank, Docling tier-1, Langfuse wiring, promptfoo in CI, error states, empty st
 
 | Track | Stages | Effort |
 |---|---|---|
-| Library → v1.0.0 | L0–L8 | **~11.5 days** |
-| Product | P1–P6 | **~9 days** |
+| Library → v1.0.0 | L0 to L8 | **~11.5 days** |
+| Product | P1 to P6 | **~9 days** |
 | **Total** | | **~20 working days** |
 
 ### The fast path, 2 days

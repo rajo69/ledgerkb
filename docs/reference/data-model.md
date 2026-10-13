@@ -22,8 +22,9 @@ plus `authors` and `current_version_id`. `status` is `active`, `unavailable` or
 `failed`. A document that disappears from its source becomes `unavailable`; it is
 never deleted, and assertions drawn from it are retained.
 
-**`DocumentVersion`** is immutable. A new content hash is a new row, never an
-update. `content_hash` is over the raw bytes and `text_hash` over the extracted
+**`DocumentVersion`**: a new content hash is a new row, never an update, and a
+trigger rejects any update to `content_hash`, `text_hash` or `ingested_at`.
+`content_hash` is over the raw bytes and `text_hash` over the extracted
 text, which is what makes the dedupe check cheap and the "what did this say in
 March?" question answerable. `text` holds the canonical sanitised text that chunk
 offsets index into. `parse_warnings` and `metadata_misses` record what went wrong
@@ -54,7 +55,7 @@ exactly. See [Citations and offsets](../explanation/citations-and-offsets.md).
 
 ## The ledger
 
-These models exist and validate. Nothing writes them yet; extraction is L4.
+These models exist and validate. Extraction (L4) writes them.
 
 **`Evidence`** is a verbatim `quote` plus the `chunk_id` it came from and, where
 known, its character span within that chunk.

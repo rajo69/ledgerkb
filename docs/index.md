@@ -1,7 +1,9 @@
 # ledgerkb
 
-Most tools answer questions about your documents. This one keeps a position on
-them, tells you when that position changes, and shows its working.
+A Python library for searching mixed documents with provenance you can check to
+the character. Most tools answer questions about your documents; ledgerkb is
+designed to keep a position on them, tell you when that position changes, and
+show its working.
 
 ```bash
 uv pip install -e ".[local]" --group dev
@@ -9,7 +11,7 @@ lkb init . && lkb ingest ./documents && lkb index
 lkb search "who owns the footbridge decision?" --explain
 ```
 
-No API key. No network. No account.
+No API key. No account. Offline after a one-time model download.
 
 ## Where to go
 
@@ -56,6 +58,6 @@ The list of what works, and the gate criteria for every stage, is in
 from the same machine-readable file as the paragraph above, so neither can drift
 from what is claimed elsewhere.
 
-The documentation names the stage for anything that is not built. If you find a
+The documentation names the stage for every planned capability. If you find a
 page claiming a capability that does not exist, that is the most useful bug report
 this project can receive.

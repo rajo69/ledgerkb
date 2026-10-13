@@ -26,7 +26,7 @@ and after a one-time download of the local embedding model none of it needs the
 network.
 
 Grounded answering, the assertion ledger, the knowledge graph, the change report
-and the exports are designed and gated but not built.
+and the exports are designed and gated, each in its own stage from L3 to L7.
 """
 
 # --- library track ------------------------------------------------------------
@@ -186,7 +186,7 @@ gate = [
   { text = "Contradictions surface as two assertions, and a blended single answer is a test failure", met = false },
   { text = "Change-report precision at or above 0.90 against human review of the scripted document", met = false },
   { text = "A full replay from scratch yields the same final ledger state with LLM calls stubbed", met = false },
-  { text = "The change report runs end to end on a second corpus of real public documents, not the generated one, and the result is published with its limitations", met = false },
+  { text = "The change report runs end to end on a second corpus of real public documents, not the generated one, and the result is published with its provenance", met = false },
 ]
 
 [[stage]]

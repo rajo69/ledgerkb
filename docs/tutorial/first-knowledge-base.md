@@ -1,7 +1,8 @@
 # Your first knowledge base
 
 Twenty minutes, from nothing to a searchable corpus with a citation you can
-verify. No API key, no network beyond the install, no account anywhere.
+verify. No API key, no network beyond the install and a one-time model download,
+no account anywhere.
 
 By the end you will have ingested twenty-one documents in eleven formats, searched them
 three different ways, and checked that a citation points at exactly the characters
@@ -285,6 +286,6 @@ That block runs as a test in CI, so it cannot rot.
 - [Tune retrieval](../how-to/tune-retrieval.md) if the results are not what you
   expected.
 - [One ledger](../explanation/the-ledger.md) for why the system is shaped this
-  way, and what the four unbuilt projections will do.
-- [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md) for what does not exist yet. Grounded answering
+  way, and what the four planned projections will do.
+- [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md) for every stage ahead. Grounded answering
   with verified quotes is L3, and the change report is L6.

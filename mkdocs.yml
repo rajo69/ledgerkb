@@ -1,7 +1,7 @@
 site_name: ledgerkb
 site_description: >-
-  Turn scattered documents into a knowledge base that maintains a position over
-  time.
+  A Python library for searching mixed documents with provenance you can check
+  to the character.
 site_url: https://rajo69.github.io/ledgerkb/
 repo_url: https://github.com/rajo69/ledgerkb
 repo_name: rajo69/ledgerkb

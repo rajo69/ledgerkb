@@ -1,7 +1,8 @@
 # The four tunability tiers
 
 Every configuration key in this library carries a tier, and the tier is an
-attribute of the field rather than a note in a document. Validation enforces it.
+attribute of the field rather than a note in a document. `lkb doctor` checks a
+changed config against it.
 
 The governing rule is one sentence:
 
@@ -21,8 +22,8 @@ re-index. `resolution.trigram` forces resolution to run again. The profile's
 entity types and predicates force re-extraction.
 
 Gated does not mean forbidden. It means the caller is told exactly what must be
-rebuilt, and refuses to proceed rather than leaving the store in a state where
-half the data was produced under one setting and half under another.
+rebuilt: `check_transition` refuses a tier-2 change until the caller confirms the
+rebuilds, and `lkb doctor` lists them.
 
 **Tier 3, locked after first use.** The embedding model and its dimensions, the
 store backend, the tokenizer. Changing the embedding model makes every stored
@@ -39,15 +40,19 @@ environment variable, not as a keyword argument.
 | Zero tools in extraction calls | The anti-injection control is architectural. A flag would make it a preference |
 | Append-only ledger | History preservation is the product |
 | Contradictions stay unmerged | Display may vary. The store may never pick a winner |
-| Evidence required per assertion | A database constraint, and a pydantic validator |
+| Evidence required per assertion | A pydantic validator and a check in the store; a trigger refuses to delete evidence |
 | Closed predicate schema | Extend it through a profile. Never disable the validation |
 | ZIP and path-traversal guards | Not negotiable |
 | Budget guards abort | You set the ceiling. You cannot set "ignore it" |
 
+Quote verification (L3), zero tools in extraction calls and the closed predicate
+schema (L4), and unmerged contradictions (L6) ship the same way when their stages
+land, with no key.
+
 ## Why a setting is a claim
 
 A configuration key is a promise that both values are supported. Ship
-`verify_quotes = false` and you have promised that the unverified mode works, is
+`verify_quotes = false` and you have promised that the mode without verification works, is
 tested, and is a legitimate way to run the system. Somebody will set it, because
 it is faster. Then a bug report arrives from that mode, and the honest answer to
 "does ledgerkb verify citations?" becomes "it depends".
@@ -68,9 +73,7 @@ Supply your own `Chunker` and the boundaries are yours. Supply your own `Parser`
 object came from, so a substitution needs no permission and no flag.
 
 That is full power, through code you own. The difference from a configuration key
-is accountability: a custom port is your component, and the resolved config
-recorded in every build receipt says which ports were substituted, so an artifact
-produced that way can be recognised as such.
+is accountability: a custom port is your component.
 
 What is not on offer is a flag that quietly disables a guarantee while the system
 keeps making it.

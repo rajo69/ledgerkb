@@ -25,11 +25,11 @@ So the rule is: if a check can be code instead of a model call, it is code.
 
 ## Where that rule shows up
 
-**Quote verification** is normalised string matching, then a fuzzy match with a
+**Quote verification** (L3) is normalised string matching, then a fuzzy match with a
 floor. Not "does this evidence support this claim" but "does this exact string
 occur in this exact chunk". Microseconds, no key, and no way to argue with it.
 
-**The predicate schema is closed.** Extraction returns a `Literal` of ten
+**The predicate schema is closed** (L4). Extraction returns one of ten
 predicates. An eleventh is not a low-confidence result, it is a rejected one.
 Extending the vocabulary is a profile change, not a prompt change.
 
@@ -59,18 +59,19 @@ the grey band between "obviously the same" and "obviously different", where the
 alternative is a coin flip.
 
 The pattern in each case is the same: **the model proposes, code disposes.**
-Extraction runs, and then post-conditions checked in code decide what survives.
+When extraction runs (L4), post-conditions checked in code decide what survives.
 The quote must occur in the chunk. An inferred claim cannot have full confidence.
 An unknown predicate is rejected. None of those are trusted from the model, and
 none of them cost anything.
 
 ## The consequence for evaluation
 
-The headline metrics require no judge and no API key. Citation validity is
-enforced rather than measured, and it is 1.00 by construction. Correct abstention
+The headline metrics require no judge and no API key. Citation validity will be
+enforced rather than measured (L3), so it will be 1.00 by construction. Correct abstention
 is counted against a labelled set. Retrieval recall is counted against labelled
-chunk ids. Over-merge rate is counted against labelled pairs. All of it runs in
-CI, on a fork, for free.
+quotes, which resolve to chunk ids. Over-merge rate is counted against labelled
+pairs. All of it is designed to run in CI, on a fork, for free; the retrieval metrics
+come first, in the L2 gate.
 
 LLM-judged metrics have a place after that, measuring residual quality rather than
 being the only line of defence. They live behind an extra, and they are not the

@@ -119,6 +119,6 @@ and pass it to `search()`. See [Ports](../reference/ports.md).
 ## Do not tune by feel
 
 The golden set is the arbiter, and a knob changed without a measured delta is a
-guess. That set does not exist yet, which is exactly why L2 is still open. Until it
-does, `--explain` and `--arms` on your own queries are the honest tools, and any
+guess. Writing that set is the open work of the L2 gate. Until it lands,
+`--explain` and `--arms` on your own queries are the honest tools, and any
 claim about which setting is better should say which queries it was checked on.

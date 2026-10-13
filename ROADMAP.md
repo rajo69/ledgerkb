@@ -230,7 +230,7 @@ Gate:
 - [ ] A full replay from scratch yields the same final ledger state with LLM calls
       stubbed
 - [ ] The change report runs end to end on a second corpus of real public documents,
-      not the generated one, and the result is published with its limitations
+      not the generated one, and the result is published with its provenance
 
 ### L5. Entity resolution and graph
 

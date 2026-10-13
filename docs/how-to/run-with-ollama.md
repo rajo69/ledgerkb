@@ -13,7 +13,7 @@ the documented init-then-edit order.
 
 ```bash
 ollama pull nomic-embed-text   # 274MB, 768 dimensions
-ollama pull qwen3:8b           # chat: not called by anything yet, see below
+ollama pull qwen3:8b           # chat: ready for L3, see below
 ```
 
 Confirm the server answers the OpenAI-compatible embeddings endpoint before
@@ -57,7 +57,7 @@ field of its own (see
 **`chat.base_url` with `chat.api_key_env`**, the same endpoint as the chat
 block, not a second one you configure separately. Point `[chat]` at Ollama and
 embeddings follow it there. If you ever need embeddings and chat on two
-different servers, that is a case the config format does not represent yet.
+different servers, the way through is the `Embedder` port in code.
 
 ## Ingest, index, search
 
@@ -105,14 +105,12 @@ model. If the `vectors` line says `not what is configured`, `lkb index` refuses
 to mix the two models until you run `lkb index --rebuild`, which drops the
 existing vectors and re-embeds.
 
-## Why the chat block above is untested
+## The chat block
 
-Nothing in `lkb` calls a chat model yet; grounded answering is L3 and is not
-built. `qwen3:8b` and the `[chat]` block are there so the config is ready when
-it lands, matching the pattern in
-[Use a hosted provider](use-a-hosted-provider.md). Only the embeddings path
-above, `ingest` through `search`, was actually run against a live server for
-this page.
+Grounded answering is L3. `qwen3:8b` and the `[chat]` block are there so the
+config is ready when it lands, matching the pattern in
+[Use a hosted provider](use-a-hosted-provider.md). The embeddings path above,
+`ingest` through `search`, was run against a live Ollama server for this page.
 
 ## Performance
 

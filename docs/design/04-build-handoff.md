@@ -22,7 +22,7 @@ Repository: <https://github.com/rajo69/ledgerkb> (public, Apache-2.0). CI runs o
 | **L0**, skeleton and contracts | ✅ done |
 | **L1**, ingest, parse, chunk | ✅ done |
 | **L2**, index and retrieve | 🟡 **half done**, machinery in, measurement outstanding |
-| L3–L8, P1–P6 | not started |
+| L3 to L8, P1 to P6 | not started |
 
 ```bash
 uv venv && uv pip install -e ".[local]" --group dev
@@ -91,7 +91,7 @@ Each was researched. If you want to change one, read the cited section first.
 |---|---|---|
 | 1 | **SQLite is the default store.** Postgres is the scale backend behind the same `Store` protocol | Plan §1.2 |
 | 2 | **No Kafka, Flink, CDC, or live ingest.** Manual refresh + content hashing only | Arch §5 |
-| 3 | **No graph database.** Relational `entity`/`assertion` tables + recursive CTEs. Kùzu is archived; Apache AGE isn't in Railway's image | Research §3.1–3.2 |
+| 3 | **No graph database.** Relational `entity`/`assertion` tables + recursive CTEs. Kùzu is archived; Apache AGE isn't in Railway's image | Research §3.1 to 3.2 |
 | 4 | **No GraphRAG framework.** Own extraction. MS GraphRAG ~100× cost; LightRAG locks storage + had auth CVEs | Research §3.3 |
 | 5 | **Bitemporal invalidation**, set `invalid_at`, never delete | Arch §3.3 |
 | 6 | **Quote verification is deterministic**, not an LLM judge | Arch §6.4 |
@@ -115,7 +115,7 @@ Each was researched. If you want to change one, read the cited section first.
 | Q1 | **PyPI name.** Is `ledgerkb` available? | ✅ **Resolved.** Available (so are `okfkit` and `attestkb`). Availability is not reservation, the name is only claimed on first publish at L8 |
 | Q2 | **Embedding model + dimension** | ✅ **Resolved**, though not the way this document proposed, see below. Since 2026-08-21 the store also records which model made its vectors and refuses a second one |
 | Q3 | **PDF parser default.** `pymupdf4llm` is AGPL-3.0 | ✅ **Resolved.** `pypdfium2` (BSD-3/Apache-2.0) is the default and is implemented. Every parser dependency was licence-checked: all permissive, no AGPL anywhere |
-| Q4 | **Is there a real corpus?** | ✅ **Resolved by its documented default.** None exists. `tests/fixtures/build_corpus.py` generates 20 council-shaped documents across ten formats. See the caveat below |
+| Q4 | **Is there a real corpus?** | ✅ **Resolved by its documented default.** None exists. `tests/fixtures/build_corpus.py` generates 20 council-shaped documents across ten formats. See the provenance note below |
 | Q5 | **Second corpus for the agnosticism gate** | ⬜ Open, not needed until v1.0. Pick any public document set unlike council minutes |
 
 ### Q2: resolved, but not the way this document proposed
@@ -144,9 +144,9 @@ non-commercial.
 against the config at construction, so a mismatch is refused before a corpus is
 embedded rather than surfacing as a shape error on the first search.
 
-### Q4: the caveat worth knowing
+### Q4: provenance of the coverage figures
 
-The fixture corpus is synthetic and was written by the same process that wrote the extractors. When metadata coverage came in below the 90% gate, **both** the extractor and the fixtures were changed: a format-based `doc_type` fallback was added (a real gap), *and* three fixtures gained approval dates while four gained programme references (making the corpus more like real council papers, but also adjusting the thing being measured). Real documents will behave differently. Treat the current coverage figures as a floor on a friendly corpus, not as a measured property of the extractor.
+The fixture corpus is generated and was written by the same process that wrote the extractors. When metadata coverage came in below the 90% gate, **both** the extractor and the fixtures were changed: a format-based `doc_type` fallback was added (a real gap), *and* three fixtures gained approval dates while four gained programme references (making the corpus more like real council papers, but also adjusting the thing being measured). Real documents will behave differently. Treat the current coverage figures as a floor on a friendly corpus, not as a measured property of the extractor.
 
 ---
 
@@ -540,7 +540,7 @@ nothing. Two of its criteria, "hybrid beats dense-only *and* BM25-only" and
 "contextual headers improve recall@20 by ≥ 5 points", are unmeasurable at this
 size. Fix the corpus before writing the questions, not after.
 
-1. **Grow it to ~200 documents / 3–5k chunks.** `tests/fixtures/build_corpus.py`
+1. **Grow it to ~200 documents / 3k to 5k chunks.** `tests/fixtures/build_corpus.py`
    is generative, so this is parameterisation rather than authoring, and the
    corpus stays reviewable source instead of a committed binary.
 2. **Change the metrics.** `recall@5` and `nDCG@10` as headline, plus MRR, plus
@@ -549,9 +549,9 @@ size. Fix the corpus before writing the questions, not after.
 3. **Require a bootstrap confidence interval on the hybrid delta**, not merely a
    positive number. With 40 questions a 5-point difference is two questions.
 4. **Write the questions from the documents alone, before running retrieval.**
-   Q4's caveat, that the extractor and the fixtures were adjusted together,
+   Q4's provenance note, that the extractor and the fixtures were adjusted together,
    applies doubly here, where both the questions and the documents would be
-   synthetic and written by the same process.
+   generated and written by the same process.
 5. **Bring Q5's second corpus forward** from v1.0 to now. Any public document
    set unlike council minutes will do.
 

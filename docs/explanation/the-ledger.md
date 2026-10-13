@@ -32,7 +32,8 @@ has no owner" is a null check. A governance guide generated this way cannot
 contain generic filler, because every line traces to a row.
 
 **Citations cannot drift.** Every projection carries the same `chunk_id`, and
-every `chunk_id` resolves to a character span in an immutable document version.
+every `chunk_id` resolves to a character span in a stored document version, and
+changed content becomes a new version rather than an edit to the old one.
 The wiki, the briefing and the graph all cite the same thing because they are all
 reading the same column.
 
@@ -77,9 +78,10 @@ is right.
 
 ## What exists today
 
-The ledger tables exist, with their constraints and their triggers. Nothing writes
-to them: extraction is L4. Of the five projections, retrieval is built and the
-other four are not. [ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md) has the detail.
+The ledger tables exist, with their constraints and their triggers, and extraction
+(L4) is the stage that writes to them. Of the five projections, retrieval is built,
+and the other four are staged from L5 to L7.
+[ROADMAP.md](https://github.com/rajo69/ledgerkb/blob/main/ROADMAP.md) has the detail.
 
-This page describes the organising idea the code is being built towards, and the
+This page describes the organising idea the code is built around, and the
 schema it already commits to.

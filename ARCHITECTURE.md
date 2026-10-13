@@ -22,7 +22,7 @@ a projection of that ledger.
 
 ```
                     ┌──────────────────────────────────┐
-   sources  ─────►  │      DOCUMENT VERSIONS           │  immutable, hashed
+   sources  ─────►  │      DOCUMENT VERSIONS           │  hashed, versioned
                     └────────────────┬─────────────────┘
                                      ▼
                     ┌──────────────────────────────────┐
@@ -59,9 +59,9 @@ a wiki concurrently from the same documents. That is three sources of truth that
 will disagree, with nothing to reconcile them.
 
 The top two boxes and the retrieval projection exist in code today. The assertion
-ledger has its tables, its constraints and its triggers, but nothing writes to
-them yet, and the other four projections are not built. Section 2 says which
-directories are still empty.
+ledger has its tables, its constraints and its triggers, and extraction (L4) is
+the stage that writes to them; the other four projections are staged from L5 to
+L7. Section 2 names the reserved directories and their stages.
 
 ## 2. Code map
 
@@ -139,17 +139,17 @@ decide: every command opens the config and the store, calls into the library, an
 prints. Anything a document controls is escaped before it reaches the console,
 because output is styled with Rich markup and a document is untrusted input.
 
-### Still empty
+### Reserved for later stages
 
-`extract/`, `ledger/`, `project/` and `obs/` are packages with nothing in them
-but an `__init__.py`. So is `storage/postgres/`, and so is `apps/` at the
-repository root. They are named here because the layering contract already knows
-about them, so the shape of the system is settled even where the code is not.
+`extract/`, `ledger/`, `project/` and `obs/` are packages reserved for later
+stages, each holding an `__init__.py`. So is `storage/postgres/`, and so is `apps/`
+at the repository root. They are named here because the layering contract already
+knows about them, so the shape of the system is settled ahead of the code.
 What each will hold is in [ROADMAP.md](ROADMAP.md) under L4 to L8 and P1.
 
 `evals/` is no longer among them. It holds the measurement machinery L2 needs:
 the provenance header a committed result carries, the golden set format, and the
-retrieval metrics. None of it runs retrieval, and no measurement has been taken.
+retrieval metrics.
 
 ## 3. Invariants
 
@@ -173,7 +173,7 @@ post-sanitisation text.
 once. *Enforced by* database triggers that abort a delete on `assertion` or
 `assertion_evidence`, and abort a second write to `invalid_at`.
 
-**A document version is immutable.** A new content hash is a new row.
+**A document version keeps its hashes.** A new content hash is a new row.
 *Enforced by* a trigger that aborts an update to `content_hash`, `text_hash` or
 `ingested_at`.
 
