@@ -8,8 +8,8 @@ is itself the criterion.
 
 **Write the questions from the documents, before retrieval is run even once.**
 Questions written after looking at what the retriever returned measure the
-retriever against itself, and no amount of care afterwards repairs that. This is
-not a style preference, it is what L2's first gate criterion says.
+retriever against itself, and no amount of care afterwards repairs that. L2's first
+gate criterion says exactly this.
 
 The format, the question shapes that discriminate, and the reasoning behind both
 are in
