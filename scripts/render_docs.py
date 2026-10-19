@@ -118,28 +118,7 @@ def wrap(text: str, width: int = 92, indent: str = "") -> str:
 
 def render_status(data: dict[str, Any], stages: list[Stage]) -> str:
     current = next(s for s in stages if s.id == data["current"])
-    out = [
-        f"**Current stage: {current.id}, {current.title.lower()}.** "
-        f"{current.met} of its {len(current.gate)} gate criteria are met.",
-        "",
-    ]
-
-    for track in ("library", "product"):
-        members = [s for s in stages if s.track == track]
-        span = f"{members[0].id} to {members[-1].id}"
-        done = [s.id for s in members if s.status == "done"]
-        doing = [s.id for s in members if s.status == "in-progress"]
-        todo = [s.id for s in members if s.status == "not-started"]
-        groups = [(done, "done"), (doing, "in progress"), (todo, "not started")]
-        present = [(ids_, label) for ids_, label in groups if ids_]
-        if len(present) == 1:
-            # A whole track in one state reads badly as "P1 to P6: P1 to P6 not started".
-            line = present[0][1]
-        else:
-            line = "; ".join(f"{join(ids_)} {label}" for ids_, label in present)
-        out.append(f"- **{TRACK_LABEL[track]}** ({span}): {line}.")
-
-    out.append("")
+    out: list[str] = []
     for paragraph in data["works_today"].strip().split("\n\n"):
         out.append(wrap(unwrap(paragraph)))
         out.append("")

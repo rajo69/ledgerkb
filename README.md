@@ -8,9 +8,8 @@ runs three-arm hybrid search (dense vectors, BM25, heading path) fused by
 reciprocal rank fusion; `--explain` shows each arm's rank and the fused score. Embeddings
 run locally: no API key, no server.
 
-Where it is going: most tools answer questions about your documents. ledgerkb is
-designed to keep a position on them, tell you when that position changes, and
-show its working. [Status](#status) gives the stage and its gate.
+ledgerkb is designed to hold a position on a body of documents and to report when
+that position changes. 427 tests passing in CI, one job of them with the network cut.
 
 [![ci](https://github.com/rajo69/ledgerkb/actions/workflows/ci.yml/badge.svg)](https://github.com/rajo69/ledgerkb/actions/workflows/ci.yml)
 [![offline](https://github.com/rajo69/ledgerkb/actions/workflows/offline.yml/badge.svg)](https://github.com/rajo69/ledgerkb/actions/workflows/offline.yml)
@@ -23,8 +22,7 @@ A team accumulates two years of meeting minutes, reports, risk registers and
 email. Every tool in this category answers questions about that pile and then
 forgets. Ask the same question twice and you get two independently derived
 answers. Add a new document and nothing happens until somebody thinks to ask the
-right question again. Plenty of tools serve the person with a question. Nobody
-serves the person who owns that body of knowledge over time.
+right question again.
 
 ## What it does today
 
@@ -95,8 +93,8 @@ the stored chunk text, header included, even if a caller forgets to reindex.
 path-traversal guards on archives and budget aborts have no configuration key at
 any level, and quote verification, zero tools in extraction calls and unmerged
 contradictions will ship the same way when their stages land.
-The rule is that if a setting could make the system lie, it is not a setting. The
-extension point is the Protocol ports instead: bring your own `Store`, `Parser`,
+If a setting could make the system lie, it is not a setting. Extension happens
+through the Protocol ports instead: bring your own `Store`, `Parser`,
 `Chunker`, `Reranker` or `ChatModel` and you have full power through code you own.
 
 **It runs with no API key, and offline after a one-time model download.**
@@ -116,11 +114,6 @@ search ranks each on its own merits rather than choosing one.
 ## Status
 
 <!-- generated: status. Edit docs/stages.toml, then run scripts/render_docs.py -->
-**Current stage: L2, index and retrieve.** 3 of its 7 gate criteria are met.
-
-- **Library** (L0 to L8): L0 and L1 done; L2 in progress; L3 to L8 not started.
-- **Product** (P1 to P6): not started.
-
 Documents go in and ranked passages come out. Ingest reads files, directories and ZIP
 archives; tier-0 parsers cover eleven formats; the sanitiser strips invisible text and flags
 instruction-shaped spans, recording each with its offsets in a quarantine table; the chunker
