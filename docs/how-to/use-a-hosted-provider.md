@@ -23,8 +23,7 @@ api_key_env = "OPENROUTER_API_KEY"     # a variable NAME, never a key
 model = "deepseek/deepseek-v3.2"       # headers, extraction and grading run here
 
 [embeddings]
-provider   = "openai_compatible"
-base_url   = "https://openrouter.ai/api/v1"
+provider   = "openai_compatible"       # endpoint and key are read from [chat]
 model      = "qwen/qwen3-embedding-8b"
 dimensions = 1024                      # LOCKED after the first index build
 ```

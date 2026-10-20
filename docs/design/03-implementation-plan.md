@@ -423,9 +423,8 @@ api_key_env = "OPENROUTER_API_KEY"
 [chat.cheap]                    # high-volume: context headers, extraction, grading
 model = "deepseek/deepseek-v3.2"
 
-[embeddings]
+[embeddings]                    # endpoint and key are read from [chat]
 provider = "openai_compatible"
-base_url = "https://openrouter.ai/api/v1"
 model    = "qwen/qwen3-embedding-8b"
 dimensions = 1024
 ```
